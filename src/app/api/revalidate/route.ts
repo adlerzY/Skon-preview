@@ -1,4 +1,3 @@
-// src/app/api/revalidate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 
@@ -7,7 +6,6 @@ export async function POST(request: NextRequest) {
     const secret = request.headers.get('x-revalidate-secret');
 
     if (secret !== process.env.REVALIDATION_SECRET) {
-      console.warn('⚠️ تلاش ناموفق برای پاک کردن کش: توکن نامعتبر است.');
       return NextResponse.json(
         { message: 'غیرمجاز: توکن نامعتبر است' }, 
         { status: 401 }
@@ -24,19 +22,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    revalidateTag(tag);
-
-    console.log(`✅ کش Next.js برای تگ [${tag}] با موفقیت پاک شد.`);
+    if (Array.isArray(tag)) {
+      tag.forEach(t => revalidateTag(t));
+    } else {
+      revalidateTag(tag);
+    }
 
     return NextResponse.json({ 
       revalidated: true, 
       tag: tag,
-      message: `کش برای تگ ${tag} با موفقیت پاک شد.`,
       now: Date.now() 
     });
 
   } catch (error) {
-    console.error('❌ خطای سرور در عملیات پاکسازی کش:', error);
     return NextResponse.json(
       { message: 'خطای سرور در عملیات Revalidation' }, 
       { status: 500 }
