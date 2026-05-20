@@ -1,4 +1,3 @@
-// hooks/useProductSearch.ts
 import { useState, useEffect, useTransition } from "react";
 import { searchProductsByKeyword } from "@/actions/search";
 
@@ -9,9 +8,16 @@ export function useProductSearch() {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!searchQuery.trim()) {
+      setDebouncedQuery("");
+      setSearchResults([]);
+      return;
+    }
+
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
     }, 400);
+
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -21,7 +27,7 @@ export function useProductSearch() {
       return;
     }
 
-    let ignore = false; // جلوگیری از تداخل درخواست‌های قدیمی با جدید (Race Condition)
+    let ignore = false;
 
     startTransition(async () => {
       const results = await searchProductsByKeyword(debouncedQuery);
@@ -31,7 +37,7 @@ export function useProductSearch() {
     });
 
     return () => {
-      ignore = true; 
+      ignore = true;
     };
   }, [debouncedQuery]);
 
