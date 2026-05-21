@@ -27,7 +27,9 @@ export default function UserActions() {
 
   return (
     <div className="relative group">
-      <div 
+      {/* 👈 اینجا div به Link تبدیل شد تا با کلیک هم کار کنه */}
+      <Link 
+        href="/my-account"
         onMouseEnter={prefetchAccount}
         className="flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white"
       >
@@ -35,7 +37,7 @@ export default function UserActions() {
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </span>
         <span>حساب کاربری</span>
-      </div>
+      </Link>
 
       <div className="absolute top-[60px] left-0 bg-[#15171e] border border-white/5 rounded-lg opacity-0 invisible translate-y-1.5 transition-all duration-150 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 p-4 z-[1000] min-w-[260px] shadow-[0_15px_30px_rgba(0,0,0,0.6)] will-change-transform">
         {isLoggedIn ? (

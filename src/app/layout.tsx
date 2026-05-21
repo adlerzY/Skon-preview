@@ -3,11 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/Header/Header";
 
-// تعریف فونت یکان
 const yekanFont = localFont({
   src: "./fonts/Yekan.woff",
   variable: "--font-yekan",
-  // weight: "100 900", 
 });
 
 export const metadata: Metadata = {
@@ -22,15 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl">
-      {/* اعمال کلاس فونت به بادی */}
       <body className={`${yekanFont.variable} font-sans antialiased`}>
-        {/* کانتینر مرکزی با عرض ۱۶۰۰ */}
-        <div className="container mx-auto px-6 max-w-[1600px]">
-          <Header /> 
-          <main>
-            {children}
-          </main>
-        </div>
+        <Header /> 
+        {children}
       </body>
     </html>
   );

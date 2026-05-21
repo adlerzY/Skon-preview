@@ -80,11 +80,11 @@ export async function fetchGraphQL(query: string, variables: any = {}, tags: str
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables }),
+      // اینجا کش فورس شد که تو پروداکشن خیالت راحت باشه
+      cache: cacheMode === 'no-store' ? 'no-store' : 'force-cache'
     };
 
-    if (cacheMode === 'no-store') {
-      fetchOptions.cache = 'no-store';
-    } else if (tags.length > 0) {
+    if (cacheMode !== 'no-store' && tags.length > 0) {
       fetchOptions.next = { tags };
     }
 
