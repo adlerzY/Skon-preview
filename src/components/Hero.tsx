@@ -54,7 +54,7 @@ export default function CategoryHero({ banners }: Props) {
               }`}
             >
               <Image 
-                src={banner.imageUrl || "/placeholder-bg.jpg"} 
+                src={banner.imageUrl || "/images/bi-aksi.webp"} 
                 alt={banner.title} 
                 fill 
                 priority={index === 0} 

@@ -1,3 +1,4 @@
+// src/app/api/revalidate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 
@@ -7,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     if (secret !== process.env.REVALIDATION_SECRET) {
       return NextResponse.json(
-        { message: 'غیرمجاز: توکن نامعتبر است' }, 
+        { message: 'Unauthorized' }, 
         { status: 401 }
       );
     }
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (!tag) {
       return NextResponse.json(
-        { message: 'تگ ارسال نشده است' }, 
+        { message: 'Missing tag' }, 
         { status: 400 }
       );
     }
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     return NextResponse.json(
-      { message: 'خطای سرور در عملیات Revalidation' }, 
+      { message: 'Server error' }, 
       { status: 500 }
     );
   }

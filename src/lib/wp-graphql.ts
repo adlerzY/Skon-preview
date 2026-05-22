@@ -1,5 +1,49 @@
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || 'http://tazavesh.local/graphql';
 
+export interface VariationCard {
+  databaseId: number;
+  name: string;
+  slug: string;
+  price: string;
+  regularPrice: string;
+  salePrice: string;
+  imageUrl: string;
+  attributes: Array<{ name: string; value: string }>;
+  giftPriceToman: string;
+  codePriceToman: string;
+  parsedPrice?: number | null;
+  parsedRegularPrice?: number | null;
+  parsedGiftPrice?: number | 'disabled';
+  parsedCodePrice?: number | 'disabled';
+}
+
+export interface ProductNode {
+  id: string;
+  databaseId: number;
+  name: string;
+  slug: string;
+  featured?: boolean;
+  date?: string;
+  shortDescription?: string;
+  description?: string;
+  image?: { sourceUrl: string } | null;
+  price?: string;
+  regularPrice?: string;
+  salePrice?: string;
+  parsedPrice?: number | null;
+  parsedRegularPrice?: number | null;
+  variationCards?: VariationCard[];
+  isVariation?: boolean;
+  defaultVariationId?: number;
+  productCategories?: {
+    nodes: Array<{
+      name: string;
+      slug: string;
+      image?: { sourceUrl: string } | null;
+    }>;
+  };
+}
+
 export interface HeaderCategoryNode {
   name: string;
   slug: string;
@@ -94,21 +138,57 @@ export async function fetchGraphQL(query: string, variables: any = {}, tags: str
     }
 
     const json = await res.json();
+    
     if (json.errors) {
+      console.error('❌ GraphQL Errors:', JSON.stringify(json.errors, null, 2));
       throw new Error('GraphQL Execution Error');
     }
+    
     return json.data;
   } catch (error) {
     throw error;
   }
 }
 
-export const formatProducts = (products: any[]) => {
-  return products.map(product => ({
-    ...product,
-    parsedPrice: parsePrice(product.price),
-    parsedRegularPrice: parsePrice(product.regularPrice),
-  }));
+export const formatProducts = (products: ProductNode[], archiveMode: boolean = false): ProductNode[] => {
+  return products.map(product => {
+    const parsedVariationCards = product.variationCards?.map((v: VariationCard) => {
+      const pGift = (v.giftPriceToman === 'disabled' ? 'disabled' : parsePrice(v.giftPriceToman) ?? 'disabled') as number | "disabled";
+      const pCode = (v.codePriceToman === 'disabled' ? 'disabled' : parsePrice(v.codePriceToman) ?? 'disabled') as number | "disabled";
+
+      return {
+        ...v,
+        parsedPrice: parsePrice(v.price),
+        parsedRegularPrice: parsePrice(v.regularPrice),
+        parsedGiftPrice: pGift,
+        parsedCodePrice: pCode
+      };
+    }) || [];
+
+    if (archiveMode && parsedVariationCards.length > 0) {
+      const firstVar = parsedVariationCards[0];
+      return {
+        ...product,
+        image: firstVar.imageUrl ? { sourceUrl: firstVar.imageUrl } : product.image,
+        price: firstVar.price,
+        regularPrice: firstVar.regularPrice,
+        salePrice: firstVar.salePrice,
+        parsedPrice: firstVar.parsedPrice,
+        parsedRegularPrice: firstVar.parsedRegularPrice,
+        variationCards: [], 
+        isVariation: false,
+        defaultVariationId: firstVar.databaseId
+      };
+    }
+
+    return {
+      ...product,
+      parsedPrice: parsePrice(product.price),
+      parsedRegularPrice: parsePrice(product.regularPrice),
+      variationCards: parsedVariationCards,
+      isVariation: false
+    };
+  });
 };
 
 export async function getHeaderCategories() {
@@ -192,7 +272,7 @@ export async function getCategoryArchive(slug: string) {
       ...categoryData.productCategory,
       banners: bannersData?.productCategory?.banners || [],
       products: {
-        nodes: formatProducts(categoryData.products?.nodes || [])
+        nodes: formatProducts(categoryData.products?.nodes || [], true)
       }
     };
   } catch (e) {
@@ -296,6 +376,39 @@ export async function getPostDetail(slug: string) {
     `, { id: slug }, [`post-${slug}`]);
 
     return data?.post;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function getProductDetail(slug: string) {
+  if (!slug) return null;
+  try {
+    const data = await fetchGraphQL(`
+      ${PRODUCT_CARD_FIELDS}
+      query GetProductDetail($id: ID!) {
+        product(id: $id, idType: SLUG) {
+          ...ProductCardFields
+          description
+          galleryImages {
+            nodes {
+              sourceUrl(size: LARGE)
+            }
+          }
+          attributes {
+            nodes {
+              name
+              options
+            }
+          }
+        }
+      }
+    `, { id: slug }, [`product-${slug}`]);
+
+    if (!data?.product) return null;
+
+    const formatted = formatProducts([data.product]);
+    return formatted[0];
   } catch (e) {
     return null;
   }

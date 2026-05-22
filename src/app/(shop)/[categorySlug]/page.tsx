@@ -36,7 +36,7 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
         banners={
           banners && banners.length > 0 
             ? banners 
-            : [{ title: name, subtitle: `محصولات و خدمات بازی ${name}`, imageUrl: "/placeholder-bg.jpg", link: "#" }]
+            : [{ title: name, subtitle: `محصولات و خدمات بازی ${name}`, imageUrl: "/images/bi-aksi.webp", link: "#" }]
         } 
       />
 
