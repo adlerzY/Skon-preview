@@ -144,7 +144,8 @@ export async function fetchGraphQL(query: string, variables: any = {}, tags: str
   };
 
   if (cacheMode !== 'no-store' && tags.length > 0) {
-    fetchOptions.next = { tags };
+    const safeTags = tags.map(tag => encodeURIComponent(tag));
+    fetchOptions.next = { tags: safeTags };
   }
 
   const res = await fetch(WP_GRAPHQL_URL, fetchOptions);

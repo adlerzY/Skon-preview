@@ -1,4 +1,4 @@
-// components/Header.tsx
+// components/Header/Header.tsx
 import Link from "next/link";
 import Image from "next/image";
 import UserActions from "./UserActions";
@@ -6,6 +6,7 @@ import DesktopNavLinks from "./DesktopNavLinks";
 import MobileMenu from "./MobileMenu";
 import HeaderSearch from "./HeaderSearch";
 import HeaderMenuSwitcher from "./HeaderMenuSwitcher";
+import HeaderCart from "./HeaderCart"; // کامپوننت جدید ایمپورت شد
 
 import { getHeaderCategories, getHeaderBlogCategories } from "@/lib/wp-graphql"; 
 
@@ -18,13 +19,9 @@ export default async function Header() {
     getHeaderBlogCategories()
   ]);
 
-  const cartCount = 0;
-
   return (
-    // بک‌گراند اصلی هدر تمام‌عرض است
     <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-[#15171e]" dir="rtl">
       
-      {/* لایه اول دسکتاپ: با محدودیت 1600 پیکسل */}
       <div className="hidden lg:flex w-full justify-between items-center h-[60px] container mx-auto px-6 max-w-[1600px]">
         <div className="flex items-center h-full gap-8">
           <Link href="/" className="flex items-center shrink-0" aria-label="Home">
@@ -60,21 +57,12 @@ export default async function Header() {
         </div>
       </div>
 
-      {/* لایه دوم دسکتاپ: پس‌زمینه سرتاسری و محتوای 1600 پیکسل */}
       <div className="hidden lg:flex w-full justify-center bg-brand-bg">
         <div className="flex w-full container mx-auto px-6 max-w-[1600px] py-[10px] gap-[8px] h-[80px]">
           <div className="flex items-center justify-between flex-1 bg-brand-surface h-full pl-2 rounded-[5px]">
-            <div className="relative h-full group flex items-center z-[100]">
-              <Link href="/cart" className="relative text-brand-m_khonsa w-[55px] h-full flex items-center justify-center transition-colors hover:text-white hover:bg-white/5 rounded-[5px]" aria-label="سبد خرید">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                {cartCount > 0 && <span className="absolute top-3 right-3 bg-brand-blue text-white text-[11px] font-semibold w-4 h-4 rounded-full flex items-center justify-center shadow-md">{cartCount}</span>}
-              </Link>
-              
-              <div className="absolute top-[68px] right-0 bg-brand-menu opacity-0 invisible translate-y-1.5 transition-all duration-150 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 p-4 z-[100] min-w-[300px] border border-brand-surface shadow-xl will-change-transform">
-                <p className="text-brand-m_khonsa text-right text-sm border-b pb-2 font-medium">وضعیت سبد خرید</p>
-                <div className="py-8 text-center text-[13px] font-bold">سبد خرید شما خالی است</div>
-              </div>
-            </div>
+            
+            {/* استفاده از کامپوننت کلاینت سبد خرید در اینجا */}
+            <HeaderCart />
 
             <HeaderMenuSwitcher shopItems={shopGames} blogItems={blogCats} />
 
@@ -90,7 +78,8 @@ export default async function Header() {
         </div>
       </div>
 
-      <MobileMenu cartCount={cartCount} />
+      {/* پراپ cartCount را حذف کردیم. درون MobileMenu باید از useCart استفاده کنید */}
+      <MobileMenu />
 
     </header>
   );

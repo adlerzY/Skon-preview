@@ -3,12 +3,16 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 export interface CartItem {
-  id: string; // ترکیب databaseId و روش تحویل
+  id: string;
   databaseId: number;
   name: string;
   price: number;
-  deliveryMethod: "gift" | "code";
-  customFields?: { battleTag?: string };
+  deliveryMethod: "gift" | "code" | "direct";
+  customFields?: {
+    battleTag?: string;
+    identifier?: string;
+    password?: string;
+  };
 }
 
 interface CartContextType {

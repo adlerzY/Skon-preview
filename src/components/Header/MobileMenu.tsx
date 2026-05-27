@@ -7,10 +7,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { GAMES_DATA } from "@/constants/games";
 import { useProductSearch } from "./hooks/useProductSearch";
 import MiniSearchCard from "./MiniSearchCard";
+import { useCart } from "@/constants/CartContext";
 
-export default function MobileMenu({ cartCount }: { cartCount: number }) {
+export default function MobileMenu() {
   const pathname = usePathname();
   const router = useRouter();
+  const { cart } = useCart();
+  const cartCount = cart.length;
   
   const [isOpen, setIsOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -92,7 +95,6 @@ export default function MobileMenu({ cartCount }: { cartCount: number }) {
         </div>
       </div>
 
-      {/* 👈 بک‌دراپ نامرئی برای بستن سرچ با کلیک بیرون */}
       {isSearchActive && (
         <div className="fixed inset-0 z-40" onClick={closeSearchPanel} />
       )}

@@ -14,7 +14,6 @@ interface Props {
 export default function ProductPageClient({ product, initialEdition }: Props) {
   const variations = product.variationCards || [];
   
-  // دسته‌بندی ویژگی‌ها
   const groupedAttributes = useMemo(() => {
     const map = new Map<string, Set<string>>();
     variations.forEach(v => {
@@ -44,7 +43,6 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     }));
   }, [variations]);
 
-  // چک کردن وضعیت موجودی متغیر
   const isVariationInStock = (v: VariationCard) => {
     return (
       (v.parsedPrice !== null && v.parsedPrice !== undefined) ||
@@ -53,7 +51,6 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     );
   };
 
-  // بررسی معتبر و موجود بودن یک ترکیب تا یک شاخه مشخص
   const isCombinationValid = (testAttrs: Record<string, string>, upToGroupIndex: number) => {
     return variations.some(v => {
       if (!isVariationInStock(v)) return false;
@@ -68,39 +65,31 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     });
   };
 
-  // پیدا کردن اولین ترکیب ویژگی‌های موجود و معتبر
+  // اصلاح اساسی: انتخاب هوشمند و شاخه به شاخه متغیرها بر اساس موجودی
   const findFirstValidAttributes = (targetEdition?: string) => {
     const attrs: Record<string, string> = {};
     if (variations.length === 0 || groupedAttributes.length === 0) return attrs;
 
-    // پیدا کردن یک متغیر مبنا که موجود باشه
-    let baseVar = variations.find(v => {
-      if (!isVariationInStock(v)) return false;
-      if (targetEdition) {
-        return v.attributes?.some(a => a.value === targetEdition);
+    groupedAttributes.forEach((group, index) => {
+      // ۱. اگر لود اولیه با ادیشن خاصی بود و توی این شاخه معتبر بود
+      if (targetEdition && group.values.includes(targetEdition)) {
+        const tempAttrs = { ...attrs, [group.name]: targetEdition };
+        if (isCombinationValid(tempAttrs, index)) {
+          attrs[group.name] = targetEdition;
+          return;
+        }
       }
-      return true;
-    });
 
-    // اگه با ادیشن مدنظر متغیر موجودی نبود، اولین متغیر موجود کل لیست رو بردار
-    if (!baseVar && targetEdition) {
-      baseVar = variations.find(v => isVariationInStock(v));
-    }
-
-    // اگه کلا هیچی موجود نبود fallback به اولین متغیر
-    if (!baseVar) {
-      baseVar = variations[0];
-    }
-
-    if (baseVar && baseVar.attributes) {
-      baseVar.attributes.forEach(a => {
-        attrs[a.name] = a.value;
+      // ۲. پیدا کردن اولین متغیری که با انتخاب‌های شاخه‌های قبلی، ترکیب موجود و معتبری می‌سازه
+      const firstValidValue = group.values.find(val => {
+        const tempAttrs = { ...attrs, [group.name]: val };
+        return isCombinationValid(tempAttrs, index);
       });
-    }
 
-    // مطمئن شدن از اینکه همه شاخه‌ها مقدار دارن
-    groupedAttributes.forEach(group => {
-      if (!attrs[group.name] && group.values.length > 0) {
+      if (firstValidValue) {
+        attrs[group.name] = firstValidValue;
+      } else {
+        // ۳. فال‌بک نهایی اگر کلاً محصول ناموجود بود
         attrs[group.name] = group.values[0];
       }
     });
@@ -108,20 +97,17 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     return attrs;
   };
 
-  // مقداردهی اولیه بدون تاثیر مخرب روی هایدریشن سرور
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() => {
     return findFirstValidAttributes();
   });
 
-  // اعمال هوشمند initialEdition پس از ماونت کلاینت
   useEffect(() => {
     if (initialEdition) {
       setSelectedAttrs(findFirstValidAttributes(initialEdition));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEdition]);
 
-  // متغیر نهایی انتخاب شده برای نمایش قیمت و تحویل
   const selectedVar = useMemo(() => {
     if (variations.length === 0) return null;
     const exactMatch = variations.find(v => {
@@ -148,13 +134,12 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
   const categoryName = category?.name || "بدون دسته";
   const categoryImage = category?.image?.sourceUrl;
 
-  // مدیریت کلیک روی اتریبیوت‌ها با تغییر خودکار شاخه‌های ناهمخوان بعدی به اولین گزینه موجود
+  // مدیریت آبشاری کلیک‌ها و پرش اتوماتیک از روی گزینه‌های ناموجود
   const handleAttrSelect = (name: string, val: string) => {
     setSelectedAttrs(prev => {
       const newAttrs = { ...prev, [name]: val };
       const clickedGroupIndex = groupedAttributes.findIndex(g => g.name === name);
       
-      // اصلاح آبشاری شاخه‌های بعدی در صورت ناموجود شدن ترکیب
       for (let i = clickedGroupIndex + 1; i < groupedAttributes.length; i++) {
         const nextGroup = groupedAttributes[i];
         const currentSelectedValue = newAttrs[nextGroup.name];
@@ -162,13 +147,20 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
         const isCurrentValid = currentSelectedValue && isCombinationValid(newAttrs, i);
         
         if (!isCurrentValid) {
-          // پیدا کردن اولین گزینه‌ای که ترکیب رو موجود نگه می‌داره
           const fallbackValue = nextGroup.values.find(vVal => {
             const tempAttrs = { ...newAttrs, [nextGroup.name]: vVal };
             return isCombinationValid(tempAttrs, i);
           });
           
-          newAttrs[nextGroup.name] = fallbackValue || nextGroup.values[0];
+          if (fallbackValue) {
+            newAttrs[nextGroup.name] = fallbackValue;
+          } else {
+            // اگر هیچ ترکیبی معتبر نبود، اولین گزینه‌ای که حداقل یک‌جا موجودی دارد را انتخاب کن
+            const anyValid = nextGroup.values.find(vVal => {
+              return variations.some(v => isVariationInStock(v) && v.attributes?.some(a => a.name === nextGroup.name && a.value === vVal));
+            });
+            newAttrs[nextGroup.name] = anyValid || nextGroup.values[0];
+          }
         }
       }
       return newAttrs;

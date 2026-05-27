@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { VariationCard } from "@/lib/wp-graphql";
+import { useCart } from "@/constants/CartContext";
 
 interface DeliveryAndPriceProps {
   selectedVariation: VariationCard;
 }
 
 export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPriceProps) {
+  const { addToCart } = useCart();
   const [deliveryType, setDeliveryType] = useState<"direct" | "gift" | "code" | null>(null);
   
   const [accountIdentifier, setAccountIdentifier] = useState("");
@@ -26,9 +28,9 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     );
   }
 
-  const isDirectDisabled = !selectedVariation.parsedPrice;
-  const isGiftDisabled = selectedVariation.parsedGiftPrice === "disabled" || !selectedVariation.parsedGiftPrice;
-  const isCodeDisabled = selectedVariation.parsedCodePrice === "disabled" || !selectedVariation.parsedCodePrice;
+  const isDirectDisabled = selectedVariation.parsedPrice === null || selectedVariation.parsedPrice === undefined;
+  const isGiftDisabled = selectedVariation.parsedGiftPrice === "disabled" || selectedVariation.parsedGiftPrice === null || selectedVariation.parsedGiftPrice === undefined;
+  const isCodeDisabled = selectedVariation.parsedCodePrice === "disabled" || selectedVariation.parsedCodePrice === null || selectedVariation.parsedCodePrice === undefined;
 
   useEffect(() => {
     if (!isDirectDisabled) {
@@ -75,17 +77,18 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     if (!isFormValid()) return;
     setIsAddingToCart(true);
     
-    const cartItemData = {
-      productDetailId: selectedVariation.databaseId,
-      deliveryMethod: deliveryType,
+    addToCart({
+      id: `${selectedVariation.databaseId}-${deliveryType}`,
+      databaseId: selectedVariation.databaseId,
+      name: selectedVariation.name || "محصول انتخاب شده",
+      price: currentPrice || 0,
+      deliveryMethod: deliveryType as "gift" | "code" | "direct",
       customFields: 
         deliveryType === "gift" ? { battleTag } : 
         deliveryType === "direct" ? { identifier: accountIdentifier, password: accountPassword } : 
-        null,
-      price: currentPrice
-    };
+        undefined
+    });
     
-    console.log("Adding to cart:", cartItemData);
     setTimeout(() => setIsAddingToCart(false), 1000);
   };
 

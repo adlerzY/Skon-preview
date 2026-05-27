@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/Header/Header";
-// import { CartProvider } from "@/context/CartContext";
+import { CartProvider } from "@/constants/CartContext";
 
 const yekanFont = localFont({
   src: "./fonts/Yekan.woff",
@@ -22,8 +22,11 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body className={`${yekanFont.variable} font-sans antialiased`}>
-        <Header /> 
-        {children}
+        {/* رپ کردن کل برنامه با کانتکست سبد خرید */}
+        <CartProvider>
+          <Header /> 
+          {children}
+        </CartProvider>
       </body>
     </html>
   );
