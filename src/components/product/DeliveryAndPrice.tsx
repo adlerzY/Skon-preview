@@ -44,12 +44,18 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     }
   }, [selectedVariation, isDirectDisabled, isGiftDisabled, isCodeDisabled]);
 
+  // قیمت نهایی بر اساس روش تحویل فعلی
   const currentPrice = 
     deliveryType === "gift" ? (typeof selectedVariation.parsedGiftPrice === "number" ? selectedVariation.parsedGiftPrice : null) : 
     deliveryType === "code" ? (typeof selectedVariation.parsedCodePrice === "number" ? selectedVariation.parsedCodePrice : null) : 
     deliveryType === "direct" ? selectedVariation.parsedPrice : null;
 
-  const regularPrice = selectedVariation.regularPrice ? Number(selectedVariation.regularPrice) : null;
+  // قیمت قبل از تخفیف بر اساس روش تحویل فعلی (رفع باگ تداخل قیمت‌ها)
+  const regularPrice = 
+    deliveryType === "gift" ? (typeof selectedVariation.parsedGiftRegularPrice === "number" ? selectedVariation.parsedGiftRegularPrice : null) : 
+    deliveryType === "code" ? (typeof selectedVariation.parsedCodeRegularPrice === "number" ? selectedVariation.parsedCodeRegularPrice : null) : 
+    deliveryType === "direct" ? (selectedVariation.parsedRegularPrice ?? null) : null;
+
   const hasDiscount = regularPrice && currentPrice && regularPrice > currentPrice;
 
   const handleVerifyBattleTag = () => {
@@ -85,7 +91,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
       deliveryMethod: deliveryType as "gift" | "code" | "direct",
       customFields: 
         deliveryType === "gift" ? { battleTag } : 
-        deliveryType === "direct" ? { identifier: accountIdentifier, password: accountPassword } : 
+        deliveryType === "direct" ? { email: accountIdentifier, password: accountPassword } : 
         undefined
     });
     

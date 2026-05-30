@@ -10,11 +10,15 @@ export interface VariationCard {
   imageUrl: string;
   attributes: Array<{ name: string; value: string }>;
   giftPriceToman: string;
+  giftRegularPriceToman?: string;
   codePriceToman: string;
+  codeRegularPriceToman?: string;
   parsedPrice?: number | null;
   parsedRegularPrice?: number | null;
   parsedGiftPrice?: number | 'disabled';
+  parsedGiftRegularPrice?: number | 'disabled';
   parsedCodePrice?: number | 'disabled';
+  parsedCodeRegularPrice?: number | 'disabled';
 }
 
 export interface ProductNode {
@@ -67,25 +71,7 @@ const parsePrice = (priceString?: string | null): number | null => {
   return numericString ? parseInt(numericString, 10) : null;
 };
 
-export const BANNER_FIELDS = `
-  fragment BannerFields on CategoryBannerItem {
-    title
-    subtitle
-    imageUrl
-    link
-  }
-`;
-
-export const CATEGORY_BASIC_FIELDS = `
-  fragment CategoryBasicFields on ProductCategory {
-    name
-    slug
-    image {
-      sourceUrl(size: THUMBNAIL)
-    }
-  }
-`;
-
+// فرگمنت اصلاح شده با فیلدهای جدید ریگولار
 export const PRODUCT_CARD_FIELDS = `
   fragment ProductCardFields on Product {
     id
@@ -125,12 +111,33 @@ export const PRODUCT_CARD_FIELDS = `
         salePrice
         imageUrl
         giftPriceToman
+        giftRegularPriceToman
         codePriceToman
+        codeRegularPriceToman
         attributes {
           name
           value
         }
       }
+    }
+  }
+`;
+
+export const BANNER_FIELDS = `
+  fragment BannerFields on CategoryBannerItem {
+    title
+    subtitle
+    imageUrl
+    link
+  }
+`;
+
+export const CATEGORY_BASIC_FIELDS = `
+  fragment CategoryBasicFields on ProductCategory {
+    name
+    slug
+    image {
+      sourceUrl(size: THUMBNAIL)
     }
   }
 `;
@@ -172,14 +179,19 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
     
     const parsedVariationCards = rawVariations.map((v: VariationCard) => {
       const pGift = (v.giftPriceToman === 'disabled' || !v.giftPriceToman ? 'disabled' : parsePrice(v.giftPriceToman) ?? 'disabled') as number | "disabled";
+      const pGiftReg = (v.giftRegularPriceToman === 'disabled' || !v.giftRegularPriceToman ? 'disabled' : parsePrice(v.giftRegularPriceToman) ?? 'disabled') as number | "disabled";
+      
       const pCode = (v.codePriceToman === 'disabled' || !v.codePriceToman ? 'disabled' : parsePrice(v.codePriceToman) ?? 'disabled') as number | "disabled";
+      const pCodeReg = (v.codeRegularPriceToman === 'disabled' || !v.codeRegularPriceToman ? 'disabled' : parsePrice(v.codeRegularPriceToman) ?? 'disabled') as number | "disabled";
 
       return {
         ...v,
         parsedPrice: parsePrice(v.price),
         parsedRegularPrice: parsePrice(v.regularPrice),
         parsedGiftPrice: pGift,
-        parsedCodePrice: pCode
+        parsedGiftRegularPrice: pGiftReg,
+        parsedCodePrice: pCode,
+        parsedCodeRegularPrice: pCodeReg
       };
     });
 

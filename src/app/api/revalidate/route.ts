@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
 
     tagsArray.forEach(t => {
       try {
-        (revalidateTag as any)(t, 'default');
-      } catch (e) {
-        try {
-          (revalidateTag as any)(t);
-        } catch (err) {}
-      }
+        revalidateTag(t, 'default');
+      } catch (err) {}
 
-      if (t === 'products') {
+      try {
+        revalidateTag(encodeURIComponent(t), 'default');
+      } catch (err) {}
+
+      if (t === 'products' || t === 'all') {
         revalidatePath('/', 'layout');
       }
     });

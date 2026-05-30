@@ -10,7 +10,7 @@ export interface CartItem {
   deliveryMethod: "gift" | "code" | "direct";
   customFields?: {
     battleTag?: string;
-    identifier?: string;
+    email?: string;
     password?: string;
   };
 }
@@ -26,15 +26,19 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) setCart(JSON.parse(savedCart));
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    if (isMounted) {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }
+  }, [cart, isMounted]);
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => [...prev, item]);
