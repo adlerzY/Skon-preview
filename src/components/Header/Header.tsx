@@ -61,7 +61,6 @@ export default async function Header() {
         <div className="flex w-full container mx-auto px-6 max-w-[1600px] py-[10px] gap-[8px] h-[80px]">
           <div className="flex items-center justify-between flex-1 bg-brand-surface h-full pl-2 rounded-[5px]">
             
-            {/* استفاده از کامپوننت کلاینت سبد خرید در اینجا */}
             <HeaderCart />
 
             <HeaderMenuSwitcher shopItems={shopGames} blogItems={blogCats} />
@@ -78,7 +77,6 @@ export default async function Header() {
         </div>
       </div>
 
-      {/* پراپ cartCount را حذف کردیم. درون MobileMenu باید از useCart استفاده کنید */}
       <MobileMenu />
 
     </header>

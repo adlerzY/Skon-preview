@@ -11,6 +11,14 @@ interface Props {
   initialEdition?: string;
 }
 
+const checkStockGlobally = (v: VariationCard) => {
+  return (
+    (v.parsedPrice != null) ||
+    (v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled") ||
+    (v.parsedCodePrice != null && v.parsedCodePrice !== "disabled")
+  );
+};
+
 export default function ProductPageClient({ product, initialEdition }: Props) {
   const variations = product.variationCards || [];
   
@@ -26,13 +34,13 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     const filteredMap = new Map<string, Set<string>>();
     map.forEach((values, name) => {
       const nameLower = name.toLowerCase();
-      const isDeliveryByName = nameLower.includes('delivery') || nameLower.includes('تحویل') || nameLower.includes('روش') || nameLower.includes('method');
-      const isDeliveryByValue = Array.from(values).some(val => 
+      const isDeliveryAttr = nameLower.includes('delivery') || nameLower.includes('تحویل') || nameLower.includes('روش') || nameLower.includes('method');
+      const isDeliveryVal = Array.from(values).some(val => 
         val.includes('گیفت') || val.includes('مستقیم') || val.includes('کد') || 
         val.toLowerCase().includes('gift') || val.toLowerCase().includes('direct')
       );
 
-      if (!isDeliveryByName && !isDeliveryByValue) {
+      if (!isDeliveryAttr && !isDeliveryVal) {
         filteredMap.set(name, values);
       }
     });
@@ -43,58 +51,31 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     }));
   }, [variations]);
 
-  const isVariationInStock = (v: VariationCard) => {
-    return (
-      (v.parsedPrice !== null && v.parsedPrice !== undefined) ||
-      (v.parsedGiftPrice !== "disabled" && v.parsedGiftPrice != null) ||
-      (v.parsedCodePrice !== "disabled" && v.parsedCodePrice != null)
-    );
-  };
-
-  const isCombinationValid = (testAttrs: Record<string, string>, upToGroupIndex: number) => {
-    return variations.some(v => {
-      if (!isVariationInStock(v)) return false;
-      
-      for (let j = 0; j <= upToGroupIndex; j++) {
-        const group = groupedAttributes[j];
-        const expectedValue = testAttrs[group.name];
-        const hasAttr = v.attributes?.some(a => a.name === group.name && a.value === expectedValue);
-        if (!hasAttr) return false;
-      }
-      return true;
-    });
-  };
-
-  // اصلاح اساسی: انتخاب هوشمند و شاخه به شاخه متغیرها بر اساس موجودی
   const findFirstValidAttributes = (targetEdition?: string) => {
-    const attrs: Record<string, string> = {};
-    if (variations.length === 0 || groupedAttributes.length === 0) return attrs;
+    const resultAttrs: Record<string, string> = {};
+    if (variations.length === 0 || groupedAttributes.length === 0) return resultAttrs;
 
-    groupedAttributes.forEach((group, index) => {
-      // ۱. اگر لود اولیه با ادیشن خاصی بود و توی این شاخه معتبر بود
-      if (targetEdition && group.values.includes(targetEdition)) {
-        const tempAttrs = { ...attrs, [group.name]: targetEdition };
-        if (isCombinationValid(tempAttrs, index)) {
-          attrs[group.name] = targetEdition;
-          return;
-        }
+    for (let i = 0; i < groupedAttributes.length; i++) {
+      const group = groupedAttributes[i];
+
+      if (i === 0 && targetEdition && group.values.includes(targetEdition)) {
+        resultAttrs[group.name] = targetEdition;
+        continue;
       }
 
-      // ۲. پیدا کردن اولین متغیری که با انتخاب‌های شاخه‌های قبلی، ترکیب موجود و معتبری می‌سازه
-      const firstValidValue = group.values.find(val => {
-        const tempAttrs = { ...attrs, [group.name]: val };
-        return isCombinationValid(tempAttrs, index);
+      const validOpt = group.values.find(candidateValue => {
+        return variations.some(v => {
+          const matchesPreceding = groupedAttributes.slice(0, i).every(prevG => 
+             v.attributes?.some(a => a.name === prevG.name && a.value === resultAttrs[prevG.name])
+          );
+          const matchesCandidate = v.attributes?.some(a => a.name === group.name && a.value === candidateValue);
+          return matchesPreceding && matchesCandidate && checkStockGlobally(v);
+        });
       });
 
-      if (firstValidValue) {
-        attrs[group.name] = firstValidValue;
-      } else {
-        // ۳. فال‌بک نهایی اگر کلاً محصول ناموجود بود
-        attrs[group.name] = group.values[0];
-      }
-    });
-
-    return attrs;
+      resultAttrs[group.name] = validOpt || group.values[0]; 
+    }
+    return resultAttrs;
   };
 
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() => {
@@ -105,18 +86,51 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
     if (initialEdition) {
       setSelectedAttrs(findFirstValidAttributes(initialEdition));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialEdition]);
+  }, [initialEdition, groupedAttributes]);
 
-  const selectedVar = useMemo(() => {
+  const combinedAggregateVar = useMemo(() => {
     if (variations.length === 0) return null;
-    const exactMatch = variations.find(v => {
+
+    const matchingVars = variations.filter(v => {
       return groupedAttributes.every(group => {
-        const attrInVar = v.attributes?.find(a => a.name === group.name);
-        return attrInVar ? attrInVar.value === selectedAttrs[group.name] : true;
+        const currentAttrObj = v.attributes?.find(a => a.name === group.name);
+        return currentAttrObj ? currentAttrObj.value === selectedAttrs[group.name] : true;
       });
     });
-    return exactMatch || variations.find(v => isVariationInStock(v)) || variations[0] || null;
+
+    if (matchingVars.length === 0) return variations.find(v => checkStockGlobally(v)) || variations[0];
+
+    let accPrice: number | null = null;
+    let accGift: number | 'disabled' = 'disabled';
+    let accCode: number | 'disabled' = 'disabled';
+
+    matchingVars.forEach(mv => {
+      if (mv.parsedPrice != null && (accPrice === null || mv.parsedPrice < accPrice)) {
+          accPrice = mv.parsedPrice;
+      }
+      if (mv.parsedGiftPrice != null && mv.parsedGiftPrice !== 'disabled') {
+          accGift = (accGift === 'disabled' ? mv.parsedGiftPrice : Math.min(accGift as number, mv.parsedGiftPrice as number)) as number | 'disabled';
+      }
+      if (mv.parsedCodePrice != null && mv.parsedCodePrice !== 'disabled') {
+          accCode = (accCode === 'disabled' ? mv.parsedCodePrice : Math.min(accCode as number, mv.parsedCodePrice as number)) as number | 'disabled';
+      }
+
+      const comboAttributesText = mv.attributes?.map(a => a.value.toLowerCase()).join(' ') || "";
+      if (comboAttributesText.includes('گیفت') || comboAttributesText.includes('gift')) {
+          if (mv.parsedPrice != null && accGift === 'disabled') accGift = mv.parsedPrice;
+      }
+      if (comboAttributesText.includes('کد') || comboAttributesText.includes('code')) {
+          if (mv.parsedPrice != null && accCode === 'disabled') accCode = mv.parsedPrice;
+      }
+    });
+
+    return {
+      ...matchingVars[0],
+      parsedPrice: accPrice,
+      parsedGiftPrice: accGift,
+      parsedCodePrice: accCode,
+    } as VariationCard;
+    
   }, [variations, selectedAttrs, groupedAttributes]);
 
   const allGalleryImages = useMemo(() => {
@@ -128,42 +142,41 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
   }, [product, variations]);
 
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
-  const displayImage = selectedGalleryImage || selectedVar?.imageUrl || product.image?.sourceUrl || "/placeholder.jpg";
+  const displayImage = selectedGalleryImage || combinedAggregateVar?.imageUrl || product.image?.sourceUrl || "/placeholder.jpg";
   
   const category = product.productCategories?.nodes?.[0];
   const categoryName = category?.name || "بدون دسته";
   const categoryImage = category?.image?.sourceUrl;
 
-  // مدیریت آبشاری کلیک‌ها و پرش اتوماتیک از روی گزینه‌های ناموجود
   const handleAttrSelect = (name: string, val: string) => {
     setSelectedAttrs(prev => {
-      const newAttrs = { ...prev, [name]: val };
-      const clickedGroupIndex = groupedAttributes.findIndex(g => g.name === name);
+      const draftAttrs = { ...prev, [name]: val };
+      const changeLevelIndex = groupedAttributes.findIndex(g => g.name === name);
       
-      for (let i = clickedGroupIndex + 1; i < groupedAttributes.length; i++) {
-        const nextGroup = groupedAttributes[i];
-        const currentSelectedValue = newAttrs[nextGroup.name];
+      for (let i = changeLevelIndex + 1; i < groupedAttributes.length; i++) {
+        const nextTargetGroup = groupedAttributes[i];
         
-        const isCurrentValid = currentSelectedValue && isCombinationValid(newAttrs, i);
+        const isStillFunctioning = variations.some(v => {
+           const validatesUpToCurrentLayer = groupedAttributes.slice(0, i + 1).every(groupLayer => 
+              v.attributes?.some(a => a.name === groupLayer.name && a.value === draftAttrs[groupLayer.name])
+           );
+           return validatesUpToCurrentLayer && checkStockGlobally(v);
+        });
         
-        if (!isCurrentValid) {
-          const fallbackValue = nextGroup.values.find(vVal => {
-            const tempAttrs = { ...newAttrs, [nextGroup.name]: vVal };
-            return isCombinationValid(tempAttrs, i);
+        if (!isStillFunctioning) {
+          const viableEscapeVal = nextTargetGroup.values.find(candVal => {
+             return variations.some(v => {
+                const pastLayers = groupedAttributes.slice(0, i).every(upLevelG => 
+                  v.attributes?.some(a => a.name === upLevelG.name && a.value === draftAttrs[upLevelG.name])
+                );
+                const isMatchingEscape = v.attributes?.some(a => a.name === nextTargetGroup.name && a.value === candVal);
+                return pastLayers && isMatchingEscape && checkStockGlobally(v);
+             });
           });
-          
-          if (fallbackValue) {
-            newAttrs[nextGroup.name] = fallbackValue;
-          } else {
-            // اگر هیچ ترکیبی معتبر نبود، اولین گزینه‌ای که حداقل یک‌جا موجودی دارد را انتخاب کن
-            const anyValid = nextGroup.values.find(vVal => {
-              return variations.some(v => isVariationInStock(v) && v.attributes?.some(a => a.name === nextGroup.name && a.value === vVal));
-            });
-            newAttrs[nextGroup.name] = anyValid || nextGroup.values[0];
-          }
+          draftAttrs[nextTargetGroup.name] = viableEscapeVal || nextTargetGroup.values[0];
         }
       }
-      return newAttrs;
+      return draftAttrs;
     });
     setSelectedGalleryImage(null);
   };
@@ -233,7 +246,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
           variations={variations}
         />
 
-        <DeliveryAndPrice selectedVariation={selectedVar || variations[0]} />
+        <DeliveryAndPrice selectedVariation={combinedAggregateVar || variations[0]} />
       </div>
     </div>
   );
