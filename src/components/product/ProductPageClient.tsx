@@ -302,7 +302,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
                 type="button"
                 onClick={handleNextImage}
                 disabled={currentIndex === allGalleryImages.length - 1}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:opacity-50 disabled:pointer-events-none"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
@@ -310,7 +310,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
                 type="button"
                 onClick={handlePrevImage}
                 disabled={currentIndex === 0}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:opacity-50 disabled:pointer-events-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6"/></svg>
               </button>
@@ -349,7 +349,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
         )}
 
         {product.description && (
-          <div className="bg-brand-menu p-6 mt-2">
+          <div className="bg-brand-menu p-6 ">
             <h3 className="text-lg font-bold text-brand-active mb-4">توضیحات محصول</h3>
             <div 
               className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none"
