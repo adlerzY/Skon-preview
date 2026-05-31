@@ -224,20 +224,20 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 min-h-screen rounded-2xl">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 min-h-screen">
       
       <div className="lg:col-span-4 lg:order-first flex flex-col gap-6 sticky top-6 h-fit">
         <div>
           <div className="flex items-center gap-2 mb-3">
             {categoryImage && (
-              <div className="relative w-6 h-6 rounded-full overflow-hidden bg-brand-surface_hover">
+              <div className="relative w-6 h-6 overflow-hidden bg-brand-surface_hover">
                 <Image src={categoryImage} alt={categoryName} fill className="object-cover" />
               </div>
             )}
             <span className="text-brand-blue text-xs font-bold uppercase tracking-wider">{categoryName}</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
-          <div className="mt-3 inline-block bg-brand-blue/10 border border-brand-blue/20 text-brand-blue text-xs px-3 py-1.5 rounded-md font-medium">
+          <div className="mt-3 inline-block bg-brand-blue/10 border border-brand-blue/20 text-brand-blue text-xs px-3 py-1.5 font-medium">
              ✨ تحویل فوری و تضمین شده
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
       </div>
 
       <div className="lg:col-span-8 lg:order-last flex flex-col gap-6">
-        <div className="relative w-full aspect-[16/9] bg-brand-surface rounded-xl overflow-hidden border border-brand-surface_hover transition-all duration-300 shadow-lg group">
+        <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover transition-all duration-300 shadow-lg group">
           <Image 
             src={displayImage} 
             alt={product.name} 
@@ -267,16 +267,16 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
               <button
                 type="button"
                 onClick={handleNextImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-brand-surface/80 border border-brand-surface_hover text-brand-active flex items-center justify-center hover:bg-brand-active hover:text-brand-bg transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-md"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg hover:border-brand-surface_m text-m_khonsa hover:text-brand-white p-2 transition-all opacity-0 group-hover:opacity-100 border border-brand-surface"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
               <button
                 type="button"
                 onClick={handlePrevImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-brand-surface/80 border border-brand-surface_hover text-brand-active flex items-center justify-center hover:bg-brand-active hover:text-brand-bg transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-md"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg hover:border-brand-surface_m text-m_khonsa hover:text-brand-white p-2 transition-all opacity-0 group-hover:opacity-100 border border-brand-surface"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6"/></svg>
               </button>
             </>
           )}
@@ -288,7 +288,7 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
               <button 
                 key={idx} 
                 onClick={() => setSelectedGalleryImage(imgUrl)}
-                className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                className={`relative aspect-video overflow-hidden border-2 transition-all duration-200 ${
                   (selectedGalleryImage === imgUrl) || (!selectedGalleryImage && imgUrl === displayImage) 
                     ? 'border-brand-blue opacity-100 scale-105' 
                     : 'border-transparent opacity-60 hover:opacity-100 hover:border-brand-surface_hover'
@@ -301,10 +301,10 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
         )}
 
         {product.description && (
-          <div className="mt-4 bg-brand-surface border border-brand-surface_hover p-6 rounded-2xl shadow-sm">
+          <div className="bg-brand-menu p-6">
             <h3 className="text-lg font-bold text-brand-active mb-4">توضیحات محصول</h3>
             <div 
-              className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none"
+              className="text-brand-surface_m text-sm leading-7 prose prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: product.description }} 
             />
           </div>

@@ -44,13 +44,11 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     }
   }, [selectedVariation, isDirectDisabled, isGiftDisabled, isCodeDisabled]);
 
-  // قیمت نهایی بر اساس روش تحویل فعلی
   const currentPrice = 
     deliveryType === "gift" ? (typeof selectedVariation.parsedGiftPrice === "number" ? selectedVariation.parsedGiftPrice : null) : 
     deliveryType === "code" ? (typeof selectedVariation.parsedCodePrice === "number" ? selectedVariation.parsedCodePrice : null) : 
     deliveryType === "direct" ? selectedVariation.parsedPrice : null;
 
-  // قیمت قبل از تخفیف بر اساس روش تحویل فعلی (رفع باگ تداخل قیمت‌ها)
   const regularPrice = 
     deliveryType === "gift" ? (typeof selectedVariation.parsedGiftRegularPrice === "number" ? selectedVariation.parsedGiftRegularPrice : null) : 
     deliveryType === "code" ? (typeof selectedVariation.parsedCodeRegularPrice === "number" ? selectedVariation.parsedCodeRegularPrice : null) : 
@@ -258,10 +256,10 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
           {deliveryType === null ? (
              <span className="text-sm text-brand-surface_m">ابتدا روش تحویل را انتخاب کنید</span>
           ) : typeof currentPrice === "number" ? (
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-row items-baseline gap-2">
               {hasDiscount && (
-                <span className="text-xs text-neutral-500 line-through decoration-red-500/70">
-                  {regularPrice?.toLocaleString("fa-IR")} تومان
+                <span className="text-xs text-neutral-500 line-through whitespace-nowrap">
+                  {regularPrice?.toLocaleString("fa-IR")}
                 </span>
               )}
               <div className="flex items-baseline gap-1">
