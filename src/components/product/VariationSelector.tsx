@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import { VariationCard } from "@/lib/wp-graphql";
 
@@ -22,8 +22,6 @@ export default function VariationSelector({
   onAttributeSelect,
   variations
 }: VariationSelectorProps) {
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-
   if (!groupedAttributes || groupedAttributes.length === 0) return null;
 
   const isVariationInStockGlobally = (v: VariationCard) => {
@@ -35,10 +33,10 @@ export default function VariationSelector({
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full">
+    <div className="flex flex-col gap-5 w-full">
       {groupedAttributes.map((group, currentLayerIdx) => {
-        const isFirst = currentLayerIdx === 0;
         const cleanName = group.name.replace('pa_', '').replace('attribute_', '');
+        const isRegion = cleanName.toLowerCase().includes('region') || cleanName.includes('ریجن');
         
         const processedValues = group.values.map(btnValue => {
           const isValidBtn = variations.some(v => {
@@ -57,75 +55,50 @@ export default function VariationSelector({
 
         if (processedValues.length === 0) return null;
 
-        const currentSelectedValue = selectedAttrs[group.name];
-        const currentSelectedItem = group.values.find(v => v.value === currentSelectedValue);
-
         return (
-          <div 
-            key={group.name} 
-            className={`relative flex flex-col gap-1 w-full ${isFirst ? "md:w-[70%]" : "md:w-[30%]"}`}
-          >
-            <span className="text-brand-surface_m text-[13px] font-bold uppercase tracking-wide">
+          <div key={group.name} className="flex flex-col gap-2 w-full">
+            <span className="text-brand-surface_m text-[13px] font-bold">
               انتخاب {cleanName}:
             </span>
 
-            <button
-              type="button"
-              onClick={() => setActiveDropdown(activeDropdown === group.name ? null : group.name)}
-              className="w-full p-4 text-sm font-medium transition-all duration-200 flex items-center justify-between bg-brand-surface text-brand-active border border-brand-surface_hover hover:bg-brand-surface_hover"
+            {/* ریجن‌ها در دسکتاپ تک ردیف، لپ‌تاپ به پایین گرید ۲ ستونه */}
+            <div 
+              className={
+                isRegion 
+                  ? "grid grid-cols-2 lg:flex lg:flex-row lg:flex-wrap gap-2 w-full"
+                  : "grid grid-cols-2 sm:grid-cols-3 gap-2 w-full"
+              }
             >
-              <div className="flex items-center gap-2">
-                {currentSelectedItem?.flagUrl && (
-                  <div className="relative w-5 h-3.5 overflow-hidden rounded-sm flex-shrink-0">
-                    <Image src={currentSelectedItem.flagUrl} alt="" fill className="object-cover" />
-                  </div>
-                )}
-                <span>{currentSelectedValue || `انتخاب ${cleanName}`}</span>
-              </div>
-              <svg 
-                className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === group.name ? "rotate-180" : ""}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {activeDropdown === group.name && (
-              <div className="absolute right-0 left-0 top-[100%] mt-1 bg-brand-surface border border-brand-surface_hover z-50 max-h-60 overflow-y-auto shadow-2xl">
-                {processedValues.map(({ item, isValidBtn }) => {
-                  const isSelected = selectedAttrs[group.name] === item.value;
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      disabled={!isValidBtn}
-                      onClick={() => {
-                        if (isValidBtn) {
-                          onAttributeSelect(group.name, item.value);
-                          setActiveDropdown(null);
-                        }
-                      }}
-                      className={`w-full p-3 text-right text-sm font-medium transition-all duration-150 flex items-center gap-3 border-b border-brand-surface_hover/40 last:border-0 ${
-                        !isValidBtn
-                          ? "opacity-30 cursor-not-allowed bg-brand-bg text-brand-surface_m/50"
-                          : isSelected
-                          ? "bg-brand-blue text-brand-active font-bold"
-                          : "text-brand-m_khonsa hover:bg-brand-surface_hover hover:text-brand-active"
-                      }`}
-                    >
-                      {item.flagUrl && (
-                        <div className="relative w-6 h-4 overflow-hidden rounded-sm flex-shrink-0">
-                          <Image src={item.flagUrl} alt="" fill className="object-cover" />
-                        </div>
-                      )}
-                      <span>{item.value}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              {processedValues.map(({ item, isValidBtn }) => {
+                const isSelected = selectedAttrs[group.name] === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    disabled={!isValidBtn}
+                    onClick={() => {
+                      if (isValidBtn) {
+                        onAttributeSelect(group.name, item.value);
+                      }
+                    }}
+                    className={`p-3 text-xs font-medium transition-all duration-200 flex flex-col items-center justify-center gap-2 border rounded-sm lg:flex-1 min-w-[90px] ${
+                      !isValidBtn
+                        ? "opacity-25 cursor-not-allowed bg-brand-bg text-brand-surface_m/40 border-brand-surface_hover/30"
+                        : isSelected
+                        ? "bg-brand-blue/10 border-brand-blue text-brand-blue font-bold shadow-[0_0_12px_rgba(0,116,224,0.15)]"
+                        : "bg-brand-surface text-brand-m_khonsa border-brand-surface_hover hover:border-brand-white hover:text-brand-active"
+                    }`}
+                  >
+                    {item.flagUrl && (
+                      <div className="relative w-7 h-4.5 overflow-hidden rounded-sm flex-shrink-0">
+                        <Image src={item.flagUrl} alt={item.value} fill className="object-cover" />
+                      </div>
+                    )}
+                    <span className="text-center">{item.value}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         );
       })}

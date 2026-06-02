@@ -264,150 +264,164 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 min-h-screen" dir="rtl">
-      <div className="lg:col-span-4 lg:order-first flex flex-col gap-6 sticky top-10 h-fit">
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            {categoryImage && (
-              <div className="relative w-8 h-8 overflow-hidden">
-                <Image src={categoryImage} alt={categoryName} fill className="object-cover" />
+    <div className="flex flex-col gap-12 w-full min-h-screen" dir="rtl">
+      
+      {/* بخش اول: گرید دو ستونه بالایی (۳۰ درصد متغیرها در راست و ۷۰ درصد گالری در چپ) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start w-full">
+        
+        {/* ستون راست (۳۰ درصد): عنوان، بنرها، انتخابگر متغیرها و دکمه خرید */}
+        <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              {categoryImage && (
+                <div className="relative w-8 h-8 overflow-hidden">
+                  <Image src={categoryImage} alt={categoryName} fill className="object-cover" />
+                </div>
+              )}
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
+            {product.shortNotify && (
+              <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">
+                 {product.shortNotify}
               </div>
             )}
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
-          {product.shortNotify && (
-            <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">
-               {product.shortNotify}
-            </div>
-          )}
-        </div>
 
-        <VariationSelector 
-          groupedAttributes={groupedAttributes}
-          selectedAttrs={selectedAttrs}
-          onAttributeSelect={handleAttrSelect}
-          variations={variations}
-        />
-
-        <DeliveryAndPrice selectedVariation={combinedAggregateVar || variations[0]} />
-      </div>
-
-      <div className="lg:col-span-8 lg:order-last flex flex-col gap-8">
-        <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover transition-all duration-300 shadow-lg group">
-          <Image 
-            src={displayImage} 
-            alt={product.name} 
-            fill
-            priority
-            loading="eager"
-            quality={90}
-            className="object-cover transition-opacity duration-300"
-            sizes="(max-width: 1024px) 100vw, 80vw"
+          <VariationSelector 
+            groupedAttributes={groupedAttributes}
+            selectedAttrs={selectedAttrs}
+            onAttributeSelect={handleAttrSelect}
+            variations={variations}
           />
 
-          {allGalleryImages.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={handleNextImage}
-                disabled={currentIndex === allGalleryImages.length - 1}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <button
-                type="button"
-                onClick={handlePrevImage}
-                disabled={currentIndex === 0}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6"/></svg>
-              </button>
-            </>
-          )}
+          <DeliveryAndPrice selectedVariation={combinedAggregateVar || variations[0]} />
         </div>
 
-        {allGalleryImages.length > 1 && (
-          <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="rtl">
-            <div 
-              className="flex transition-transform duration-300 ease-in-out will-change-transform"
-              style={{ 
-                gap: `8px`,
-                transform: `translateX(${trackOffset}px)` 
-              }}
-            >
-              {allGalleryImages.map((imgUrl, idx) => {
-                const isActive = idx === currentIndex;
-                return (
-                  <button 
-                    key={idx} 
-                    type="button"
-                    onClick={() => setSelectedGalleryImage(imgUrl)}
-                    className={`relative w-[100px] aspect-video flex-shrink-0 overflow-hidden border transition-all duration-300 ${
-                      isActive 
-                        ? 'border-brand-blue opacity-100 ring-2 ring-brand-blue/60 z-10 shadow-[0_0_12px_rgba(0,116,224,0.3)]' 
-                        : 'border-brand-surface_hover opacity-40 hover:opacity-80'
-                    }`}
-                  >
-                    <Image src={imgUrl} alt={`گالری ${idx + 1}`} fill quality={75} className="object-cover" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {product.shortDescription && (
-          <div className="bg-brand-menu p-6 border border-brand-surface_hover">
-            <div 
-              className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: product.shortDescription }} 
+        {/* ستون چپ (۷۰ درصد): گالری اصلی و توضیح کوتاه (فقط در دسکتاپ حالت Sticky دارد) */}
+        <div className="lg:col-span-8 lg:sticky lg:top-6 h-fit flex flex-col gap-6 w-full">
+          <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover transition-all duration-300 shadow-lg group">
+            <Image 
+              src={displayImage} 
+              alt={product.name} 
+              fill
+              priority
+              loading="eager"
+              quality={90}
+              className="object-cover transition-opacity duration-300"
+              sizes="(max-width: 1024px) 100vw, 70vw"
             />
-          </div>
-        )}
 
-        {product.secondaryGallery && product.secondaryGallery.length > 0 && (
-          <div className="w-full flex flex-col md:flex-row gap-6 border-t border-brand-surface_hover pt-8">
-            <div className="w-full md:w-1/5">
-              <h3 className="text-lg font-bold text-brand-active border-r-4 border-brand-blue pr-2">گالری محصول</h3>
-            </div>
-            <div className="w-full md:w-4/5 flex flex-col gap-6">
-              {product.secondaryGallery.map((item: any, index: number) => (
-                <div key={index} className="flex flex-col gap-4">
-                  {item.imageUrl && (
-                    <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover shadow-md">
-                      <Image src={item.imageUrl} alt="" fill quality={85} className="object-cover" sizes="(max-width: 1024px) 100vw, 60vw" />
-                    </div>
-                  )}
-                  {item.description && (
-                    <p className="text-brand-surface_m text-sm leading-8 bg-brand-menu/40 p-4 rounded">{item.description}</p>
-                  )}
-                </div>
-              ))}
-            </div>
+            {allGalleryImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleNextImage}
+                  disabled={currentIndex === allGalleryImages.length - 1}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrevImage}
+                  disabled={currentIndex === 0}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6"/></svg>
+                </button>
+              </>
+            )}
           </div>
-        )}
 
-        {product.description && (
-          <div className="w-full flex flex-col md:flex-row gap-6 border-t border-brand-surface_hover pt-8">
-            <div className="w-full md:w-1/5">
-              <h3 className="text-lg font-bold text-brand-active border-r-4 border-brand-blue pr-2">توضیحات محصول</h3>
-            </div>
-            <div className="w-full md:w-4/5">
+          {allGalleryImages.length > 1 && (
+            <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="rtl">
               <div 
-                className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none bg-brand-menu p-6 border border-brand-surface_hover"
-                dangerouslySetInnerHTML={{ __html: product.description }} 
+                className="flex transition-transform duration-300 ease-in-out will-change-transform"
+                style={{ 
+                  gap: `8px`,
+                  transform: `translateX(${trackOffset}px)` 
+                }}
+              >
+                {allGalleryImages.map((imgUrl, idx) => {
+                  const isActive = idx === currentIndex;
+                  return (
+                    <button 
+                      key={idx} 
+                      type="button"
+                      onClick={() => setSelectedGalleryImage(imgUrl)}
+                      className={`relative w-[100px] aspect-video flex-shrink-0 overflow-hidden border transition-all duration-300 ${
+                        isActive 
+                          ? 'border-brand-blue opacity-100 ring-2 ring-brand-blue/60 z-10 shadow-[0_0_12px_rgba(0,116,224,0.3)]' 
+                          : 'border-brand-surface_hover opacity-40 hover:opacity-80'
+                      }`}
+                    >
+                      <Image src={imgUrl} alt={`گالری ${idx + 1}`} fill quality={75} className="object-cover" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {product.shortDescription && (
+            <div className="bg-brand-menu p-6 border border-brand-surface_hover">
+              <div 
+                className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: product.shortDescription }} 
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        <div className="w-full flex flex-col md:flex-row gap-6 border-t border-brand-surface_hover pt-8">
-          <div className="w-full md:w-1/5">
-            <h3 className="text-lg font-bold text-brand-active border-r-4 border-brand-blue pr-2">نظرات کاربران</h3>
+      {/* بخش دوم: ۱۰۰ درصد - آیتم‌های محصول (شبیه بتل نت) */}
+      {product.secondaryGallery && product.secondaryGallery.length > 0 && (
+        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
+          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
+            آیتم‌های محصول
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {product.secondaryGallery.map((item: any, index: number) => (
+              <div key={index} className="bg-brand-menu border border-brand-surface_hover flex flex-col overflow-hidden shadow-md">
+                {item.imageUrl && (
+                  <div className="relative w-full aspect-[16/9] bg-brand-surface">
+                    <Image src={item.imageUrl} alt="" fill quality={85} className="object-cover" sizes="(max-width: 1024px) 100vw, 33vw" />
+                  </div>
+                )}
+                {item.description && (
+                  <p className="text-brand-surface_m text-xs leading-7 p-4">{item.description}</p>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="w-full md:w-4/5 flex flex-col gap-6">
+        </div>
+      )}
+
+      {/* بخش سوم: ۱۰۰ درصد - توضیحات تکمیلی محصول */}
+      {product.description && (
+        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
+          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
+            توضیحات تکمیلی محصول
+          </h2>
+          <div 
+            className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none bg-brand-menu p-6 border border-brand-surface_hover"
+            dangerouslySetInnerHTML={{ __html: product.description }} 
+          />
+        </div>
+      )}
+
+      {/* بخش چهارم: ۱۰۰ درصد - نظرات (۷۰ درصد لیست نظرات و فرم در راست، ۳۰ درصد امتیازات کلی در چپ) */}
+      <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
+        <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
+          نظرات کاربران
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+          
+          {/* ۷۰ درصد: فرم ثبت نظر و لیست نظرات جاری */}
+          <div className="lg:col-span-8 flex flex-col gap-6 w-full">
             <form onSubmit={handleReviewSubmit} className="bg-brand-menu p-6 border border-brand-surface_hover flex flex-col gap-4">
+              <span className="text-sm font-bold text-brand-active">امتیاز و نظر خود را بنویسید</span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input 
                   type="text" 
@@ -455,8 +469,37 @@ export default function ProductPageClient({ product, initialEdition }: Props) {
               ))}
             </div>
           </div>
+
+          {/* ۳۰ درصد: باکس امتیازات کلی محصول */}
+          <div className="lg:col-span-4 bg-brand-menu p-6 border border-brand-surface_hover flex flex-col items-center justify-center gap-4 text-center w-full">
+            <span className="text-sm font-bold text-brand-surface_m">امتیاز کلی محصول</span>
+            <div className="text-5xl font-black text-brand-blue">۴.۷</div>
+            <div className="flex gap-1 text-brand-zard text-lg">
+              <span>★</span><span>★</span><span>★</span><span>★</span><span className="text-brand-surface_hover">★</span>
+            </div>
+            <span className="text-xs text-brand-m_khonsa">براساس ۲ نظر ثبت شده</span>
+            
+            <div className="w-full flex flex-col gap-2 mt-2">
+              <div className="flex items-center gap-2 text-xs w-full text-brand-surface_m">
+                <span className="w-12 text-left">۵ ستاره</span>
+                <div className="flex-1 bg-brand-surface h-2 rounded-full overflow-hidden">
+                  <div className="bg-brand-blue h-full w-[80%]" />
+                </div>
+                <span className="w-6 text-right">۸۰٪</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs w-full text-brand-surface_m">
+                <span className="w-12 text-left">۴ ستاره</span>
+                <div className="flex-1 bg-brand-surface h-2 rounded-full overflow-hidden">
+                  <div className="bg-brand-blue h-full w-[20%]" />
+                </div>
+                <span className="w-6 text-right">۲۰٪</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
+
     </div>
   );
 }
