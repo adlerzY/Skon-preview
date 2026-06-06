@@ -6,7 +6,7 @@ import DesktopNavLinks from "./DesktopNavLinks";
 import MobileMenu from "./MobileMenu";
 import HeaderSearch from "./HeaderSearch";
 import HeaderMenuSwitcher from "./HeaderMenuSwitcher";
-import HeaderCart from "./HeaderCart"; // کامپوننت جدید ایمپورت شد
+import HeaderCart from "./HeaderCart";
 
 import { getHeaderCategories, getHeaderBlogCategories } from "@/lib/wp-graphql"; 
 
@@ -32,7 +32,7 @@ export default async function Header() {
               height={40}
               className="h-10 w-auto object-contain"
               priority
-              style={{ width: 'auto', height: 'auto' }} 
+              style={{ width: "auto" }} 
             />
           </Link>
           <DesktopNavLinks />

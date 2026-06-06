@@ -8,6 +8,7 @@ import { GAMES_DATA } from "@/constants/games";
 import { useProductSearch } from "./hooks/useProductSearch";
 import MiniSearchCard from "./MiniSearchCard";
 import { useCart } from "@/constants/CartContext";
+import Skeleton from "@/components/ui/Skeleton";
 
 export default function MobileMenu() {
   const pathname = usePathname();
@@ -69,7 +70,7 @@ export default function MobileMenu() {
             height={30} 
             className="h-[30px] w-auto object-contain" 
             priority 
-            style={{ width: 'auto', height: 'auto' }}
+            style={{ width: "auto" }}
           />
         </Link>
 
@@ -135,10 +136,16 @@ export default function MobileMenu() {
           </div>
         </form>
 
-        {isSearchActive && (searchQuery || searchResults.length > 0) && (
+        {isSearchActive && (searchQuery || searchResults.length > 0 || isPending) && (
           <div className="absolute top-[60px] right-0 w-full bg-[#15171e] border-b border-brand-surface p-3 max-h-[calc(100vh-60px)] overflow-y-auto flex flex-col gap-1.5 shadow-[0_20px_40px_rgba(0,0,0,0.8)] z-50 custom-scrollbar">
             <div className="text-[13px] text-brand-m_khonsa border-b border-white/5 pb-2 mb-1 px-1 font-bold">نتایج سریع محصولات</div>
-            {searchResults.length > 0 ? (
+            {isPending ? (
+              <div className="flex flex-col gap-2 p-1">
+                <Skeleton className="h-[68px] w-full" />
+                <Skeleton className="h-[68px] w-full" />
+                <Skeleton className="h-[68px] w-full" />
+              </div>
+            ) : searchResults.length > 0 ? (
               <>
                 {searchResults.map((prod) => (
                   <div 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Skeleton from "@/components/ui/Skeleton";
 
 export default function UserActions() {
   const router = useRouter();
@@ -15,9 +16,9 @@ export default function UserActions() {
 
   if (!isMounted) {
     return (
-      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-transparent text-brand-m_khonsa">
-        <span className="w-8 h-8 rounded-full bg-white/5 border border-[#23252b] shrink-0" />
-        <span className="w-16 h-3 bg-white/5 rounded animate-pulse" />
+      <div className="flex items-center gap-2.5 px-3 py-4 h-[60px]">
+        <Skeleton className="w-5 h-5 rounded-full shrink-0" />
+        <Skeleton className="w-16 h-4 rounded" />
       </div>
     );
   }
@@ -26,27 +27,29 @@ export default function UserActions() {
   const prefetchOrders = () => router.prefetch("/my-account/orders");
 
   return (
-    <div className="relative group">
-      {/* 👈 اینجا div به Link تبدیل شد تا با کلیک هم کار کنه */}
+    <div className="relative group/user">
       <Link 
         href="/my-account"
         onMouseEnter={prefetchAccount}
         className="flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white"
       >
         <span className="flex items-center border border-brand-surface_m justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
         </span>
         <span>حساب کاربری</span>
       </Link>
 
-      <div className="absolute top-[60px] left-0 bg-[#15171e] border border-white/5 rounded-lg opacity-0 invisible translate-y-1.5 transition-all duration-150 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 p-4 z-[1000] min-w-[260px] shadow-[0_15px_30px_rgba(0,0,0,0.6)] will-change-transform">
+      <div className="absolute top-[60px] left-0 bg-[#15171e] border border-white/5 rounded-lg opacity-0 invisible translate-y-1.5 transition-all duration-150 group-hover/user:opacity-100 group-hover/user:visible group-hover/user:translate-y-0 p-4 z-[1000] min-w-[260px] shadow-[0_15px_30px_rgba(0,0,0,0.6)] will-change-transform">
         {isLoggedIn ? (
           <>
             <div className="p-2.5 mb-1.5 bg-white/5 rounded-md border border-white/5">
-              <div className="text-white font-semibold text-sm">مشتری عزیز</div>
+              <div className="text-white font-semibold text-sm text-right">مشتری عزیز</div>
             </div>
-            <Link href="/my-account" onMouseEnter={prefetchAccount} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded">پیشخوان من</Link>
-            <Link href="/my-account/orders" onMouseEnter={prefetchOrders} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded">سفارشات</Link>
+            <Link href="/my-account" onMouseEnter={prefetchAccount} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">پیشخوان من</Link>
+            <Link href="/my-account/orders" onMouseEnter={prefetchOrders} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">سفارشات</Link>
             <button className="w-full text-right flex items-center gap-2.5 p-2.5 text-[#ff5c5c] hover:bg-[#ff5c5c]/10 text-[13px] font-semibold transition-colors mt-1 rounded">خروج از حساب</button>
           </>
         ) : (

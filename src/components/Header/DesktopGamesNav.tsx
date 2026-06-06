@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import Skeleton from "@/components/ui/Skeleton";
 
 export interface HeaderGameItem {
   title: string;
@@ -18,13 +19,21 @@ interface DesktopGamesNavProps {
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [visibleCount, setVisibleCount] = useState(games?.length || 0);
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculateItems = useCallback((width: number) => {
     if (!games || games.length === 0) return 0;
     if (width >= games.length * 60) return games.length;
     return Math.max(1, Math.floor((width - 50) / 60));
+  }, [games]);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (games?.length) {
+      setVisibleCount(games.length);
+    }
   }, [games]);
 
   useEffect(() => {
@@ -48,7 +57,16 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const visible = useMemo(() => (games ? games.slice(0, visibleCount) : []), [visibleCount, games]);
   const hidden = useMemo(() => (games ? games.slice(visibleCount) : []), [visibleCount, games]);
 
-  if (!games || games.length === 0) return null;
+  if (!isMounted || !games || games.length === 0) {
+    return (
+      <div className="flex items-center gap-2 h-full px-2 w-[240px]">
+        <Skeleton className="w-9 h-9" />
+        <Skeleton className="w-9 h-9" />
+        <Skeleton className="w-9 h-9" />
+        <Skeleton className="w-9 h-9" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 h-full px-2 flex items-center contain-inline-size" ref={containerRef}>
@@ -66,7 +84,14 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
               aria-label={game.title}
             >
               <div className="relative w-9 h-9 pointer-events-none transition-transform duration-300 group-hover:scale-110">
-                <Image src={game.img} alt={game.title || "game"} fill sizes="36px" quality={80} className={`object-contain ${isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" : ""}`} />
+                <Image 
+                  src={game.img} 
+                  alt={game.title || "game"} 
+                  fill 
+                  sizes="36px" 
+                  quality={80} 
+                  className={`object-contain ${isActive ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" : ""}`} 
+                />
               </div>
             </Link>
           );

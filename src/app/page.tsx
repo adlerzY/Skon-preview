@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 const DynamicProductGrid = dynamic(() => import("@/components/ProductGrid"), {
   loading: () => (
-    <div className="w-full my-4 h-[400px] bg-[#1c1e25]/40 backdrop-blur-xl border border-white/5 rounded-2xl animate-pulse"></div>
+    <div className="w-full my-4 h-[400px] bg-[#1c1e25]/40 backdrop-blur-xl border border-white/5 animate-pulse"></div>
   ), 
 });
 
