@@ -1,6 +1,6 @@
 // src/app/(shop)/[categorySlug]/page.tsx
 import React from "react";
-import { getCategoryArchive } from "@/lib/wp-graphql";
+import { getCategoryArchive } from "@/lib/graphql";
 import CategoryHero from "@/components/Hero"; 
 import ProductGrid from "@/components/ProductGrid"; 
 import { notFound } from "next/navigation";

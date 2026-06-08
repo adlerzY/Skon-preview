@@ -8,7 +8,7 @@ import HeaderSearch from "./HeaderSearch";
 import HeaderMenuSwitcher from "./HeaderMenuSwitcher";
 import HeaderCart from "./HeaderCart";
 
-import { getHeaderCategories, getHeaderBlogCategories } from "@/lib/wp-graphql"; 
+import { getHeaderCategories, getHeaderBlogCategories } from "@/lib/graphql"; 
 
 const ACTION_BUTTON_CLASSES = "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
 const ICON_WRAPPER_CLASSES = "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";

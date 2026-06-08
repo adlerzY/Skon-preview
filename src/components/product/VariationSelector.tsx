@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { VariationCard } from "@/lib/wp-graphql";
+import { VariationCard } from "@/lib/graphql";
 
 interface AttrValueItem {
   value: string;

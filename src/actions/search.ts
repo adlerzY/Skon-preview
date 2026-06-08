@@ -1,7 +1,7 @@
 // فایل: src/actions/search.ts
 "use server"
 
-import { fetchGraphQL, formatProducts, PRODUCT_CARD_FIELDS } from "@/lib/wp-graphql";
+import { fetchGraphQL, formatProducts, PRODUCT_CARD_FIELDS } from "@/lib/graphql";
 
 export async function searchProductsByKeyword(keyword: string) {
   const safeKeyword = keyword?.trim();

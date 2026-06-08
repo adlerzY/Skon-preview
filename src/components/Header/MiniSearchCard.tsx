@@ -1,7 +1,7 @@
 // فایل: src/components/MiniSearchCard.tsx
 import Image from "next/image";
 import Link from "next/link";
-import { ProductNode } from "@/lib/wp-graphql";
+import { ProductNode } from "@/lib/graphql";
 
 export default function MiniSearchCard({ product }: { product: ProductNode }) {
   const categoryName = product.productCategories?.nodes?.[0]?.name || "دسته بندی نامشخص";

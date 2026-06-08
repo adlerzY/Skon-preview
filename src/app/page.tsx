@@ -1,4 +1,4 @@
-import { getHomePageData } from "@/lib/wp-graphql"; 
+import { getHomePageData } from "@/lib/graphql"; 
 import CategoryHero from "@/components/Hero"; 
 import dynamic from "next/dynamic";
 

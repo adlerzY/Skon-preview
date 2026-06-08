@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
-import { ProductNode, VariationCard } from "@/lib/wp-graphql";
+import { ProductNode, VariationCard } from "@/lib/graphql";
 import DeliveryAndPrice from "@/components/product/DeliveryAndPrice";
 import VariationSelector from "@/components/product/VariationSelector";
 import ProductReviews from "@/components/ProductReviews";

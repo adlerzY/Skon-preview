@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { VariationCard } from "@/lib/wp-graphql";
+import { VariationCard } from "@/lib/graphql";
 import { useCart } from "@/constants/CartContext";
 
 interface DeliveryAndPriceProps {

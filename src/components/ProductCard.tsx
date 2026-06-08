@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ProductNode } from "@/lib/wp-graphql";
+import { ProductNode } from "@/lib/graphql";
 
 const formatToPersianDigits = (num: number) => {
   return num.toLocaleString("fa-IR");
