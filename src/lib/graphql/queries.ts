@@ -1,0 +1,220 @@
+//توابع اصلی دریافت دیتا (ارتباط با صفحات نکس)
+import { fetchGraphQL } from './client';
+import { formatProducts } from './utils';
+import { HeaderCategoryNode, ProductNode } from './types';
+import { CATEGORY_BASIC_FIELDS, PRODUCT_CARD_FIELDS, BANNER_FIELDS } from './fragments';
+
+export async function getHeaderCategories() {
+  const data = await fetchGraphQL(
+    `
+      ${CATEGORY_BASIC_FIELDS}
+      query GetHeaderCategories {
+        productCategories(where: { hideEmpty: true, parent: 0 }, first: 15) {
+          nodes {
+            ...CategoryBasicFields
+          }
+        }
+      }
+    `,
+    {},
+    ["header-data"]
+  );
+
+  if (!data?.productCategories?.nodes) return [];
+
+  const nodes: HeaderCategoryNode[] = data.productCategories.nodes;
+  return nodes
+    .filter((cat) => !["home", "uncategorized"].includes(cat.slug) && cat.image?.sourceUrl)
+    .map((cat) => ({
+      title: cat.name,
+      img: cat.image!.sourceUrl,
+      link: `/${cat.slug}`,
+    }));
+}
+
+export async function getProducts(categorySlug?: string) {
+  const tags = categorySlug ? ['products', `category-${categorySlug}`] : ['products'];
+  const data = await fetchGraphQL(`
+    ${PRODUCT_CARD_FIELDS}
+    query GetProducts($categoryIn: [String]) {
+      products(first: 12, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
+        nodes { ...ProductCardFields }
+      }
+    }
+  `, categorySlug ? { categoryIn: [categorySlug] } : {}, tags); 
+  
+  if (!data?.products?.nodes) return [];
+
+  return formatProducts(data.products.nodes, true);
+}
+
+export async function getCategoryArchive(slug: string) {
+  if (!slug) return null;
+  
+  const categoryAndProductsPromise = fetchGraphQL(`
+    ${CATEGORY_BASIC_FIELDS}
+    ${PRODUCT_CARD_FIELDS}
+    query GetCategoryProducts($id: ID!, $categoryIn: [String]) {
+      productCategory(id: $id, idType: SLUG) {
+        ...CategoryBasicFields
+      }
+      products(first: 20, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
+        nodes { ...ProductCardFields }
+      }
+    }
+  `, { id: slug, categoryIn: [slug] }, ['products', `category-${slug}`]); 
+
+  const bannersPromise = fetchGraphQL(`
+    ${BANNER_FIELDS}
+    query GetCategoryBanners($id: ID!) {
+      productCategory(id: $id, idType: SLUG) {
+        banners { ...BannerFields }
+      }
+    }
+  `, { id: slug }, ['banners', `banners-${slug}`]); 
+
+  const [categoryData, bannersData] = await Promise.all([categoryAndProductsPromise, bannersPromise]);
+
+  if (!categoryData?.productCategory) return null;
+
+  return {
+    ...categoryData.productCategory,
+    banners: bannersData?.productCategory?.banners || [],
+    products: {
+      nodes: formatProducts(categoryData.products?.nodes || [], true)
+    }
+  };
+}
+
+export async function getHomePageData() {
+  const data = await fetchGraphQL(`
+    ${PRODUCT_CARD_FIELDS}
+    ${BANNER_FIELDS}
+    query GetHomePage {
+      homeBanners: productCategory(id: "home", idType: SLUG) {
+        banners {
+          ...BannerFields
+        }
+      }
+      featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH" }) {
+        nodes {
+          ...ProductCardFields
+        }
+      }
+      latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC } }) {
+        nodes {
+          ...ProductCardFields
+        }
+      }
+    }
+  `, {}, ['products', 'banners', 'home']); 
+
+  if (!data) {
+    return { banners: [], featured: [], latest: [] };
+  }
+
+  return {
+    banners: data.homeBanners?.banners || [],
+    featured: formatProducts(data.featuredProducts?.nodes || [], true),
+    latest: formatProducts(data.latestProducts?.nodes || [], true)
+  };
+}
+
+export async function getHeaderBlogCategories() {
+  const data = await fetchGraphQL(
+    `
+      query GetBlogCategories {
+        categories(where: { hideEmpty: true, parent: 0 }, first: 15) {
+          nodes {
+            name
+            slug
+            categoryImage {
+              sourceUrl(size: "thumbnail")
+            }
+          }
+        }
+      }
+    `,
+    {},
+    ["header-data"]
+  );
+
+  if (!data?.categories?.nodes) return [];
+
+  const nodes: HeaderCategoryNode[] = data.categories.nodes;
+  return nodes
+    .filter((cat) => cat.categoryImage?.sourceUrl)
+    .map((cat) => ({
+      title: cat.name,
+      img: cat.categoryImage!.sourceUrl, 
+      link: `/blog/${cat.slug}/`,
+    }));
+}
+
+export async function getPostDetail(slug: string) {
+  if (!slug) return null;
+
+  const data = await fetchGraphQL(`
+    query GetPostDetail($id: ID!) {
+      post(id: $id, idType: SLUG) {
+        title
+        content
+        date
+        featuredImage {
+          node {
+            sourceUrl(size: LARGE)
+          }
+        }
+        categories {
+          nodes {
+            name
+            slug
+          }
+        }
+        author {
+          node {
+            name
+          }
+        }
+      }
+    }
+  `, { id: slug }, [`post-${slug}`]);
+
+  if (!data?.post) return null;
+
+  return data.post;
+}
+
+export async function getProductDetail(slug: string) {
+  if (!slug) return null;
+
+  const data = await fetchGraphQL(`
+    ${PRODUCT_CARD_FIELDS}
+    query GetProductDetail($id: ID!) {
+      product(id: $id, idType: SLUG) {
+        ...ProductCardFields
+        description
+        secondaryGallery {
+          description
+          imageUrl
+        }
+        galleryImages {
+          nodes {
+            sourceUrl(size: LARGE)
+          }
+        }
+        attributes {
+          nodes {
+            name
+            options
+          }
+        }
+      }
+    }
+  `, { id: slug }, [`product-${slug}`]);
+
+  if (!data?.product) return null;
+
+  const formatted = formatProducts([data.product], false);
+  return formatted[0];
+}
