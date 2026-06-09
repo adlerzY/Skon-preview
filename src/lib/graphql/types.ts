@@ -40,6 +40,7 @@ export interface ProductNode {
   variationCards?: VariationCard[];
   isVariation?: boolean;
   defaultVariationId?: number;
+  defaultEdition?: string;
   productCategories?: {
     nodes: Array<{
       name: string;

@@ -1,4 +1,3 @@
-//متدهای کمکی مثل فرمت‌کننده محصولات برای آرشیو و سینگل
 import { parsePrice } from './client';
 import { ProductNode, VariationCard } from './types';
 
@@ -7,13 +6,23 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
 
   products.forEach(product => {
     const rawVariations = product.variationCards || [];
-    
+
     const parsedVariationCards = rawVariations.map((v: VariationCard) => {
-      const pGift = (v.giftPriceToman === 'disabled' || !v.giftPriceToman ? 'disabled' : parsePrice(v.giftPriceToman) ?? 'disabled') as number | "disabled";
-      const pGiftReg = (v.giftRegularPriceToman === 'disabled' || !v.giftRegularPriceToman ? 'disabled' : parsePrice(v.giftRegularPriceToman) ?? 'disabled') as number | "disabled";
-      
-      const pCode = (v.codePriceToman === 'disabled' || !v.codePriceToman ? 'disabled' : parsePrice(v.codePriceToman) ?? 'disabled') as number | "disabled";
-      const pCodeReg = (v.codeRegularPriceToman === 'disabled' || !v.codeRegularPriceToman ? 'disabled' : parsePrice(v.codeRegularPriceToman) ?? 'disabled') as number | "disabled";
+      const pGift = (v.giftPriceToman === 'disabled' || !v.giftPriceToman
+        ? 'disabled'
+        : parsePrice(v.giftPriceToman) ?? 'disabled') as number | "disabled";
+
+      const pGiftReg = (v.giftRegularPriceToman === 'disabled' || !v.giftRegularPriceToman
+        ? 'disabled'
+        : parsePrice(v.giftRegularPriceToman) ?? 'disabled') as number | "disabled";
+
+      const pCode = (v.codePriceToman === 'disabled' || !v.codePriceToman
+        ? 'disabled'
+        : parsePrice(v.codePriceToman) ?? 'disabled') as number | "disabled";
+
+      const pCodeReg = (v.codeRegularPriceToman === 'disabled' || !v.codeRegularPriceToman
+        ? 'disabled'
+        : parsePrice(v.codeRegularPriceToman) ?? 'disabled') as number | "disabled";
 
       return {
         ...v,
@@ -22,16 +31,18 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
         parsedGiftPrice: pGift,
         parsedGiftRegularPrice: pGiftReg,
         parsedCodePrice: pCode,
-        parsedCodeRegularPrice: pCodeReg
+        parsedCodeRegularPrice: pCodeReg,
       };
     });
 
     if (archiveMode && parsedVariationCards.length > 0) {
       const groupedVariations = new Map<string, typeof parsedVariationCards[0]>();
-      
+
       parsedVariationCards.forEach(v => {
-        const mainAttr = v.attributes && v.attributes.length > 0 ? v.attributes[0].value : 'بدون‌نسخه';
-        
+        const mainAttr = v.attributes && v.attributes.length > 0
+          ? v.attributes[0].value
+          : 'بدون‌نسخه';
+
         if (!groupedVariations.has(mainAttr)) {
           groupedVariations.set(mainAttr, v);
         } else {
@@ -49,16 +60,20 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
           ...product,
           id: `${product.id}-${representativeVar.databaseId}`,
           name: `${product.name} - ${attrValue}`,
-          image: representativeVar.imageUrl ? { sourceUrl: representativeVar.imageUrl } : product.image,
+          image: representativeVar.imageUrl
+            ? { sourceUrl: representativeVar.imageUrl }
+            : product.image,
           price: representativeVar.price,
           regularPrice: representativeVar.regularPrice,
           salePrice: representativeVar.salePrice,
-          parsedPrice: representativeVar.parsedPrice, 
+          parsedPrice: representativeVar.parsedPrice,
           parsedRegularPrice: representativeVar.parsedRegularPrice,
-          variationCards: [], 
+          variationCards: [],
           isVariation: true,
           defaultVariationId: representativeVar.databaseId,
-          slug: `${product.slug}?edition=${encodeURIComponent(attrValue)}` 
+          // ✅ slug تمیز — edition جدا نگه داشته میشه
+          slug: product.slug,
+          defaultEdition: attrValue,
         });
       });
     } else {
@@ -67,10 +82,14 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
 
       formattedProducts.push({
         ...product,
-        parsedPrice: product.variationCards && product.variationCards.length > 0 ? firstVarPrice : parsePrice(product.price),
-        parsedRegularPrice: product.variationCards && product.variationCards.length > 0 ? firstVarRegularPrice : parsePrice(product.regularPrice),
+        parsedPrice: product.variationCards && product.variationCards.length > 0
+          ? firstVarPrice
+          : parsePrice(product.price),
+        parsedRegularPrice: product.variationCards && product.variationCards.length > 0
+          ? firstVarRegularPrice
+          : parsePrice(product.regularPrice),
         variationCards: parsedVariationCards,
-        isVariation: parsedVariationCards.length > 0
+        isVariation: parsedVariationCards.length > 0,
       });
     }
   });

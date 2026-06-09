@@ -218,3 +218,28 @@ export async function getProductDetail(slug: string) {
   const formatted = formatProducts([data.product], false);
   return formatted[0];
 }
+export async function getRegions() {
+  const data = await fetchGraphQL(
+    `
+      query GetRegions {
+        paRegionShops(first: 10) {
+          nodes {
+            name
+            slug
+            flag_url
+          }
+        }
+      }
+    `,
+    {},
+    ["regions"]
+  );
+
+  if (!data?.paRegionShops?.nodes) return [];
+
+  return data.paRegionShops.nodes.map((r: any) => ({
+    name: r.name,
+    slug: r.slug,
+    flagUrl: r.flag_url || undefined,
+  }));
+}

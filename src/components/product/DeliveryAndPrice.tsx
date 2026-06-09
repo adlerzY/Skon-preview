@@ -2,37 +2,33 @@
 
 import React, { useState, useEffect } from "react";
 import { VariationCard } from "@/lib/graphql";
-import { useCart } from "@/constants/CartContext";
+import { useCart } from "@/context/CartContext";
 
 interface DeliveryAndPriceProps {
-  selectedVariation: VariationCard;
+  selectedVariation: VariationCard | null;
 }
 
 export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPriceProps) {
   const { addToCart } = useCart();
+
+  // ✅ همه هوک‌ها قبل از هر return تعریف میشن (Rules of Hooks)
   const [deliveryType, setDeliveryType] = useState<"direct" | "gift" | "code" | null>(null);
-  
   const [accountIdentifier, setAccountIdentifier] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [battleTag, setBattleTag] = useState("");
-  
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "success" | "error">("idle");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  if (!selectedVariation) {
-    return (
-      <div className="text-brand-surface_m text-sm text-center py-4 bg-brand-surface border border-brand-surface_hover">
-        محصول در حال حاضر موجود نمی‌باشد.
-      </div>
-    );
-  }
-
-  const isDirectDisabled = selectedVariation.parsedPrice === null || selectedVariation.parsedPrice === undefined;
-  const isGiftDisabled = selectedVariation.parsedGiftPrice === "disabled" || selectedVariation.parsedGiftPrice === null || selectedVariation.parsedGiftPrice === undefined;
-  const isCodeDisabled = selectedVariation.parsedCodePrice === "disabled" || selectedVariation.parsedCodePrice === null || selectedVariation.parsedCodePrice === undefined;
+  const isDirectDisabled = !selectedVariation || selectedVariation.parsedPrice === null || selectedVariation.parsedPrice === undefined;
+  const isGiftDisabled = !selectedVariation || selectedVariation.parsedGiftPrice === "disabled" || selectedVariation.parsedGiftPrice === null || selectedVariation.parsedGiftPrice === undefined;
+  const isCodeDisabled = !selectedVariation || selectedVariation.parsedCodePrice === "disabled" || selectedVariation.parsedCodePrice === null || selectedVariation.parsedCodePrice === undefined;
 
   useEffect(() => {
+    if (!selectedVariation) {
+      setDeliveryType(null);
+      return;
+    }
     if (!isDirectDisabled) {
       setDeliveryType("direct");
     } else if (!isGiftDisabled) {
@@ -44,29 +40,46 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     }
   }, [selectedVariation, isDirectDisabled, isGiftDisabled, isCodeDisabled]);
 
-  const currentPrice = 
-    deliveryType === "gift" ? (typeof selectedVariation.parsedGiftPrice === "number" ? selectedVariation.parsedGiftPrice : null) : 
-    deliveryType === "code" ? (typeof selectedVariation.parsedCodePrice === "number" ? selectedVariation.parsedCodePrice : null) : 
+  // ✅ early return بعد از همه هوک‌ها
+  if (!selectedVariation) {
+    return (
+      <div className="text-brand-surface_m text-sm text-center py-4 bg-brand-surface border border-brand-surface_hover">
+        محصول در حال حاضر موجود نمی‌باشد.
+      </div>
+    );
+  }
+
+  const currentPrice =
+    deliveryType === "gift" ? (typeof selectedVariation.parsedGiftPrice === "number" ? selectedVariation.parsedGiftPrice : null) :
+    deliveryType === "code" ? (typeof selectedVariation.parsedCodePrice === "number" ? selectedVariation.parsedCodePrice : null) :
     deliveryType === "direct" ? selectedVariation.parsedPrice : null;
 
-  const regularPrice = 
-    deliveryType === "gift" ? (typeof selectedVariation.parsedGiftRegularPrice === "number" ? selectedVariation.parsedGiftRegularPrice : null) : 
-    deliveryType === "code" ? (typeof selectedVariation.parsedCodeRegularPrice === "number" ? selectedVariation.parsedCodeRegularPrice : null) : 
+  const regularPrice =
+    deliveryType === "gift" ? (typeof selectedVariation.parsedGiftRegularPrice === "number" ? selectedVariation.parsedGiftRegularPrice : null) :
+    deliveryType === "code" ? (typeof selectedVariation.parsedCodeRegularPrice === "number" ? selectedVariation.parsedCodeRegularPrice : null) :
     deliveryType === "direct" ? (selectedVariation.parsedRegularPrice ?? null) : null;
 
   const hasDiscount = regularPrice && currentPrice && regularPrice > currentPrice;
 
-  const handleVerifyBattleTag = () => {
+  const handleVerifyBattleTag = async () => {
     if (!battleTag.includes("#")) {
       setVerifyStatus("error");
       return;
     }
     setIsVerifying(true);
     setVerifyStatus("idle");
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/check-battletag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ battleTag }),
+      });
+      setVerifyStatus(res.ok ? "success" : "error");
+    } catch {
+      setVerifyStatus("error");
+    } finally {
       setIsVerifying(false);
-      setVerifyStatus("success");
-    }, 1200);
+    }
   };
 
   const isFormValid = () => {
@@ -80,30 +93,31 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
   const handleAddToCart = async () => {
     if (!isFormValid()) return;
     setIsAddingToCart(true);
-    
+
     addToCart({
       id: `${selectedVariation.databaseId}-${deliveryType}`,
       databaseId: selectedVariation.databaseId,
       name: selectedVariation.name || "محصول انتخاب شده",
       price: currentPrice || 0,
       deliveryMethod: deliveryType as "gift" | "code" | "direct",
-      customFields: 
-        deliveryType === "gift" ? { battleTag } : 
-        deliveryType === "direct" ? { email: accountIdentifier, password: accountPassword } : 
-        undefined
+      customFields:
+        deliveryType === "gift" ? { battleTag } :
+        deliveryType === "direct" ? { email: accountIdentifier, password: accountPassword } :
+        undefined,
     });
-    
+
     setTimeout(() => setIsAddingToCart(false), 1000);
   };
 
   return (
-    <div className="flex flex-col gap-2 ">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
         <span className="text-brand-surface_m text-[13px] font-bold uppercase tracking-wide">
           مسیر تحویل محصول:
         </span>
         <div className="grid grid-cols-3 gap-2">
-          
+
+          {/* مستقیم */}
           <div className="relative group flex flex-col">
             <button
               type="button"
@@ -122,11 +136,12 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
             </button>
             <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-48 bg-brand-menu border border-brand-surface_hover p-3 text-center opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 shadow-xl pointer-events-none">
               <span className="block text-[13px] font-bold text-brand-blue mb-1">فست متد</span>
-              <span className="text-[11px] text-brand-m_khonsa leading-relaxed">سریع ترین حالت فعالسازی درصورت فرند نبودن. نیازیمند ورود موقت به اکانت شما</span>
+              <span className="text-[11px] text-brand-m_khonsa leading-relaxed">سریع‌ترین حالت فعال‌سازی. نیازمند ورود موقت به اکانت شما.</span>
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-brand-surface_hover"></div>
             </div>
           </div>
 
+          {/* گیفت */}
           <div className="relative group flex flex-col">
             <button
               type="button"
@@ -150,6 +165,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
             </div>
           </div>
 
+          {/* کد */}
           <div className="relative group flex flex-col">
             <button
               type="button"
@@ -178,7 +194,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
 
       {deliveryType && (
         <div className="bg-brand-surface p-2 border border-brand-surface_hover animate-in fade-in duration-300">
-          
+
           {deliveryType === "direct" && (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-brand-blue font-bold">
@@ -203,7 +219,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
             </div>
           )}
 
-            {deliveryType === "gift" && (
+          {deliveryType === "gift" && (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-brand-zard font-bold">
                 💡 بتل‌تگ خود را جهت بررسی وارد کنید:
@@ -216,7 +232,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
                     setBattleTag(e.target.value);
                     setVerifyStatus("idle");
                   }}
-                  placeholder="بتل تگ خود را وارد کنید"
+                  placeholder="BattleTag#1234"
                   className="flex-1 bg-brand-bg border border-brand-surface_hover p-4 text-sm text-brand-active focus:outline-none focus:border-brand-zard font-mono text-left"
                   dir="ltr"
                 />
@@ -229,12 +245,11 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
                   {isVerifying ? "بررسی..." : "چک کن"}
                 </button>
               </div>
-              
               {verifyStatus === "success" && (
                 <span className="text-xs text-brand-sabz font-medium mt-1">✓ شما در لیست فرندهای ما قرار دارید!</span>
               )}
               {verifyStatus === "error" && (
-                <span className="text-xs text-red-500 font-medium mt-1">⚠️ فرمت بتل‌تگ اشتباه است. (مثال صحیح: Name#1234)</span>
+                <span className="text-xs text-red-500 font-medium mt-1">⚠️ بتل‌تگ یافت نشد یا فرمت اشتباه است. (مثال: Name#1234)</span>
               )}
             </div>
           )}
@@ -243,7 +258,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
             <div className="py-2 text-center flex flex-col items-center gap-2">
               <span className="text-3xl">🚀</span>
               <p className="text-xs text-brand-sabz font-bold leading-relaxed">
-                کد اورجینال بلافاصله پس از پرداخت<br/>در پنل کاربری نمایش داده می‌شود.
+                کد اورجینال بلافاصله پس از پرداخت<br />در پنل کاربری نمایش داده می‌شود.
               </p>
             </div>
           )}
@@ -254,7 +269,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
         <div className="flex justify-between items-center bg-brand-surface p-4 border border-brand-surface_hover">
           <span className="text-sm text-brand-surface_m font-medium">مبلغ نهایی:</span>
           {deliveryType === null ? (
-             <span className="text-sm text-brand-surface_m">ابتدا روش تحویل را انتخاب کنید</span>
+            <span className="text-sm text-brand-surface_m">ابتدا روش تحویل را انتخاب کنید</span>
           ) : typeof currentPrice === "number" ? (
             <div className="flex flex-row items-baseline gap-2">
               {hasDiscount && (
@@ -264,7 +279,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
               )}
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl md:text-3xl font-black text-brand-sabz">{currentPrice.toLocaleString("fa-IR")}</span>
-                <span className="text-x text-brand-surface_m">تومان</span>
+                <span className="text-xs text-brand-surface_m">تومان</span>
               </div>
             </div>
           ) : (
@@ -285,7 +300,6 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
           {isAddingToCart ? "در حال پردازش..." : "افزودن به سبد خرید"}
         </button>
       </div>
-
     </div>
   );
 }

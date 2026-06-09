@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import DesktopGamesNav from "./DesktopGamesNav";
+import DesktopGamesNav, { HeaderGameItem } from "./DesktopGamesNav";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface HeaderMenuSwitcherProps {
-  shopItems: any[];
-  blogItems: any[];
+  // ✅ type صحیح به جای any[]
+  shopItems: HeaderGameItem[];
+  blogItems: HeaderGameItem[];
 }
 
 export default function HeaderMenuSwitcher({ shopItems, blogItems }: HeaderMenuSwitcherProps) {

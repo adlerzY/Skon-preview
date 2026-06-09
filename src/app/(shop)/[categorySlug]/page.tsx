@@ -9,14 +9,16 @@ interface CategoryPageProps {
   params: Promise<{
     categorySlug: string;
   }>;
+  searchParams: Promise<{ // ✅ اضافه شد
+    region?: string;
+  }>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function CategoryArchivePage({ params }: CategoryPageProps) {
+export default async function CategoryArchivePage({ params, searchParams }: CategoryPageProps) {
   const { categorySlug } = await params;
-
-  // ۱. گرفتن دیتای اختصاصی این دسته‌بندی از وردپرس
+  const { region } = await searchParams; // ✅ استخراج ریجن فعال از متغیرهای URL
   const categoryData = await getCategoryArchive(categorySlug);
 
   if (!categoryData) {
@@ -36,11 +38,10 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
             : [{ title: name, subtitle: `محصولات و خدمات بازی ${name}`, imageUrl: "/images/bi-aksi.webp", link: "#" }]
         } 
       />
-
-      {/* پاس دادن محصولاتِ فیلتر شده‌ی همین بازی */}
       <ProductGrid 
         products={categoryProducts} 
         title={`محصولات اختصاصی ${name}`} 
+        activeRegion={region} 
       />
 
     </main>

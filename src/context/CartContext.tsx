@@ -29,23 +29,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) setCart(JSON.parse(savedCart));
+    try {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          setCart(parsed);
+        }
+      }
+    } catch {
+      localStorage.removeItem("cart");
+    }
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (isMounted) {
+    if (!isMounted) return;
+    try {
       localStorage.setItem("cart", JSON.stringify(cart));
+    } catch {
+      // localStorage ممکنه در حالت private mode پر باشه
     }
   }, [cart, isMounted]);
 
   const addToCart = (item: CartItem) => {
-    setCart((prev) => [...prev, item]);
+    setCart(prev => [...prev, item]);
   };
 
   const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    setCart(prev => prev.filter(item => item.id !== id));
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);

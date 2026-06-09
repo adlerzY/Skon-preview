@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { GAMES_DATA } from "@/constants/games";
+import { GAMES_DATA } from "@/context/games";
 import { useProductSearch } from "./hooks/useProductSearch";
 import MiniSearchCard from "./MiniSearchCard";
-import { useCart } from "@/constants/CartContext";
+import { useCart } from "@/context/CartContext";
 import Skeleton from "@/components/ui/Skeleton";
 
 export default function MobileMenu() {

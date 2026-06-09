@@ -1,13 +1,13 @@
 import ProductCard from "./ProductCard";
+import { ProductNode } from "@/lib/graphql";
 
 interface ProductGridProps {
-  products: any[]; // در صورت داشتن تایپ دقیق محصول، آن را جایگزین any کنید
+  products: ProductNode[];
   title: string;
+  activeRegion?: string; // ✅ دریافت ریجن از صفحه اصلی آرشیو
 }
 
-export default function ProductGrid({ products, title }: ProductGridProps) {
-  
-  // استایل پنل برای زمانی که محصولی وجود ندارد
+export default function ProductGrid({ products, title, activeRegion }: ProductGridProps) {
   if (!products || products.length === 0) {
     return (
       <div className="w-full my-4 bg-brand-surface backdrop-blur-xl border border-white/5 p-10 flex items-center justify-center">
@@ -26,7 +26,11 @@ export default function ProductGrid({ products, title }: ProductGridProps) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard 
+            key={product.id} 
+            product={product} 
+            activeRegion={activeRegion}
+          />
         ))}
       </div>
     </section>

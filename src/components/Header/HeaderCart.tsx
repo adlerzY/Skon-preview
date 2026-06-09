@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useCart } from "@/constants/CartContext";
+import { useCart } from "@/context/CartContext";
 import Skeleton from "@/components/ui/Skeleton";
 
 export default function HeaderCart() {

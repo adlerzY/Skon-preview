@@ -11,6 +11,7 @@ interface ProductPageProps {
   }>;
   searchParams: Promise<{
     edition?: string;
+    region?: string;
   }>;
 }
 
@@ -35,6 +36,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <ProductPageClient 
         product={product} 
         initialEdition={resolvedSearchParams.edition} 
+        activeRegion={resolvedSearchParams.region}
       />
     </main>
   );
