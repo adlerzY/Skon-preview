@@ -1,4 +1,5 @@
 // فرگمنت‌های گراف‌کیوال برای جلوگیری از تکرار کوئری‌ها
+
 export const PRODUCT_CARD_FIELDS = `
   fragment ProductCardFields on Product {
     id
@@ -9,9 +10,11 @@ export const PRODUCT_CARD_FIELDS = `
     date
     shortDescription
     shortNotify
+
     image {
       sourceUrl(size: MEDIUM)
     }
+
     productCategories(first: 1) {
       nodes {
         name
@@ -21,15 +24,18 @@ export const PRODUCT_CARD_FIELDS = `
         }
       }
     }
+
     ... on SimpleProduct {
       price
       regularPrice
       salePrice
     }
+
     ... on VariableProduct {
       price
       regularPrice
       salePrice
+
       variationCards {
         databaseId
         name
@@ -38,10 +44,13 @@ export const PRODUCT_CARD_FIELDS = `
         regularPrice
         salePrice
         imageUrl
+
         giftPriceToman
         giftRegularPriceToman
+
         codePriceToman
         codeRegularPriceToman
+
         attributes {
           name
           taxonomy
@@ -56,6 +65,7 @@ export const PRODUCT_CARD_FIELDS = `
 
 export const BANNER_FIELDS = `
   fragment BannerFields on CategoryBannerItem {
+    title
     secondimage
     subtitle
     imageUrl
@@ -65,10 +75,14 @@ export const BANNER_FIELDS = `
 
 export const CATEGORY_BASIC_FIELDS = `
   fragment CategoryBasicFields on ProductCategory {
+    id
+    databaseId
     name
     slug
+    count
+
     image {
-      sourceUrl(size: THUMBNAIL)
+      sourceUrl
     }
   }
 `;

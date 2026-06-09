@@ -106,11 +106,17 @@ export async function getHomePageData() {
         }
       }
     }
-  `, {}, ['products', 'banners', 'home']); 
+  `, 
+  {}, 
+  ['products', 'banners', 'home'],
+  { type: 'no-store' } // 👈 این خط رو دقیقاً اینجا اضافه کنید تا کش کاملاً غیرفعال بشه
+  ); 
 
   if (!data) {
     return { banners: [], featured: [], latest: [] };
   }
+
+  console.log("--- DATAYE BANNERAYE HOME ---", data.homeBanners);
 
   return {
     banners: data.homeBanners?.banners || [],
