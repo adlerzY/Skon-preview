@@ -1,4 +1,3 @@
-// توابع اصلی دریافت دیتا (ارتباط با صفحات نکس)
 import { fetchGraphQL } from './client';
 import { formatProducts } from './utils';
 import { HeaderCategoryNode, ProductNode } from './types';
@@ -218,15 +217,17 @@ export async function getProductDetail(slug: string) {
   const formatted = formatProducts([data.product], false);
   return formatted[0];
 }
+
 export async function getRegions() {
   const data = await fetchGraphQL(
     `
       query GetRegions {
-        paRegionShops(first: 10) {
+        allPaRegionShop(first: 10) {
           nodes {
             name
+            title
             slug
-            flag_url
+            flagUrl
           }
         }
       }
@@ -235,11 +236,11 @@ export async function getRegions() {
     ["regions"]
   );
 
-  if (!data?.paRegionShops?.nodes) return [];
+  if (!data?.allPaRegionShop?.nodes) return [];
 
-  return data.paRegionShops.nodes.map((r: any) => ({
-    name: r.name,
+  return data.allPaRegionShop.nodes.map((r: any) => ({
+    name: r.name || r.title,
     slug: r.slug,
-    flagUrl: r.flag_url || undefined,
+    flagUrl: r.flagUrl || undefined,
   }));
 }

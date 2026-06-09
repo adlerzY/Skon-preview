@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProductNode } from "@/lib/graphql";
 
-const formatToPersianDigits = (num: number) =>
-  num.toLocaleString("fa-IR");
+const formatToPersianDigits = (num: number) => {
+  return num.toLocaleString("fa-IR");
+};
 
 interface ProductCardProps {
   product: ProductNode;
@@ -16,6 +17,7 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
   const categoryName = category?.name || "بدون دسته";
   const categoryLogo = category?.image?.sourceUrl;
 
+  // منطق پیشرفته محاسبه قیمت بر اساس ریجن فعال
   const { currentMinPrice, regularMinPrice } = (() => {
     const variations = product.variationCards || [];
     
@@ -66,76 +68,109 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
     currentMinPrice &&
     regularMinPrice > currentMinPrice;
 
+  // مدیریت بج‌های محصول
   const badges = [];
   const productDate = product.date ? new Date(product.date).getTime() : 0;
   const now = Date.now();
   const isNew = productDate > 0 && now - productDate < 15 * 24 * 60 * 60 * 1000;
 
-  if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
-  if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
+  if (isActualSale) {
+    badges.push({ text: "حراج", color: "bg-brand-sabz" });
+  }
+  if (isNew) {
+    badges.push({ text: "جدید", color: "bg-brand-blue" });
+  }
 
+  // ساخت لینک پویا با در نظر گرفتن ریجن و ادیشن
   const regionParam = activeRegion ? `?region=${activeRegion}` : "";
   const href = product.defaultEdition
     ? `/${categorySlug}/${product.slug}${regionParam}${regionParam ? '&' : '?'}edition=${encodeURIComponent(product.defaultEdition)}`
     : `/${categorySlug}/${product.slug}${regionParam}`;
 
   return (
-    <Link href={href} className="group relative bg-[#15181f] border border-white/5 overflow-hidden flex flex-col h-full transition-all duration-300 hover:border-brand-blue/40 hover:shadow-[0_0_20px_rgba(0,116,224,0.1)]">
-      
-      {badges.length > 0 && (
-        <div className="absolute top-3 right-3 z-30 flex flex-col gap-1.5" dir="rtl">
-          {badges.map((b, i) => (
-            <span key={i} className={`${b.color} text-brand-bg text-[10px] font-black px-2.5 py-1 tracking-wider shadow-md`}>
-              {b.text}
-            </span>
-          ))}
-        </div>
-      )}
+    <Link
+      href={href}
+      className="group flex flex-col bg-brand-surface duration-200 hover:bg-brand-surface_hover overflow-hidden relative h-full min-h-[340px] md:min-h-[340px]"
+    >
+      {/* بخش بج‌ها */}
+      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
+        {badges.map((badge, index) => (
+          <span
+            key={index}
+            className={`${badge.color} text-brand-bg text-[10px] md:text-[13px] font-bold px-3.5 py-1 uppercase tracking-wider`}
+          >
+            {badge.text}
+          </span>
+        ))}
+      </div>
 
-      <div className="relative aspect-[16/10] w-full bg-brand-surface overflow-hidden">
+      {/* تصویر محصول */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0b0c10] flex-shrink-0">
         {product.image?.sourceUrl ? (
           <Image
             src={product.image.sourceUrl}
             alt={product.name || "تصویر محصول"}
             fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-all duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
-          <div className="w-full h-full bg-brand-surface flex items-center justify-center">
-            <span className="text-brand-m_khonsa text-xs">بدون تصویر</span>
+          <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">
+            بدون تصویر
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#15181f] via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#23252b] via-transparent to-transparent opacity-20"></div>
       </div>
 
-      <div className="p-4 flex flex-col flex-grow relative z-10 -mt-5">
-        <div className="flex items-center gap-2 mb-2.5">
-          {categoryLogo && (
-            <div className="relative w-4 h-4 overflow-hidden rounded-full shrink-0">
-              <Image src={categoryLogo} alt={categoryName} fill className="object-cover opacity-80" />
-            </div>
-          )}
-          <span className="text-[#8e98b0] text-[10px] font-bold tracking-wide truncate max-w-[120px]">
-            {categoryName}
-          </span>
-        </div>
+      {/* محتوای متنی کارت */}
+      <div className="p-4 md:p-5 flex flex-col flex-grow">
+        <div className="transform transition-transform duration-200 ease-out group-hover:-translate-y-1">
+          {/* لوگو و نام دسته بندی */}
+          <div className="flex items-center gap-2 mb-1">
+            {categoryLogo && (
+              <div className="relative w-5 h-5 opacity-90">
+                <Image
+                  src={categoryLogo}
+                  alt={categoryName}
+                  fill
+                  className="object-contain"
+                  sizes="20px"
+                />
+              </div>
+            )}
+            <span className="text-[#8e98b0] text-[12px] font-bold uppercase tracking-wide">
+              {categoryName}
+            </span>
+          </div>
 
-        <h3 className="text-white font-bold text-[14px] md:text-[15px] leading-6 group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 text-right" dir="rtl">
-          {product.name}
-        </h3>
+          {/* عنوان محصول */}
+          <h3 className="text-[#f3f4f6] font-bold text-base md:text-[17px] transition-colors duration-200 group-hover:text-white line-clamp-2 mb-1">
+            {product.name}
+          </h3>
 
-        <div className="hidden md:block mb-4 border-t border-white/[0.03] pt-3">
-          <div className="text-[#8e98b0] text-[11px] leading-5 line-clamp-2 text-right opacity-80" dir="rtl">
-            تحویل فوری و تضمین شده در کمترین زمان ممکن!
+          {/* توضیحات کوتاه محصول */}
+          <div
+            className="text-[#ffb400] text-[13px] mb-1 line-clamp-3 overflow-hidden"
+            dangerouslySetInnerHTML={{
+              __html: product.shortDescription || "خدمات دیجیتال و درون‌برنامه‌ای",
+            }}
+          />
+
+          {/* متن ضمانت تحویل */}
+          <div className="text-[#8e98b0] text-[10px] font-medium leading-relaxed mb-2 line-clamp-1">
+            تحویل آنی و تضمین شده در کمترین زمان ممکن!
           </div>
         </div>
 
+        {/* بخش قیمت نهایی (فوتر کارت) */}
         <div className="mt-auto flex items-end justify-between pt-3">
           <div className="flex flex-col gap-0.5">
             {currentMinPrice ? (
               <>
-                <span className="text-[#8e98b0] text-[11px] font-medium mb-1">شروع قیمت:</span>
+                <span className="text-[#8e98b0] text-[11px] font-medium mb-1">
+                  شروع قیمت:
+                </span>
+                
                 {isActualSale ? (
                   <div className="flex flex-col">
                     <span className="text-[#75dd04] font-bold text-base md:text-[17px] flex items-center gap-1.5">
@@ -149,23 +184,17 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
                 ) : (
                   <span className="text-white font-bold text-base md:text-[17px] flex items-center gap-1.5">
                     {formatToPersianDigits(currentMinPrice)}
-                    <span className="text-[12px] font-normal text-[#8e98b0]\">تومان</span>
+                    <span className="text-[12px] font-normal text-[#8e98b0]">تومان</span>
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-[#ff4e4e] font-bold text-sm md:text-[15px]">ناموجود</span>
+              <span className="text-[#ff4e4e] font-bold text-sm md:text-base mt-2">
+                ناموجود
+              </span>
             )}
           </div>
-
-          <div className="w-8 h-8 rounded-sm bg-brand-surface border border-white/5 flex items-center justify-center text-brand-m_khonsa group-hover:bg-brand-blue group-hover:text-brand-bg group-hover:border-brand-blue transition-all duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </div>
         </div>
-
       </div>
     </Link>
   );
