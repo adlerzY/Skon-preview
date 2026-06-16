@@ -7,15 +7,14 @@ import MobileMenu from "./MobileMenu";
 import HeaderSearch from "./HeaderSearch";
 import HeaderMenuSwitcher from "./HeaderMenuSwitcher";
 import HeaderCart from "./HeaderCart";
-import RegionSwitcher from "./RegionSwitcher"; // اضافه شد
+import RegionSwitcher from "./RegionSwitcher";
 
-import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql"; // getRegions اضافه شد
+import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql";
 
 const ACTION_BUTTON_CLASSES = "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
 const ICON_WRAPPER_CLASSES = "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
 export default async function Header() {
-  // گرفتن همزمان دسته‌بندی‌ها، بلاگ‌ها و ریژن‌ها برای پرفورمنس بهتر
   const [shopGames, blogCats, regions] = await Promise.all([
     getHeaderCategories(),
     getHeaderBlogCategories(),
@@ -27,7 +26,7 @@ export default async function Header() {
       
       <div className="hidden lg:flex w-full justify-between items-center h-[60px] container mx-auto px-6 max-w-[1600px]">
         <div className="flex items-center h-full gap-8">
-          <Link href="/" className="flex items-center shrink-0" aria-label="Home">
+          <Link href="/" className="flex items-center shrink-0" aria-label="صفحه اصلی">
             <Image
               src="/images/arena2battleLogo.webp"
               alt="Arena2Battle"
@@ -41,17 +40,25 @@ export default async function Header() {
           <DesktopNavLinks />
         </div>
 
-        <div className="flex items-center ">
+        <div className="flex items-center">
           <Link href="/download" className={ACTION_BUTTON_CLASSES}>
             <span className={ICON_WRAPPER_CLASSES}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
             </span>
             <span>دانلود بازی</span>
           </Link>
 
           <Link href="/support" className={ACTION_BUTTON_CLASSES}>
             <span className={ICON_WRAPPER_CLASSES}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
             </span>
             <span>پشتیبانی</span>
           </Link>
@@ -63,24 +70,19 @@ export default async function Header() {
       <div className="hidden lg:flex w-full justify-center bg-brand-bg">
         <div className="flex w-full container mx-auto px-6 max-w-[1600px] py-[10px] gap-[8px] h-[80px]">
           <div className="flex items-center justify-between flex-1 bg-brand-surface h-full pl-2 rounded-[5px]">
-            
             <HeaderCart />
-
             <HeaderMenuSwitcher shopItems={shopGames} blogItems={blogCats} />
-
           </div>
 
           <HeaderSearch />
 
-          {/* ریژن سوییچر جایگزین پورتال گیلد شد */}
           <div className="flex items-center justify-center h-full">
             <RegionSwitcher regions={regions} />
           </div>
         </div>
       </div>
 
-      <MobileMenu />
-
+    <MobileMenu shopItems={shopGames} blogItems={blogCats} />
     </header>
   );
 }

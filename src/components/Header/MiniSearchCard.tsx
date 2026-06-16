@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ProductNode } from "@/lib/graphql";
 
 export default function MiniSearchCard({ product }: { product: ProductNode }) {
-  // ✅ مسیر درست: /categorySlug/productSlug
   const category = product.productCategories?.nodes?.[0];
   const categoryName = category?.name || "دسته‌بندی نامشخص";
   const categorySlug = category?.slug || "uncategorized";

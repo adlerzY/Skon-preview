@@ -10,7 +10,7 @@ import ProductReviews from "@/components/ProductReviews";
 interface Props {
   product: ProductNode;
   initialEdition?: string;
-  activeRegion?: string; // ✅ اضافه شد
+  activeRegion?: string;
 }
 
 const checkStockGlobally = (v: VariationCard) => {
@@ -21,7 +21,7 @@ const checkStockGlobally = (v: VariationCard) => {
   );
 };
 
-export default function ProductPageClient({ product, initialEdition, activeRegion }: Props) { // ✅ دریافت activeRegion
+export default function ProductPageClient({ product, initialEdition, activeRegion }: Props) {
   const variations = product.variationCards || [];
   const containerRef = useRef<HTMLDivElement>(null);
   const [trackOffset, setTrackOffset] = useState(0);
@@ -229,7 +229,6 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
     });
   }, [groupedAttributes, variations]);
 
-  // ✅ هماهنگ‌سازی خودکار متغیر ریجن داخل صفحه با تغییر ریجن از هدر (URL)
   useEffect(() => {
     if (!activeRegion) return;
 

@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/Header/Header";
 import SubHeaderBar from "@/components/Header/SubHeaderBar";
-// ✅ import از context/ — نه constants/
 import { CartProvider } from "@/context/CartContext";
 
 const yekanFont = localFont({

@@ -19,16 +19,13 @@ interface DesktopGamesNavProps {
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  // مقدار اولیه را تعداد کل بازی‌ها قرار می‌دهیم تا در اولین رندر مشکلی پیش نیاید
   const [visibleCount, setVisibleCount] = useState(games?.length || 0);
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const calculateItems = useCallback((width: number) => {
     if (!games || games.length === 0) return 0;
-    // اگر عرض کانتینر از مجموع عرض بازی‌ها بیشتر بود، همه را نشان بده
     if (width >= games.length * 60) return games.length;
-    // در غیر این صورت، فضا را منهای ۵۰ پیکسل (دکمه پلاس) کرده و بر ۶۰ پیکسل (عرض هر آیتم) تقسیم کن
     return Math.max(1, Math.floor((width - 50) / 60));
   }, [games]);
 
@@ -39,7 +36,6 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   useEffect(() => {
     if (!containerRef.current || !games || games.length === 0) return;
 
-    // اندازه‌گیری دقیق اولیه عرض کانتینر
     const initialWidth = containerRef.current.getBoundingClientRect().width || containerRef.current.offsetWidth;
     if (initialWidth > 0) {
       setVisibleCount(calculateItems(initialWidth));
@@ -51,7 +47,6 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
       const { width } = entries[0].contentRect;
       
       rafId = window.requestAnimationFrame(() => {
-        // فقط در صورتی که کانتینر فضای معتبری داشت محاسبات تغییر لایوت را انجام بده
         if (width > 0) {
           setVisibleCount(calculateItems(width));
         }

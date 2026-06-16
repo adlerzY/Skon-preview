@@ -84,7 +84,7 @@ export default function VariationSelector({
                       !isValidBtn
                         ? "opacity-25 cursor-not-allowed bg-brand-bg text-brand-surface_m/40 border-brand-surface_hover/30"
                         : isSelected
-                        ? "bg-brand-blue/10 border-brand-blue text-brand-blue font-bold shadow-[0_0_12px_rgba(0,116,224,0.15)]"
+                        ? "bg-brand-blue/10 border-brand-blue text-brand-white font-bold shadow-[0_0_12px_rgba(0,116,224,0.15)]"
                         : "bg-brand-surface text-brand-m_khonsa border-brand-surface_hover hover:border-brand-white hover:text-brand-active"
                     }`}
                   >

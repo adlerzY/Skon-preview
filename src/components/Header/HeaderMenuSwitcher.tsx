@@ -6,7 +6,6 @@ import DesktopGamesNav, { HeaderGameItem } from "./DesktopGamesNav";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface HeaderMenuSwitcherProps {
-  // ✅ type صحیح به جای any[]
   shopItems: HeaderGameItem[];
   blogItems: HeaderGameItem[];
 }

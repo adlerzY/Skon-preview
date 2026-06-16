@@ -4,13 +4,23 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { GAMES_DATA } from "@/context/games";
 import { useProductSearch } from "./hooks/useProductSearch";
 import MiniSearchCard from "./MiniSearchCard";
 import { useCart } from "@/context/CartContext";
 import Skeleton from "@/components/ui/Skeleton";
 
-export default function MobileMenu() {
+interface MobileMenuItem {
+  title: string;
+  img: string;
+  link: string;
+}
+
+interface MobileMenuProps {
+  shopItems: MobileMenuItem[];
+  blogItems: MobileMenuItem[];
+}
+
+export default function MobileMenu({ shopItems, blogItems }: MobileMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { cart } = useCart();
@@ -34,7 +44,9 @@ export default function MobileMenu() {
     }
   }, [isSearchActive]);
 
-  const activeStore = pathname === "/" || pathname === "/shop";
+  const isBlogSection = pathname?.startsWith("/blog");
+  const activeStore = pathname === "/" || pathname === "/shop" || !isBlogSection;
+  const activeData = isBlogSection ? blogItems : shopItems;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,15 +198,15 @@ export default function MobileMenu() {
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
           <nav className="flex flex-col text-right w-full">
             <Link href="/" onClick={() => setIsOpen(false)} onTouchStart={() => router.prefetch("/")} className={`p-4 text-sm font-bold border-b border-brand-surface transition-colors ${activeStore ? "text-brand-blue bg-brand-surface/20" : "text-brand-white hover:bg-brand-surface/30"}`}>فروشگاه</Link>
-            <Link href="/blog" onClick={() => setIsOpen(false)} onTouchStart={() => router.prefetch("/blog")} className={`p-4 text-sm font-bold border-b border-brand-surface transition-colors ${pathname?.startsWith("/blog") ? "text-brand-blue bg-brand-surface/20" : "text-brand-white hover:bg-brand-surface/30"}`}>بلاگ اخبار</Link>
+            <Link href="/blog" onClick={() => setIsOpen(false)} onTouchStart={() => router.prefetch("/blog")} className={`p-4 text-sm font-bold border-b border-brand-surface transition-colors ${isBlogSection ? "text-brand-blue bg-brand-surface/20" : "text-brand-white hover:bg-brand-surface/30"}`}>بلاگ اخبار</Link>
             
             <div className="flex flex-col w-full">
               <button onClick={() => setShopOpen(!shopOpen)} className="flex items-center justify-between p-4 text-sm font-bold text-brand-white hover:bg-brand-surface/30 transition-colors border-b border-brand-surface bg-transparent outline-none">
-                بازی‌ها
+                {isBlogSection ? "دسته‌بندی‌های اخبار" : "بازی‌ها"}
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" className={`transition-transform duration-200 ${shopOpen ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6"></path></svg>
               </button>
               <div className={`grid grid-cols-4 gap-2 bg-[#111215] border-t border-[#23252b] transition-all overflow-hidden ${shopOpen ? "max-h-[500px] p-2.5 opacity-100" : "max-h-0 p-0 opacity-0"}`}>
-                {GAMES_DATA.map((game, i) => (
+                {activeData.map((game, i) => (
                   <Link 
                     key={i} 
                     href={game.link} 
