@@ -67,7 +67,7 @@ export default function CategoryHero({ banners }: Props) {
           <div className="absolute inset-0 bg-gradient-to-l from-[#111215] via-[#111215]/80 to-transparent w-full md:w-2/3 z-20"></div>
         </div>
 
-        <div key={activeIndex} className="relative h-full flex flex-col justify-center px-6 md:px-12 w-full max-w-2xl z-30 animate-in fade-in duration-700">
+        <div key={activeIndex} className="relative h-full flex flex-col justify-center px-[5.5rem] md:px-[5.5rem] w-full max-w-2xl z-30 animate-in fade-in duration-700">
           {currentBanner["secondimage"] && (
             <div className="relative w-48 h-16 md:w-64 md:h-24 mb-2">
               <Image
