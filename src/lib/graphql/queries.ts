@@ -76,9 +76,15 @@ export async function getCategoryArchive(slug: string) {
 
   if (!categoryData?.productCategory) return null;
 
+  const safeBanners = (bannersData?.productCategory?.banners || []).map((banner: any) => ({
+    ...banner,
+    imageUrl: banner.imageUrl ? encodeURI(banner.imageUrl) : '',
+    secondimage: banner.secondimage ? encodeURI(banner.secondimage) : '',
+  }));
+
   return {
     ...categoryData.productCategory,
-    banners: bannersData?.productCategory?.banners || [],
+    banners: safeBanners,
     products: {
       nodes: formatProducts(categoryData.products?.nodes || [], true)
     }
@@ -109,17 +115,21 @@ export async function getHomePageData() {
   `, 
   {}, 
   ['products', 'banners', 'home'],
-  { type: 'no-store' } // 👈 این خط رو دقیقاً اینجا اضافه کنید تا کش کاملاً غیرفعال بشه
+  { type: 'no-store' }
   ); 
 
   if (!data) {
     return { banners: [], featured: [], latest: [] };
   }
 
-  console.log("--- DATAYE BANNERAYE HOME ---", data.homeBanners);
+  const safeBanners = (data.homeBanners?.banners || []).map((banner: any) => ({
+    ...banner,
+    imageUrl: banner.imageUrl ? encodeURI(banner.imageUrl) : '',
+    secondimage: banner.secondimage ? encodeURI(banner.secondimage) : '',
+  }));
 
   return {
-    banners: data.homeBanners?.banners || [],
+    banners: safeBanners,
     featured: formatProducts(data.featuredProducts?.nodes || [], true),
     latest: formatProducts(data.latestProducts?.nodes || [], true)
   };

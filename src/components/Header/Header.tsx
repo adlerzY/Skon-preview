@@ -1,4 +1,3 @@
-// components/Header/Header.tsx
 import Link from "next/link";
 import Image from "next/image";
 import UserActions from "./UserActions";
@@ -9,7 +8,7 @@ import HeaderMenuSwitcher from "./HeaderMenuSwitcher";
 import HeaderCart from "./HeaderCart";
 import RegionSwitcher from "./RegionSwitcher";
 import { Download, HelpCircle } from "lucide-react";
-
+import { Suspense } from "react";
 import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql";
 
 const ACTION_BUTTON_CLASSES = "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
@@ -24,7 +23,6 @@ export default async function Header() {
 
   return (
     <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-[#15171e]" dir="rtl">
-      
       <div className="hidden lg:flex w-full justify-between items-center h-[60px] container mx-auto px-6 max-w-[1600px]">
         <div className="flex items-center h-full gap-8">
           <Link href="/" className="flex items-center shrink-0" aria-label="صفحه اصلی">
@@ -70,12 +68,14 @@ export default async function Header() {
           <HeaderSearch />
 
           <div className="flex items-center justify-center h-full">
-            <RegionSwitcher regions={regions} />
+            <Suspense fallback={<div className="w-[100px] h-10 bg-brand-surface/50 animate-pulse rounded-[5px]" />}>
+              <RegionSwitcher regions={regions} />
+            </Suspense>
           </div>
         </div>
       </div>
 
-    <MobileMenu shopItems={shopGames} blogItems={blogCats} />
+      <MobileMenu shopItems={shopGames} blogItems={blogCats} />
     </header>
   );
 }
