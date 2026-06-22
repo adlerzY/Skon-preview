@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductNode, VariationCard } from "@/lib/graphql";
 import DeliveryAndPrice from "@/components/product/DeliveryAndPrice";
 import VariationSelector from "@/components/product/VariationSelector";
@@ -26,10 +27,8 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
   const containerRef = useRef<HTMLDivElement>(null);
   const [trackOffset, setTrackOffset] = useState(0);
 
-  // هماهنگی با پیش‌فرض سوییچر هدر در صورت نبودن ریجن در URL
-  const effectiveRegion = activeRegion || "eu";
+  const effectiveRegion = !activeRegion || activeRegion === "$undefined" || activeRegion === "undefined" ? "eu-global" : activeRegion;
 
-  // استخراج اتریبیوت‌های نمایشی و حذف کامل ریجن از لایه نمایش UI
   const groupedAttributes = useMemo(() => {
     const map = new Map<string, Set<{ value: string; flagUrl: string }>>();
     variations.forEach(v => {
@@ -73,35 +72,50 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
     }));
   }, [variations]);
 
-  // پیدا کردن نام اتریبیوت ریجن و مچ کردن آن با ریجن فعال (با احتساب فالبک لود اول)
   const regionInfo = useMemo(() => {
     let repoName = "";
-    const values = new Set<string>();
+    let matchedValue = "";
 
-    variations.forEach(v => {
-      v.attributes?.forEach(a => {
+    for (const v of variations) {
+      if (!v.attributes) continue;
+      for (const a of v.attributes) {
         const clean = a.name.replace('pa_', '').replace('attribute_', '').toLowerCase();
         if (clean.includes('region') || clean.includes('ریجن')) {
           repoName = a.name;
-          values.add(a.value);
+          const valLower = a.value.toLowerCase();
+          const slugLower = (a as any).slug?.toLowerCase() || "";
+          const regionLower = effectiveRegion.toLowerCase();
+
+          if (
+            valLower === regionLower ||
+            slugLower === regionLower ||
+            ((regionLower === 'eu' || regionLower === 'eu-global') && (valLower.includes('eu') || valLower.includes('اروپا') || slugLower.includes('eu'))) ||
+            (regionLower === 'us' && (valLower.includes('us') || valLower.includes('آمریکا') || valLower.includes('امریکا') || slugLower === 'us'))
+          ) {
+            matchedValue = a.value;
+            break;
+          }
         }
-      });
-    });
+      }
+      if (matchedValue) break;
+    }
 
-    if (!repoName) return null;
+    if (!matchedValue && repoName) {
+      for (const v of variations) {
+        const found = v.attributes?.find(a => {
+          const clean = a.name.replace('pa_', '').replace('attribute_', '').toLowerCase();
+          return clean.includes('region') || clean.includes('ریجن');
+        });
+        if (found) {
+          matchedValue = found.value;
+          break;
+        }
+      }
+    }
 
-    const matchedValue = Array.from(values).find(val => {
-      const valLower = val.toLowerCase();
-      const regionLower = effectiveRegion.toLowerCase();
-      return valLower === regionLower || 
-             (regionLower === 'eu' && (valLower.includes('eu') || valLower.includes('اروپا'))) ||
-             (regionLower === 'us' && (valLower.includes('us') || valLower.includes('آمریکا')));
-    });
-
-    return matchedValue ? { name: repoName, value: matchedValue } : null;
+    return repoName && matchedValue ? { name: repoName, value: matchedValue } : null;
   }, [variations, effectiveRegion]);
 
-  // پیدا کردن اولین اتریبیوت معتبر با در نظر گرفتن ریجن فعال
   const findFirstValidAttributes = useCallback(
     (targetEdition?: string): Record<string, string> => {
       const resultAttrs: Record<string, string> = {};
@@ -140,12 +154,10 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
     findFirstValidAttributes(initialEdition)
   );
 
-  // واکنش آنی به تغییر ریجن هدر یا ادیشن اولیه
   useEffect(() => {
     setSelectedAttrs(findFirstValidAttributes(initialEdition));
   }, [initialEdition, regionInfo, findFirstValidAttributes]);
 
-  // محاسبه دقیق قیمت کف و قیمت‌های خط‌خورده ریجن فعال
   const combinedAggregateVar = useMemo(() => {
     if (variations.length === 0) return null;
 
@@ -355,7 +367,15 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
                   disabled={currentIndex === allGalleryImages.length - 1}
                   className="absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                  <ChevronLeft
+                    width={20}
+                    height={60}
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
                 </button>
                 <button
                   type="button"
@@ -363,7 +383,15 @@ export default function ProductPageClient({ product, initialEdition, activeRegio
                   disabled={currentIndex === 0}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:bg-opacity-50 border-opacity-10 disabled:pointer-events-none"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 13 12 9 6" /></svg>
+                  <ChevronRight
+                    width={20}
+                    height={60}
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
                 </button>
               </>
             )}
