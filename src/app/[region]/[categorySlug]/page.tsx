@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 interface CategoryPageProps {
   params: Promise<{
     categorySlug: string;
+    region?: string;
   }>;
   searchParams: Promise<{
     region?: string;
@@ -17,18 +18,17 @@ interface CategoryPageProps {
 export const dynamic = "force-dynamic";
 
 export default async function CategoryArchivePage({ params, searchParams }: CategoryPageProps) {
-  const { categorySlug } = await params;
+  const { categorySlug, region: paramsRegion } = await params;
   const { region: urlRegion } = await searchParams;
   const cookieStore = await cookies();
-  const activeRegion = urlRegion || cookieStore.get("store_region")?.value || "eu";
+  const activeRegion = paramsRegion || urlRegion || cookieStore.get("store_region")?.value || "eu";
 
-  const categoryData = await getCategoryArchive(categorySlug);
+  const categoryData = await getCategoryArchive(categorySlug, activeRegion);
 
   if (!categoryData) {
     notFound();
   }
   const { name, products, banners } = categoryData;
-  
   const categoryProducts = products?.nodes || [];
 
   return (

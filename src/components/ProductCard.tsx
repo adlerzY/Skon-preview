@@ -7,7 +7,7 @@ const formatToPersianDigits = (num: number) => {
 };
 
 interface ProductCardProps {
-  product: ProductNode;
+  product: ProductNode & { activeRegion?: string; defaultEdition?: string };
   activeRegion?: string;
 }
 
@@ -17,53 +17,8 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
   const categoryName = category?.name || "بدون دسته";
   const categoryLogo = category?.image?.sourceUrl;
 
-  const { currentMinPrice, regularMinPrice } = (() => {
-    const variations = product.variationCards || [];
-    
-    if (activeRegion && variations.length > 0) {
-      const filteredVars = variations.filter(v => 
-        v.attributes?.some(attr => {
-          const cleanName = attr.name.replace('pa_', '').replace('attribute_', '').toLowerCase();
-          const isRegionAttr = cleanName.includes('region') || cleanName.includes('ریجن');
-          if (!isRegionAttr) return false;
-
-          const valLower = attr.value.toLowerCase();
-          const regionLower = activeRegion.toLowerCase();
-          return valLower === regionLower || 
-                 (regionLower === 'eu' && (valLower.includes('eu') || valLower.includes('اروپا'))) ||
-                 (regionLower === 'us' && (valLower.includes('us') || valLower.includes('آمریکا')));
-        })
-      );
-
-      if (filteredVars.length > 0) {
-        let minPrice = Infinity;
-        let minRegular: number | null = null;
-
-        filteredVars.forEach(mv => {
-          const prices = [mv.parsedPrice, mv.parsedGiftPrice, mv.parsedCodePrice].filter(
-            p => p !== null && p !== undefined && p !== 'disabled'
-          ) as number[];
-          
-          if (prices.length > 0) {
-            const cardMin = Math.min(...prices);
-            if (cardMin < minPrice) {
-              minPrice = cardMin;
-              minRegular = mv.regularPrice ? Number(mv.regularPrice) : null;
-            }
-          }
-        });
-
-        if (minPrice !== Infinity) {
-          return { currentMinPrice: minPrice, regularMinPrice: minRegular };
-        }
-      }
-
-      return { currentMinPrice: null, regularMinPrice: null };
-    }
-
-    return { currentMinPrice: product.parsedPrice, regularMinPrice: product.parsedRegularPrice };
-  })();
-
+  const currentMinPrice = product.parsedPrice;
+  const regularMinPrice = product.parsedRegularPrice ? Number(product.parsedRegularPrice) : null;
   const isActualSale = regularMinPrice && currentMinPrice && regularMinPrice > currentMinPrice;
 
   const badges = [];
@@ -74,16 +29,8 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
   if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
   if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
 
-  const urlParams = new URLSearchParams();
-  if (activeRegion) {
-    urlParams.set("region", activeRegion);
-  }
-  if (product.defaultEdition) {
-    urlParams.set("edition", product.defaultEdition);
-  }
-  
-  const queryString = urlParams.toString();
-  const href = `/${categorySlug}/${product.slug}${queryString ? `?${queryString}` : ""}`;
+  const targetRegion = product.activeRegion || activeRegion || "eu";
+  const href = `/${targetRegion}/${categorySlug}/${product.slug}`;
 
   return (
     <Link
@@ -134,7 +81,7 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
           />
 
           <div className="text-[#8e98b0] text-[10px] font-medium leading-relaxed mb-2 line-clamp-1">
-            تحویل آنی و تضمین شده در کمترین زمان ممکن!
+            تحویل آنی و تضمین شده در ریجن {targetRegion.toUpperCase()}
           </div>
         </div>
 

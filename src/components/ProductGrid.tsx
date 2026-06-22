@@ -4,7 +4,7 @@ import { ProductNode } from "@/lib/graphql";
 interface ProductGridProps {
   products: ProductNode[];
   title: string;
-  activeRegion?: string; // ✅ دریافت ریجن از صفحه اصلی آرشیو
+  activeRegion?: string;
 }
 
 export default function ProductGrid({ products, title, activeRegion }: ProductGridProps) {

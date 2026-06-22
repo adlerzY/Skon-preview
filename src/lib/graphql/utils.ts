@@ -1,13 +1,17 @@
 import { parsePrice } from './client';
 import { ProductNode, VariationCard } from './types';
 
-export const formatProducts = (products: ProductNode[], archiveMode: boolean = false): ProductNode[] => {
+export const formatProducts = (
+  products: ProductNode[], 
+  archiveMode: boolean = false, 
+  activeRegion: string = 'eu'
+): ProductNode[] => {
   const formattedProducts: ProductNode[] = [];
 
   products.forEach(product => {
     const rawVariations = product.variationCards || [];
 
-    const parsedVariationCards = rawVariations.map((v: VariationCard) => {
+    const parsedVariationCards = rawVariations.map((v: any) => {
       const pGift = (v.giftPriceToman === 'disabled' || !v.giftPriceToman
         ? 'disabled'
         : parsePrice(v.giftPriceToman) ?? 'disabled') as number | "disabled";
@@ -36,61 +40,72 @@ export const formatProducts = (products: ProductNode[], archiveMode: boolean = f
     });
 
     if (archiveMode && parsedVariationCards.length > 0) {
-      const groupedVariations = new Map<string, typeof parsedVariationCards[0]>();
+      const regionFilteredVariations = parsedVariationCards.filter(
+        v => v.regionSlug?.toLowerCase() === activeRegion.toLowerCase()
+      );
 
-      parsedVariationCards.forEach(v => {
-        const mainAttr = v.attributes && v.attributes.length > 0
-          ? v.attributes[0].value
-          : 'بدون‌نسخه';
+      if (regionFilteredVariations.length === 0) return;
 
-        if (!groupedVariations.has(mainAttr)) {
-          groupedVariations.set(mainAttr, v);
+      const groupedVariations = new Map<string, typeof regionFilteredVariations[0]>();
+
+      regionFilteredVariations.forEach(v => {
+        const editionAttr = v.attributes?.find((a: any) => {
+          const cleanName = a.name?.replace('pa_', '').replace('attribute_', '').toLowerCase() || '';
+          return !cleanName.includes('region') && !cleanName.includes('ریجن');
+        })?.value || 'نسخه اصلی';
+
+        if (!groupedVariations.has(editionAttr)) {
+          groupedVariations.set(editionAttr, v);
         } else {
-          const existing = groupedVariations.get(mainAttr)!;
+          const existing = groupedVariations.get(editionAttr)!;
           const currentPrice = v.parsedPrice || Infinity;
           const existingPrice = existing.parsedPrice || Infinity;
           if (currentPrice < existingPrice) {
-            groupedVariations.set(mainAttr, v);
+            groupedVariations.set(editionAttr, v);
           }
         }
       });
 
-      groupedVariations.forEach((representativeVar, attrValue) => {
+      groupedVariations.forEach((representativeVar, editionValue) => {
+        const validPrices = [
+          representativeVar.parsedPrice,
+          representativeVar.parsedGiftPrice,
+          representativeVar.parsedCodePrice
+        ].filter(p => p !== null && p !== undefined && p !== 'disabled') as number[];
+
+        const currentMinPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
+
         formattedProducts.push({
           ...product,
           id: `${product.id}-${representativeVar.databaseId}`,
-          name: `${product.name} - ${attrValue}`,
+          name: `${product.name} - ${editionValue}`,
           image: representativeVar.imageUrl
             ? { sourceUrl: representativeVar.imageUrl }
             : product.image,
           price: representativeVar.price,
           regularPrice: representativeVar.regularPrice,
           salePrice: representativeVar.salePrice,
-          parsedPrice: representativeVar.parsedPrice,
+          parsedPrice: currentMinPrice, 
           parsedRegularPrice: representativeVar.parsedRegularPrice,
-          variationCards: [],
+          variationCards: regionFilteredVariations, 
           isVariation: true,
           defaultVariationId: representativeVar.databaseId,
-          // ✅ slug تمیز — edition جدا نگه داشته میشه
           slug: product.slug,
-          defaultEdition: attrValue,
+          defaultEdition: editionValue,
+          activeRegion: activeRegion 
         });
       });
     } else {
       const firstVarPrice = parsedVariationCards.length > 0 ? parsedVariationCards[0].parsedPrice : null;
       const firstVarRegularPrice = parsedVariationCards.length > 0 ? parsedVariationCards[0].parsedRegularPrice : null;
 
-      formattedProducts.push({
-        ...product,
-        parsedPrice: product.variationCards && product.variationCards.length > 0
-          ? firstVarPrice
-          : parsePrice(product.price),
-        parsedRegularPrice: product.variationCards && product.variationCards.length > 0
-          ? firstVarRegularPrice
-          : parsePrice(product.regularPrice),
-        variationCards: parsedVariationCards,
-        isVariation: parsedVariationCards.length > 0,
-      });
+          formattedProducts.push({
+            ...product,
+            parsedPrice: product.variationCards && product.variationCards.length > 0 ? firstVarPrice : parsePrice(product.price),
+            parsedRegularPrice: product.variationCards && product.variationCards.length > 0 ? firstVarRegularPrice : parsePrice(product.regularPrice),
+            variationCards: parsedVariationCards,
+            isVariation: parsedVariationCards.length > 0,
+          });
     }
   });
 

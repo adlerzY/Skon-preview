@@ -9,12 +9,15 @@ interface ProductPageProps {
     categorySlug: string;
     productSlug?: string;
     slug?: string;
+    region?: string;
   }>;
   searchParams: Promise<{
     edition?: string;
     region?: string;
   }>;
 }
+
+export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const resolvedParams = await params;
@@ -33,7 +36,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
 
   const cookieStore = await cookies();
-  const activeRegion = resolvedSearchParams.region || cookieStore.get("store_region")?.value || "eu";
+  const activeRegion = resolvedParams.region || resolvedSearchParams.region || cookieStore.get("store_region")?.value || "eu";
 
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">

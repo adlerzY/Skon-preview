@@ -9,12 +9,18 @@ import HeaderCart from "./HeaderCart";
 import RegionSwitcher from "./RegionSwitcher";
 import { Download, HelpCircle } from "lucide-react";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql";
 
-const ACTION_BUTTON_CLASSES = "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
-const ICON_WRAPPER_CLASSES = "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
+const ACTION_BUTTON_CLASSES = 
+  "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
+const ICON_WRAPPER_CLASSES = 
+  "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
 export default async function Header() {
+  const cookieStore = await cookies();
+  const activeRegion = cookieStore.get("store_region")?.value || "eu";
+
   const [shopGames, blogCats, regions] = await Promise.all([
     getHeaderCategories(),
     getHeaderBlogCategories(),
@@ -23,7 +29,7 @@ export default async function Header() {
 
   return (
     <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-[#15171e]" dir="rtl">
-      <div className="hidden lg:flex w-full justify-between items-center h-[60px] container mx-auto px-6 max-w-[1600px]">
+      <div className="hidden lg:flex w-full justify-between items-center h-[60px] border-b border-white/5 px-6 max-w-[1600px] mx-auto">
         <div className="flex items-center h-full gap-8">
           <Link href="/" className="flex items-center shrink-0" aria-label="صفحه اصلی">
             <Image
@@ -68,14 +74,16 @@ export default async function Header() {
           <HeaderSearch />
 
           <div className="flex items-center justify-center h-full">
-            <Suspense fallback={<div className="w-[100px] h-10 bg-brand-surface/50 animate-pulse rounded-[5px]" />}>
-              <RegionSwitcher regions={regions} />
+            <Suspense fallback={<div className="w-[140px] h-[60px] bg-brand-surface/50 animate-pulse rounded-[4px]" />}>
+              <RegionSwitcher regions={regions} initialRegion={activeRegion} />
             </Suspense>
           </div>
         </div>
       </div>
 
-      <MobileMenu shopItems={shopGames} blogItems={blogCats} />
+      <div className="lg:hidden flex items-center justify-between h-[60px] px-4 bg-brand-bg border-b border-white/5">
+        <MobileMenu shopItems={shopGames} blogItems={blogCats} />
+      </div>
     </header>
   );
 }

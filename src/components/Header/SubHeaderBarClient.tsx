@@ -1,4 +1,3 @@
-// components/Header/SubHeaderBarClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -8,13 +7,20 @@ export default function SubHeaderBarClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  if (pathname === "/") return null;
-
   const pathSegments = pathname.split("/").filter((item) => item);
-  const edition = searchParams.get("edition");
+  
+  const knownRegions = ["eu", "us", "tr"]; 
+  const isOnlyRegion = pathSegments.length === 1 && knownRegions.includes(pathSegments[0].toLowerCase());
 
-  const isShop = !pathname.startsWith("/blog") && 
-                 !["/download", "/support", "/guild-portal"].includes(pathname);
+  if (pathname === "/" || pathSegments.length === 0 || isOnlyRegion) return null;
+
+  const filteredSegments = knownRegions.includes(pathSegments[0].toLowerCase()) 
+    ? pathSegments.slice(1) 
+    : pathSegments;
+
+  if (filteredSegments.length === 0) return null;
+
+  const edition = searchParams.get("edition");
 
   const getSegmentLabel = (segment: string) => {
     const maps: Record<string, string> = {
@@ -29,8 +35,6 @@ export default function SubHeaderBarClient() {
   return (
     <div className="w-full" dir="rtl">
       <div className="w-full container mx-auto px-6 max-w-[1600px] h-[40px] flex items-center justify-between">
-        
-        {/* مپ سمت راست */}
         <nav className="flex items-center gap-2 text-[13px] font-medium text-white/80">
           <Link href="/" className="hover:text-brand-white transition-colors flex items-center gap-1">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -39,9 +43,10 @@ export default function SubHeaderBarClient() {
             </svg>
           </Link>
 
-          {pathSegments.map((segment, index) => {
-            const href = `/${pathSegments.slice(0, index + 1).join("/")}`;
-            const isLast = index === pathSegments.length - 1 && !edition;
+          {filteredSegments.map((segment, index) => {
+            const originalIndex = pathSegments.indexOf(segment);
+            const href = `/${pathSegments.slice(0, originalIndex + 1).join("/")}`;
+            const isLast = index === filteredSegments.length - 1 && !edition;
             const label = getSegmentLabel(segment);
 
             return (
@@ -65,7 +70,6 @@ export default function SubHeaderBarClient() {
             </div>
           )}
         </nav>
-
       </div>
     </div>
   );

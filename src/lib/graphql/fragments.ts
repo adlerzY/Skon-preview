@@ -44,6 +44,7 @@ export const PRODUCT_CARD_FIELDS = `
         regularPrice
         salePrice
         imageUrl
+        regionSlug
 
         giftPriceToman
         giftRegularPriceToman

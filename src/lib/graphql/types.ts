@@ -1,4 +1,3 @@
-// تایپ‌ها و اینترفیس‌های کل پروژه
 export interface VariationCard {
   databaseId: number;
   name: string;
@@ -18,6 +17,7 @@ export interface VariationCard {
   parsedGiftRegularPrice?: number | 'disabled';
   parsedCodePrice?: number | 'disabled';
   parsedCodeRegularPrice?: number | 'disabled';
+  regionSlug?: string;
 }
 
 export interface ProductNode {
@@ -41,6 +41,7 @@ export interface ProductNode {
   isVariation?: boolean;
   defaultVariationId?: number;
   defaultEdition?: string;
+  activeRegion?: string;
   productCategories?: {
     nodes: Array<{
       name: string;

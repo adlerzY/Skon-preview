@@ -31,7 +31,7 @@ export async function getHeaderCategories() {
     }));
 }
 
-export async function getProducts(categorySlug?: string) {
+export async function getProducts(categorySlug?: string, activeRegion: string = 'eu') {
   const tags = categorySlug ? ['products', `category-${categorySlug}`] : ['products'];
   const data = await fetchGraphQL(`
     ${PRODUCT_CARD_FIELDS}
@@ -44,10 +44,10 @@ export async function getProducts(categorySlug?: string) {
   
   if (!data?.products?.nodes) return [];
 
-  return formatProducts(data.products.nodes, true);
+  return formatProducts(data.products.nodes, true, activeRegion);
 }
 
-export async function getCategoryArchive(slug: string) {
+export async function getCategoryArchive(slug: string, activeRegion: string = 'eu') {
   if (!slug) return null;
   
   const categoryAndProductsPromise = fetchGraphQL(`
@@ -86,12 +86,12 @@ export async function getCategoryArchive(slug: string) {
     ...categoryData.productCategory,
     banners: safeBanners,
     products: {
-      nodes: formatProducts(categoryData.products?.nodes || [], true)
+      nodes: formatProducts(categoryData.products?.nodes || [], true, activeRegion)
     }
   };
 }
 
-export async function getHomePageData() {
+export async function getHomePageData(activeRegion: string = 'eu') {
   const data = await fetchGraphQL(`
     ${PRODUCT_CARD_FIELDS}
     ${BANNER_FIELDS}
@@ -130,8 +130,8 @@ export async function getHomePageData() {
 
   return {
     banners: safeBanners,
-    featured: formatProducts(data.featuredProducts?.nodes || [], true),
-    latest: formatProducts(data.latestProducts?.nodes || [], true)
+    featured: formatProducts(data.featuredProducts?.nodes || [], true, activeRegion),
+    latest: formatProducts(data.latestProducts?.nodes || [], true, activeRegion)
   };
 }
 
