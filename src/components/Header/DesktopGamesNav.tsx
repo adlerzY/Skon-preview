@@ -64,6 +64,29 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const visible = useMemo(() => (games ? games.slice(0, visibleCount) : []), [visibleCount, games]);
   const hidden = useMemo(() => (games ? games.slice(visibleCount) : []), [visibleCount, games]);
 
+  const regionInfo = useMemo(() => {
+    if (!isMounted || !pathname) return { currentRegion: "eu", pathnameWithoutRegion: pathname };
+    const segments = pathname.split("/").filter(Boolean);
+    const knownRegions = ["eu", "us", "tr"];
+    const hasRegion = knownRegions.includes(segments[0]?.toLowerCase());
+    
+    let currentRegion = "eu";
+    if (hasRegion) {
+      currentRegion = segments[0];
+    } else if (typeof document !== "undefined") {
+      const match = document.cookie.match(new RegExp('(^| )store_region=([^;]+)'));
+      if (match && knownRegions.includes(match[2].toLowerCase())) {
+        currentRegion = match[2];
+      }
+    }
+    
+    const pathnameWithoutRegion = hasRegion 
+      ? `/${segments.slice(1).join("/")}` 
+      : pathname;
+      
+    return { currentRegion, pathnameWithoutRegion };
+  }, [isMounted, pathname]);
+
   if (!isMounted || !games || games.length === 0) {
     return (
       <div className="flex items-center gap-2 h-full px-2 w-[240px]">
@@ -75,18 +98,23 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
     );
   }
 
+  const { currentRegion, pathnameWithoutRegion } = regionInfo;
+
   return (
     <div className="flex-1 h-full flex items-center contain-inline-size w-full" ref={containerRef}>
       <div className="flex items-center h-full w-full justify-start">
         {visible.map((game) => {
-          const isActive = pathname === game.link || pathname?.startsWith(`${game.link}/`);
+          const cleanLink = game.link.startsWith("/") ? game.link : `/${game.link}`;
+          const finalHref = `/${currentRegion}${cleanLink}`;
+          const isActive = pathnameWithoutRegion === cleanLink || pathnameWithoutRegion?.startsWith(`${cleanLink}/`);
+          
           return (
             <Link
               key={game.link}
-              href={game.link}
+              href={finalHref}
               prefetch={false}
-              onMouseEnter={() => router.prefetch(game.link)}
-              onFocus={() => router.prefetch(game.link)}
+              onMouseEnter={() => router.prefetch(finalHref)}
+              onFocus={() => router.prefetch(finalHref)}
               className={`flex items-center justify-center w-[60px] h-full transition-all group border-b-[3px] ${
                 isActive
                   ? "bg-white/10 border-[#0074E1] opacity-100"
@@ -111,7 +139,7 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
         {hidden.length > 0 && (
           <div className="relative group flex items-center h-full w-[50px]">
             <button
-              aria-label="مشاهدہ بازی‌های بیشتر"
+              aria-label="مشاهده بازی‌های بیشتر"
               className="flex items-center justify-center w-full h-full text-brand-m_khonsa hover:text-white transition-colors border-b-[3px] border-transparent hover:bg-white/5 opacity-80 hover:opacity-100"
             >
               <Plus size={20} strokeWidth={2.5} />
@@ -119,14 +147,17 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
             <div className="absolute top-[60px] right-0 bg-[#15171e] border border-white/5 rounded-lg opacity-0 invisible translate-y-1.5 transition-all duration-150 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 p-3 z-[1000] min-w-[280px] shadow-[0_15px_30px_rgba(0,0,0,0.6)] will-change-transform">
               <div className="grid grid-cols-4 gap-2">
                 {hidden.map((game) => {
-                  const isActive = pathname === game.link || pathname?.startsWith(`${game.link}/`);
+                  const cleanLink = game.link.startsWith("/") ? game.link : `/${game.link}`;
+                  const finalHref = `/${currentRegion}${cleanLink}`;
+                  const isActive = pathnameWithoutRegion === cleanLink || pathnameWithoutRegion?.startsWith(`${cleanLink}/`);
+                  
                   return (
                     <Link
                       key={game.link}
-                      href={game.link}
+                      href={finalHref}
                       prefetch={false}
-                      onMouseEnter={() => router.prefetch(game.link)}
-                      onFocus={() => router.prefetch(game.link)}
+                      onMouseEnter={() => router.prefetch(finalHref)}
+                      onFocus={() => router.prefetch(finalHref)}
                       aria-label={game.title}
                       className={`flex items-center justify-center p-2 rounded transition-colors group/game ${
                         isActive ? "bg-white/10" : "hover:bg-white/5"
@@ -152,9 +183,13 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
       </div>
 
       <div className="sr-only">
-        {games.map((game) => (
-          <Link key={`seo-${game.link}`} href={game.link}>{game.title}</Link>
-        ))}
+        {games.map((game) => {
+          const cleanLink = game.link.startsWith("/") ? game.link : `/${game.link}`;
+          const finalHref = `/${currentRegion}${cleanLink}`;
+          return (
+            <Link key={`seo-${game.link}`} href={finalHref}>{game.title}</Link>
+          );
+        })}
       </div>
     </div>
   );

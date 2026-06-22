@@ -2,28 +2,35 @@ import React from "react";
 import { getCategoryArchive } from "@/lib/graphql";
 import CategoryHero from "@/components/Hero"; 
 import ProductGrid from "@/components/ProductGrid"; 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 interface CategoryPageProps {
   params: Promise<{
     categorySlug: string;
-    region?: string;
-  }>;
-  searchParams: Promise<{
-    region?: string;
+    region: string;
   }>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function CategoryArchivePage({ params, searchParams }: CategoryPageProps) {
-  const { categorySlug, region: paramsRegion } = await params;
-  const { region: urlRegion } = await searchParams;
-  const cookieStore = await cookies();
-  const activeRegion = paramsRegion || urlRegion || cookieStore.get("store_region")?.value || "eu";
+export default async function CategoryArchivePage({ params }: CategoryPageProps) {
+  const { categorySlug, region } = await params;
+  
+  const staticRoutes = ["support", "download", "blog", "cart", "guild-portal"];
+  if (staticRoutes.includes(categorySlug.toLowerCase())) {
+    notFound();
+  }
 
-  const categoryData = await getCategoryArchive(categorySlug, activeRegion);
+  const knownRegions = ["eu", "us", "tr"];
+  const cookieStore = await cookies();
+  const activeRegion = cookieStore.get("store_region")?.value || "eu";
+
+  if (!knownRegions.includes(region.toLowerCase())) {
+    redirect(`/${activeRegion}/${region}/${categorySlug}`);
+  }
+
+  const categoryData = await getCategoryArchive(categorySlug, region);
 
   if (!categoryData) {
     notFound();
@@ -37,14 +44,10 @@ export default async function CategoryArchivePage({ params, searchParams }: Cate
         banners={
           banners && banners.length > 0 
             ? banners 
-            : [{ title: name, subtitle: `محصولات و خدمات بازی ${name}`, imageUrl: "/images/bi-aksi.webp", link: "#" }]
-        } 
+            : [{ title: name, subtitle: `محصولات و خدمات ${name}` }]
+        }
       />
-      <ProductGrid 
-        products={categoryProducts} 
-        title={`محصولات اختصاصی ${name}`} 
-        activeRegion={activeRegion} 
-      />
+      <ProductGrid title={name} products={categoryProducts} />
     </main>
   );
 }

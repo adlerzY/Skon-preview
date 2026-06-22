@@ -7,7 +7,7 @@ export default function SubHeaderBarClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const pathSegments = pathname.split("/").filter((item) => item);
+  const pathSegments = pathname.split("/").filter(Boolean);
   
   const knownRegions = ["eu", "us", "tr"]; 
   const isOnlyRegion = pathSegments.length === 1 && knownRegions.includes(pathSegments[0].toLowerCase());
@@ -39,7 +39,7 @@ export default function SubHeaderBarClient() {
           <Link href="/" className="hover:text-brand-white transition-colors flex items-center gap-1">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </Link>
 

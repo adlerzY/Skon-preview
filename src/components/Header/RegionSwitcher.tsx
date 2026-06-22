@@ -23,18 +23,33 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const activeRegions = regions.length > 0 ? regions : [
     { slug: "eu", name: "اروپا (EU)" },
     { slug: "us", name: "آمریکا (US)" }
   ];
 
-  const segments = pathname.split("/").filter(Boolean);
+  const segments = pathname ? pathname.split("/").filter(Boolean) : [];
   const firstSegmentIsRegion = activeRegions.some((r) => r.slug === segments[0]);
+
+  if (!firstSegmentIsRegion) {
+    return (
+      <div className="flex items-center justify-center h-[60px] w-[140px]">
+        <span className="text-white/40 text-[12px] font-semibold tracking-wider">Arena2Battle</span>
+      </div>
+    );
+  }
   
-  const currentRegionSlug = firstSegmentIsRegion 
-    ? segments[0] 
-    : (initialRegion || activeRegions[0]?.slug);
-    
+  const currentRegionSlug = segments[0] || initialRegion || activeRegions[0]?.slug;
   const currentRegion = activeRegions.find((r) => r.slug === currentRegionSlug) || activeRegions[0];
 
   const handleRegionChange = (slug: string) => {
@@ -61,16 +76,6 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
     router.push(targetUrl);
     setIsOpen(false);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   if (!currentRegion) return null;
 
