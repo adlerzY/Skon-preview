@@ -1,4 +1,3 @@
-// components/Header/RegionSwitcher.tsx
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -19,7 +18,6 @@ export default function RegionSwitcher({ regions }: { regions: Region[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // لود ریجن‌های بک‌اند، یا فال‌بک در صورتی که دیتابیس خالی بود
   const activeRegions = regions.length > 0 ? regions : [
     { slug: "eu", name: "اروپا (EU)" },
     { slug: "us", name: "آمریکا (US)" }
@@ -31,7 +29,9 @@ export default function RegionSwitcher({ regions }: { regions: Region[] }) {
   const handleRegionChange = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("region", slug);
-    // پوش کردن ریجن جدید به URL؛ کامپوننت محصول این تغییر را می‌فهمد و دیتایش عوض می‌شود
+    
+    document.cookie = `store_region=${slug}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    
     router.push(`${pathname}?${params.toString()}`);
     setIsOpen(false);
   };
@@ -52,7 +52,7 @@ export default function RegionSwitcher({ regions }: { regions: Region[] }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 h-[60px] bg-brand-surface hover:bg-brand-surface_hover text-white text-[13px] font-semibold  transition-colors duration-150 cursor-pointer"
+        className="flex items-center gap-2 px-3 h-[60px] bg-brand-surface hover:bg-brand-surface_hover text-white text-[13px] font-semibold transition-colors duration-150 cursor-pointer"
       >
         {currentRegion.flagUrl && (
           <div className="relative w-5 h-3.5 overflow-hidden rounded-[2px] shrink-0">

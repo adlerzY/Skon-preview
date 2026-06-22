@@ -2,6 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";
+import { cookies } from "next/headers";
 
 interface ProductPageProps {
   params: Promise<{
@@ -31,12 +32,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     notFound();
   }
 
+  const cookieStore = await cookies();
+  const activeRegion = resolvedSearchParams.region || cookieStore.get("store_region")?.value || "eu";
+
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">
       <ProductPageClient 
         product={product} 
         initialEdition={resolvedSearchParams.edition} 
-        activeRegion={resolvedSearchParams.region}
+        activeRegion={activeRegion}
       />
     </main>
   );
