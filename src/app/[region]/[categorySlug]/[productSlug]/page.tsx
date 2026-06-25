@@ -1,5 +1,5 @@
 import React from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";
 import { cookies } from "next/headers";
@@ -9,7 +9,7 @@ interface ProductPageProps {
     categorySlug: string;
     productSlug?: string;
     slug?: string;
-    region?: string;
+    region: string;
   }>;
   searchParams: Promise<{
     edition?: string;
@@ -29,14 +29,23 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     notFound();
   }
 
+  const knownRegions = ["eu", "us", "tr"];
+  const urlRegion = resolvedParams.region?.toLowerCase();
+
+  const cookieStore = await cookies();
+  const cookieRegion = cookieStore.get("store_region")?.value || "eu";
+
+  if (!knownRegions.includes(urlRegion)) {
+    redirect(`/${cookieRegion}/${resolvedParams.categorySlug}/${currentSlug}`);
+  }
+
   const product = await getProductDetail(currentSlug);
 
   if (!product) {
     notFound();
   }
 
-  const cookieStore = await cookies();
-  const activeRegion = resolvedParams.region || resolvedSearchParams.region || cookieStore.get("store_region")?.value || "eu";
+  const activeRegion = urlRegion || resolvedSearchParams.region || cookieRegion;
 
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">

@@ -16,11 +16,6 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoryArchivePage({ params }: CategoryPageProps) {
   const { categorySlug, region } = await params;
-  
-  const staticRoutes = ["support", "download", "blog", "cart", "guild-portal"];
-  if (staticRoutes.includes(categorySlug.toLowerCase())) {
-    notFound();
-  }
 
   const knownRegions = ["eu", "us", "tr"];
   const cookieStore = await cookies();
@@ -47,7 +42,7 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
             : [{ title: name, subtitle: `محصولات و خدمات ${name}` }]
         }
       />
-      <ProductGrid title={name} products={categoryProducts} />
+      <ProductGrid title={name} products={categoryProducts} activeRegion={region} />
     </main>
   );
 }
