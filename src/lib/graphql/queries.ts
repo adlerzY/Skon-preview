@@ -56,8 +56,16 @@ export async function getCategoryArchive(slug: string, activeRegion: string = 'e
     query GetCategoryProducts($id: ID!, $categoryIn: [String]) {
       productCategory(id: $id, idType: SLUG) {
         ...CategoryBasicFields
+        children(where: { hideEmpty: true }) {
+          nodes {
+            id
+            databaseId
+            name
+            slug
+          }
+        }
       }
-      products(first: 20, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
+      products(first: 100, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
         nodes { ...ProductCardFields }
       }
     }

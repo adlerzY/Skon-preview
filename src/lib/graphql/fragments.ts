@@ -1,5 +1,3 @@
-// فرگمنت‌های گراف‌کیوال برای جلوگیری از تکرار کوئری‌ها
-
 export const PRODUCT_CARD_FIELDS = `
   fragment ProductCardFields on Product {
     id
@@ -15,7 +13,7 @@ export const PRODUCT_CARD_FIELDS = `
       sourceUrl(size: MEDIUM)
     }
 
-    productCategories(first: 1) {
+    productCategories(first: 10) {
       nodes {
         name
         slug
