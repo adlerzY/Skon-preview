@@ -24,13 +24,13 @@ export default function SubcategoryMenu({ subcategories }: SubcategoryMenuProps)
   };
 
   return (
-    <div className="sticky top-16 z-40 w-full bg-[#1c1e25]/80 backdrop-blur-xl border-b border-white/5 py-4 my-6 overflow-x-auto no-scrollbar">
-      <div className="container mx-auto px-6 flex gap-4 items-center min-w-max">
+    <div className="sticky top-20 z-40 w-full bg-brand-bg border-b border-brand-white/5 pb-2.5 my-6 rounded-none overflow-x-auto no-scrollbar">
+      <div className="container mx-auto flex gap-2 items-center min-w-max">
         {subcategories.map((sub) => (
           <Button
             key={sub.id}
             onClick={() => handleScroll(sub.slug)}
-            className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/5 text-sm font-medium whitespace-nowrap"
+            className="px-5 py-2.5 bg-brand-surface hover:bg-brand-surface_hover text-brand-white border border-white/5 text-sm font-medium whitespace-nowrap"
           >
             {sub.name}
           </Button>

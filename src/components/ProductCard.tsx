@@ -45,13 +45,13 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
         ))}
       </div>
 
-      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0b0c10] flex-shrink-0">
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0b0c10] flex-shrink-0 rounded-none">
         {product.image?.sourceUrl ? (
           <Image
             src={product.image.sourceUrl}
             alt={product.name || "تصویر محصول"}
             fill
-            className="object-cover transition-all duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110"
+            className="object-cover transition-all duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110 rounded-none"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
