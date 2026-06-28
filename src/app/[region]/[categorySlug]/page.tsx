@@ -1,4 +1,3 @@
-import React from "react";
 import { getCategoryArchive } from "@/lib/graphql";
 import CategoryHero from "@/components/Hero"; 
 import { notFound, redirect } from "next/navigation";

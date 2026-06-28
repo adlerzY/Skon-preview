@@ -42,8 +42,7 @@ export default async function Header() {
               style={{ width: "auto" }} 
             />
           </Link>
-          <DesktopNavLinks />
-        </div>
+          <DesktopNavLinks activeRegion={activeRegion} />        </div>
 
         <div className="flex items-center">
           <Link href="/download" className={ACTION_BUTTON_CLASSES}>
