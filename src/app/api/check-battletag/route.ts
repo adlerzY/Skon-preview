@@ -2,32 +2,60 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-// ✅ نکته: در production این لیست باید از دیتابیس یا env بیاد
-// فایل battletags.json نباید در repository عمومی commit بشه
-// پیشنهاد: جابجا کردن به خارج از src/ و اضافه کردن به .gitignore
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+function isValidBattleTagFormat(tag: string): boolean {
+  return /^[A-Za-z\u0600-\u06FF0-9]{2,12}#\d{4,7}$/.test(tag);
+}
 
 async function getBattleTagsList(): Promise<string[]> {
-  try {
-    // اگه environment variable تعریف شده، از اون استفاده کن
-    if (process.env.BATTLETAGS_LIST) {
+  if (process.env.BATTLETAGS_LIST) {
+    try {
       return JSON.parse(process.env.BATTLETAGS_LIST);
+    } catch {
+      console.error("BATTLETAGS_LIST env var is not valid JSON");
+      return [];
     }
-    // fallback به فایل (فقط برای local development)
-    const jsonDir = path.join(process.cwd(), "src/data");
-    const contents = await fs.readFile(path.join(jsonDir, "battletags.json"), "utf8");
+  }
+
+  if (process.env.NODE_ENV !== "development") {
+    console.error("BATTLETAGS_LIST env var is not set in production");
+    return [];
+  }
+
+  try {
+    const filePath = path.join(process.cwd(), "data", "battletags.json");
+    const contents = await fs.readFile(filePath, "utf8");
     return JSON.parse(contents);
   } catch {
     return [];
   }
 }
 
-// ✅ validate فرمت BattleTag
-function isValidBattleTagFormat(tag: string): boolean {
-  // فرمت: Name#Numbers — حداکثر ۱۲ کاراکتر قبل از # و ۴-۷ رقم بعد از آن
-  return /^[A-Za-z\u0600-\u06FF0-9]{2,12}#\d{4,7}$/.test(tag);
-}
-
 export async function POST(request: NextRequest) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { valid: false, message: "تعداد درخواست‌ها بیش از حد مجاز است" },
+      { status: 429, headers: { "Retry-After": "60" } }
+    );
+  }
+
   try {
     const body = await request.json();
     const { battleTag } = body;
@@ -39,26 +67,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ بررسی فرمت قبل از جستجو
-    if (!isValidBattleTagFormat(battleTag.trim())) {
+    const trimmedTag = battleTag.trim();
+
+    if (!isValidBattleTagFormat(trimmedTag)) {
       return NextResponse.json(
-        { valid: false, message: "فرمت بتل‌تگ نامعتبر است. مثال صحیح: PlayerName#1234" },
+        {
+          valid: false,
+          message: "فرمت بتل‌تگ نامعتبر است. مثال صحیح: PlayerName#1234",
+        },
         { status: 400 }
       );
     }
 
     const friendsList = await getBattleTagsList();
-
-    const exists = friendsList.some(
-      tag => tag.toLowerCase() === battleTag.trim().toLowerCase()
-    );
+    const exists = friendsList.includes(trimmedTag);
 
     if (exists) {
-      return NextResponse.json({ valid: true, message: "بتل‌تگ تایید شد" }, { status: 200 });
+      // حالت اول: تگ در لیست فرندها هست
+      return NextResponse.json(
+        { 
+          valid: true, 
+          isFriend: true, 
+          message: "شما در فرند لیست ما هستید، ثبت سفارش شما در کمتر از یک ساعت انجام می‌شود." 
+        },
+        { status: 200 }
+      );
     } else {
       return NextResponse.json(
-        { valid: false, message: "شما در لیست فرندهای ما نیستید" },
-        { status: 404 }
+        { 
+          valid: true, 
+          isFriend: false, 
+          message: "سفارش شما با این بتل‌تگ جدید در سبد خرید ثبت شد." 
+        },
+        { status: 200 }
       );
     }
   } catch {

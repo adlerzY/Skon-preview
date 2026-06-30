@@ -38,12 +38,14 @@ function GiftForm({
   verifyStatus,
   isVerifying,
   onVerify,
+  serverMessage,
 }: {
   battleTag: string;
   onBattleTagChange: (v: string) => void;
-  verifyStatus: "idle" | "success" | "error";
+  verifyStatus: "idle" | "friend" | "new-tag" | "error";
   isVerifying: boolean;
   onVerify: () => void;
+  serverMessage: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -70,14 +72,19 @@ function GiftForm({
           {isVerifying ? "بررسی..." : "چک کن"}
         </button>
       </div>
-      {verifyStatus === "success" && (
+      {verifyStatus === "friend" && (
         <span className="text-xs text-brand-sabz font-medium">
-          ✓ شما در لیست فرندهای ما قرار دارید!
+          ✓ {serverMessage || "شما در لیست فرندهای ما قرار دارید!"}
+        </span>
+      )}
+      {verifyStatus === "new-tag" && (
+        <span className="text-xs text-brand-blue font-medium">
+          ℹ️ {serverMessage || "بتل‌تگ جدید؛ سفارش در سبد خرید ثبت می‌شود."}
         </span>
       )}
       {verifyStatus === "error" && (
         <span className="text-xs text-red-500 font-medium">
-          ⚠️ بتل‌تگ یافت نشد یا فرمت اشتباه است. (مثال: Name#1234)
+          ⚠️ {serverMessage || "بتل‌تگ یافت نشد یا فرمت اشتباه است. (مثال: Name#1234)"}
         </span>
       )}
     </div>
@@ -142,7 +149,8 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
   const [email, setEmail] = useState("");
   const [battleTag, setBattleTag] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verifyStatus, setVerifyStatus] = useState<"idle" | "success" | "error">("idle");
+  const [verifyStatus, setVerifyStatus] = useState<"idle" | "friend" | "new-tag" | "error">("idle");
+  const [serverMessage, setServerMessage] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
@@ -158,6 +166,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
     setEmail("");
     setBattleTag("");
     setVerifyStatus("idle");
+    setServerMessage("");
   }, [selectedVariation]);
 
   if (!isMounted) return null;
@@ -185,19 +194,35 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
   const handleVerifyBattleTag = async () => {
     if (!battleTag.includes("#")) {
       setVerifyStatus("error");
+      setServerMessage("فرمت بتل‌تگ نامعتبر است.");
       return;
     }
     setIsVerifying(true);
     setVerifyStatus("idle");
+    setServerMessage("");
     try {
       const res = await fetch("/api/check-battletag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ battleTag }),
       });
-      setVerifyStatus(res.ok ? "success" : "error");
+      
+      const data = await res.json();
+      setServerMessage(data.message || "");
+
+      if (res.ok) {
+        // بررسی فلگ تفکیک‌کننده فرند از بتل‌تگ جدید
+        if (data.isFriend) {
+          setVerifyStatus("friend");
+        } else {
+          setVerifyStatus("new-tag");
+        }
+      } else {
+        setVerifyStatus("error");
+      }
     } catch {
       setVerifyStatus("error");
+      setServerMessage("خطا در ارتباط با سرور.");
     } finally {
       setIsVerifying(false);
     }
@@ -206,7 +231,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
   const isFormValid = (): boolean => {
     if (!deliveryType) return false;
     if (deliveryType === "direct") return email.trim().length > 3;
-    if (deliveryType === "gift") return verifyStatus === "success";
+    if (deliveryType === "gift") return verifyStatus === "friend" || verifyStatus === "new-tag";
     if (deliveryType === "code") return true;
     return false;
   };
@@ -346,10 +371,12 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
               onBattleTagChange={(v) => {
                 setBattleTag(v);
                 setVerifyStatus("idle");
+                setServerMessage("");
               }}
               verifyStatus={verifyStatus}
               isVerifying={isVerifying}
               onVerify={handleVerifyBattleTag}
+              serverMessage={serverMessage}
             />
           )}
           {deliveryType === "code" && <CodeInfo />}
