@@ -1,4 +1,3 @@
-import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";

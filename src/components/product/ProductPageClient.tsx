@@ -326,7 +326,6 @@ export default function ProductPageClient({
       parsedCodeRegularPrice: accCodeRegular,
     };
   }, [variations, selectedAttrs, groupedAttributes, regionInfo]);
-
   const allGalleryImages = useMemo(() => {
     const seen = new Set<string>();
     const images: string[] = [];
@@ -356,7 +355,7 @@ export default function ProductPageClient({
           v.attributes?.some(
             (a) => a.name === firstGroup.name && a.value === selectedVal
           ) && v.imageUrl
-      )?.imageUrl?.trim() ?? null
+    )?.imageUrl?.trim() ?? null
     );
   }, [variations, groupedAttributes, selectedAttrs]);
 
@@ -383,6 +382,7 @@ export default function ProductPageClient({
     const target = currentIndex * itemWidth - containerWidth / 2 + 50;
     setTrackOffset(Math.min(maxScroll, Math.max(0, target)));
   }, [currentIndex, allGalleryImages]);
+
   const handleAttrSelect = useCallback(
     (name: string, val: string) => {
       setSelectedAttrs((prev) => {
@@ -477,7 +477,13 @@ export default function ProductPageClient({
             regionInfo={regionInfo}
           />
 
-          <DeliveryAndPrice selectedVariation={combinedAggregateVar} />
+          <DeliveryAndPrice 
+            selectedVariation={combinedAggregateVar} 
+            productName={product.name}
+            selectedAttrs={selectedAttrs}
+            groupedAttributes={groupedAttributes}
+            regionInfo={regionInfo}
+          />
         </div>
         <div className="lg:col-span-8 lg:sticky lg:top-6 h-fit flex flex-col gap-6 w-full">
           <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover shadow-lg group">

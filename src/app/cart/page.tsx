@@ -1,17 +1,20 @@
 "use client";
 
-import React from "react";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
+import Button from "@/components/ui/Button"; 
+import { Trash2, Globe, Sliders } from "lucide-react";
 
 export default function CartPage() {
-  // فرض بر این است که کانتکست شما این مقادیر را پاس می‌دهد
   const { cart, removeFromCart } = useCart();
+  const totalOriginalPrice = cart?.reduce((sum: number, item: any) => {
+    const regular = Number(item.regularPrice) || Number(item.price) || 0;
+    return sum + regular;
+  }, 0) || 0;
 
-  // محاسبه قیمت کل سبد خرید
-  const totalPrice = cart?.reduce((sum: number, item: any) => sum + item.price, 0) || 0;
+  const totalPrice = cart?.reduce((sum: number, item: any) => sum + (Number(item.price) || 0), 0) || 0;
+  const totalDiscount = totalOriginalPrice - totalPrice;
 
-  // تابع کمکی برای ترجمه روش تحویل
   const getDeliveryLabel = (method: string) => {
     switch (method) {
       case "direct":
@@ -50,7 +53,6 @@ export default function CartPage() {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* لیست محصولات */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           {cart.map((item: any) => {
             const delivery = getDeliveryLabel(item.deliveryMethod);
@@ -60,16 +62,25 @@ export default function CartPage() {
                 className="bg-brand-surface border border-brand-surface_hover p-4 md:p-5 flex flex-col md:flex-row justify-between gap-4 relative animate-in fade-in duration-200"
               >
                 <div className="flex flex-col gap-2.5">
-                  {/* نام محصول */}
                   <h3 className="font-bold text-base md:text-lg text-brand-active">{item.name}</h3>
                   
-                  {/* نوع تحویل و جزییات متصل به آن */}
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className={`px-2.5 py-1 border font-bold ${delivery.color}`}>
                       {delivery.label}
                     </span>
 
-                    {/* نمایش ایمیل یا بتل‌تگ ثبت شده */}
+                    {item.region && (
+                      <span className="text-brand-blue bg-brand-blue/5 px-2.5 py-1 border border-brand-blue/20 font-bold flex items-center gap-1 uppercase">
+                        <Globe size={13} />
+                        ریجن: {item.region}
+                      </span>
+                    )}
+                    {item.variationName && (
+                      <span className="text-brand-active bg-brand-bg px-2.5 py-1 border border-brand-surface_hover font-bold flex items-center gap-1">
+                        <Sliders size={13} />
+                        ویژگی: {item.variationName}
+                      </span>
+                    )}
                     {item.customFields?.email && (
                       <span className="text-brand-m_khonsa bg-brand-bg px-2 py-1 border border-brand-surface_hover dir-ltr font-mono">
                         📧 {item.customFields.email}
@@ -83,18 +94,15 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* بخش قیمت و دکمه حذف */}
                 <div className="flex md:flex-col justify-between items-end gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-brand-surface_hover">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
                     onClick={() => removeFromCart(item.id)}
-                    className="text-red-500 hover:text-red-400 text-xs font-bold flex items-center gap-1 order-2 md:order-1 transition-colors"
+                    className="!text-red-500 hover:!text-red-400 text-xs font-bold flex items-center gap-1 order-2 md:order-1"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" />
-                    </svg>
+                    <Trash2 size={15} />
                     حذف محصول
-                  </button>
+                  </Button>
 
                   <div className="flex items-baseline gap-1 order-1 md:order-2">
                     <span className="text-xl font-black text-brand-sabz">
@@ -107,20 +115,20 @@ export default function CartPage() {
             );
           })}
         </div>
-
-        <div className="bg-brand-surface border border-brand-surface_hover p-5 flex flex-col gap-4">
+        <div className="bg-brand-surface border border-brand-surface_hover p-5 flex flex-col gap-4 lg:sticky lg:top-6">
           <h2 className="font-bold text-sm text-brand-surface_m uppercase tracking-wide border-b border-brand-surface_hover pb-3">
             خلاصه فاکتور
           </h2>
 
           <div className="flex justify-between items-center text-sm">
             <span className="text-brand-m_khonsa">قیمت محصولات:</span>
-            <span className="font-medium">{totalPrice.toLocaleString("fa-IR")} تومان</span>
+            <span className="font-medium">{totalOriginalPrice.toLocaleString("fa-IR")} تومان</span>
           </div>
-
           <div className="flex justify-between items-center text-sm">
-            <span className="text-brand-m_khonsa">هزینه تحویل و کارمزد:</span>
-            <span className="text-brand-sabz font-bold">رایگان</span>
+            <span className="text-brand-m_khonsa">سود شما از این خرید:</span>
+            <span className="text-brand-sabz font-bold">
+              {totalDiscount > 0 ? `${totalDiscount.toLocaleString("fa-IR")} تومان` : "۰ تومان"}
+            </span>
           </div>
 
           <div className="border-t border-brand-surface_hover my-1" />
@@ -135,12 +143,12 @@ export default function CartPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="w-full bg-brand-blue text-brand-active hover:bg-[#0062d1] py-4 text-center font-bold text-sm transition-all mt-2"
+          <Button
+            variant="primary"
+            className="w-full py-4 mt-2"
           >
             تکمیل سفارش و پرداخت
-          </button>
+          </Button>
         </div>
       </div>
     </div>

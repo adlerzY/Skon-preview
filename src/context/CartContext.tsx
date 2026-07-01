@@ -7,7 +7,10 @@ export interface CartItem {
   databaseId: number;
   name: string;
   price: number;
+  regularPrice?: number;
   deliveryMethod: "gift" | "code" | "direct";
+  region?: string;
+  variationName?: string;
   customFields?: {
     battleTag?: string;
     email?: string;

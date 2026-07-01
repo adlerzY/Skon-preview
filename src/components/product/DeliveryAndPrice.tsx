@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { VariationCard } from "@/lib/graphql";
 import { useCart } from "@/context/CartContext";
+import { User, Gift, FileCheck } from "lucide-react";
 
 function DirectForm({
   email,
@@ -103,6 +104,7 @@ function CodeInfo() {
     </div>
   );
 }
+
 type DeliveryType = "direct" | "gift" | "code";
 
 function getDefaultDelivery(v: VariationCard): DeliveryType | null {
@@ -137,11 +139,22 @@ function getRegularPrice(v: VariationCard, type: DeliveryType): number | null {
         : null;
   }
 }
+
 interface DeliveryAndPriceProps {
   selectedVariation: VariationCard | null;
+  productName: string;
+  selectedAttrs: Record<string, string>;
+  groupedAttributes: { name: string; values: any[] }[];
+  regionInfo: { name: string; value: string } | null;
 }
 
-export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPriceProps) {
+export default function DeliveryAndPrice({
+  selectedVariation,
+  productName,
+  selectedAttrs,
+  groupedAttributes,
+  regionInfo,
+}: DeliveryAndPriceProps) {
   const { addToCart } = useCart();
 
   const [isMounted, setIsMounted] = useState(false);
@@ -211,7 +224,6 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
       setServerMessage(data.message || "");
 
       if (res.ok) {
-        // بررسی فلگ تفکیک‌کننده فرند از بتل‌تگ جدید
         if (data.isFriend) {
           setVerifyStatus("friend");
         } else {
@@ -237,15 +249,23 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
   };
 
   const handleAddToCart = () => {
-    if (!isFormValid() || !deliveryType) return;
+    if (!isFormValid() || !deliveryType || !selectedVariation) return;
     setIsAddingToCart(true);
+    const regionValue = regionInfo ? selectedAttrs[regionInfo.name] : undefined;
+    const traitValues = groupedAttributes
+      .map((g) => selectedAttrs[g.name])
+      .filter(Boolean);
+    const variationNameValue = traitValues.length > 0 ? traitValues.join(" - ") : undefined;
 
     addToCart({
       id: `${selectedVariation.databaseId}-${deliveryType}`,
       databaseId: selectedVariation.databaseId,
-      name: selectedVariation.name || "محصول انتخاب شده",
+      name: productName,
       price: currentPrice || 0,
+      regularPrice: regularPrice || undefined,
       deliveryMethod: deliveryType,
+      region: regionValue,
+      variationName: variationNameValue,
       customFields:
         deliveryType === "gift"
           ? { battleTag }
@@ -275,12 +295,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
         titleColor: "text-brand-blue",
         body: "سریع‌ترین حالت فعال‌سازی. نیازمند ایمیل اکانت شما.",
       },
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      ),
+      icon: <User size={22} strokeWidth={2} />,
     },
     {
       type: "gift",
@@ -292,15 +307,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
         titleColor: "text-brand-zard",
         body: "نیازمند گذشت ۳ روز از ادد فرند بودن.",
       },
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 12 20 22 4 22 4 12" />
-          <rect width="20" height="5" x="2" y="7" />
-          <line x1="12" x2="12" y1="22" y2="7" />
-          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-        </svg>
-      ),
+      icon: <Gift size={22} strokeWidth={2} />,
     },
     {
       type: "code",
@@ -312,13 +319,7 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
         titleColor: "text-brand-sabz",
         body: "کد فعال‌سازی بلافاصله تحویل می‌گردد.",
       },
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-          <polyline points="14 2 14 8 20 8" />
-          <path d="m9 15 2 2 4-4" />
-        </svg>
-      ),
+      icon: <FileCheck size={22} strokeWidth={2} />,
     },
   ];
 
@@ -389,9 +390,9 @@ export default function DeliveryAndPrice({ selectedVariation }: DeliveryAndPrice
           {deliveryType === null ? (
             <span className="text-sm text-brand-surface_m">ابتدا روش تحویل را انتخاب کنید</span>
           ) : typeof currentPrice === "number" ? (
-            <div className="flex flex-row items-baseline gap-2">
+            <div className="flex flex-row items-center gap-2 flex-wrap">
               {hasDiscount && (
-                <span className="text-xl text-neutral-500 line-through whitespace-nowrap">
+                <span className="text-sm text-neutral-400 line-through whitespace-nowrap">
                   {regularPrice?.toLocaleString("fa-IR")}
                 </span>
               )}

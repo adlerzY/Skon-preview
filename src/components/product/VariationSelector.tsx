@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { VariationCard } from "@/lib/graphql";
 
 interface AttributeValue {
@@ -37,10 +36,8 @@ export default function VariationSelector({
   regionInfo,
 }: Props) {
   
-  // بررسی در دسترس بودن گزینه‌ها با توجه به ریجن هدر و انتخاب‌های قبلی (منطق آبشاری)
   const isOptionAvailable = (groupName: string, optionValue: string, groupIndex: number) => {
     return variations.some((v) => {
-      // ۱. چک کردن ریجن فعال مخفی
       if (regionInfo) {
         const hasRegion = v.attributes?.some(
           (a) => a.name === regionInfo.name && a.value === regionInfo.value
@@ -48,7 +45,6 @@ export default function VariationSelector({
         if (!hasRegion) return false;
       }
 
-      // ۲. چک کردن اتریبیوت‌های لایه‌های قبلی
       const matchesPreceding = groupedAttributes
         .slice(0, groupIndex)
         .every((prevGroup) => {
@@ -59,14 +55,12 @@ export default function VariationSelector({
 
       if (!matchesPreceding) return false;
 
-      // ۳. چک کردن خود این اتریبیوت
       const matchesCurrent = v.attributes?.some(
         (a) => a.name === groupName && a.value === optionValue
       );
 
       if (!matchesCurrent) return false;
 
-      // ۴. چک کردن موجودی و قیمت جهانی واریاسیون
       return checkStockGlobally(v);
     });
   };
