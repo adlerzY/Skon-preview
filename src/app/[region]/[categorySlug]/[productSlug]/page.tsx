@@ -17,40 +17,38 @@ interface ProductPageProps {
 }
 
 export const dynamic = "force-dynamic";
+const KNOWN_REGIONS = ["eu", "us", "tr"];
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  
+
   const currentSlug = resolvedParams.productSlug || resolvedParams.slug;
 
   if (!currentSlug) {
     notFound();
   }
 
-  const knownRegions = ["eu", "us", "tr"];
   const urlRegion = resolvedParams.region?.toLowerCase();
-
   const cookieStore = await cookies();
   const cookieRegion = cookieStore.get("store_region")?.value || "eu";
 
-  if (!knownRegions.includes(urlRegion)) {
+  if (!KNOWN_REGIONS.includes(urlRegion)) {
     redirect(`/${cookieRegion}/${resolvedParams.categorySlug}/${currentSlug}`);
   }
+  const activeRegion = urlRegion || resolvedSearchParams.region || cookieRegion;
 
-  const product = await getProductDetail(currentSlug);
+  const product = await getProductDetail(currentSlug, activeRegion);
 
   if (!product) {
     notFound();
   }
 
-  const activeRegion = urlRegion || resolvedSearchParams.region || cookieRegion;
-
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">
-      <ProductPageClient 
-        product={product} 
-        initialEdition={resolvedSearchParams.edition} 
+      <ProductPageClient
+        product={product}
+        initialEdition={resolvedSearchParams.edition}
         activeRegion={activeRegion}
       />
     </main>
