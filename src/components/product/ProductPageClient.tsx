@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductNode, VariationCard } from "@/lib/graphql";
+import type { ProductNode, VariationCard } from "@/lib/graphql";
 import DeliveryAndPrice from "@/components/product/DeliveryAndPrice";
 import VariationSelector from "@/components/product/VariationSelector";
 import ProductReviews from "@/components/ProductReviews";
@@ -91,11 +91,8 @@ export default function ProductPageClient({
   const variations = product.variationCards ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
   const [trackOffset, setTrackOffset] = useState(0);
-
   const effectiveRegion =
-    !activeRegion ||
-    activeRegion === "$undefined" ||
-    activeRegion === "undefined"
+    !activeRegion || activeRegion === "$undefined" || activeRegion === "undefined"
       ? "eu-global"
       : activeRegion;
 
@@ -111,8 +108,7 @@ export default function ProductPageClient({
       }
     }
 
-    const result: { name: string; values: { value: string; flagUrl: string }[] }[] =
-      [];
+    const result: { name: string; values: { value: string; flagUrl: string }[] }[] = [];
 
     for (const [name, valMap] of map) {
       const vals = Array.from(valMap.entries()).map(([value, flagUrl]) => ({
@@ -120,10 +116,7 @@ export default function ProductPageClient({
         flagUrl,
       }));
 
-      if (
-        !isDeliveryAttr(name, vals.map((v) => v.value)) &&
-        !isRegionAttr(name)
-      ) {
+      if (!isDeliveryAttr(name, vals.map((v) => v.value)) && !isRegionAttr(name)) {
         result.push({ name, values: vals });
       }
     }
@@ -147,9 +140,7 @@ export default function ProductPageClient({
           valLower === regionLower ||
           slugLower === regionLower ||
           ((regionLower === "eu" || regionLower === "eu-global") &&
-            (valLower.includes("eu") ||
-              valLower.includes("اروپا") ||
-              slugLower.includes("eu"))) ||
+            (valLower.includes("eu") || valLower.includes("اروپا") || slugLower.includes("eu"))) ||
           (regionLower === "us" &&
             (valLower.includes("us") ||
               valLower.includes("آمریکا") ||
@@ -180,17 +171,12 @@ export default function ProductPageClient({
     (targetEdition?: string): Record<string, string> => {
       const result: Record<string, string> = {};
       if (regionInfo) result[regionInfo.name] = regionInfo.value;
-      if (variations.length === 0 || groupedAttributes.length === 0)
-        return result;
+      if (variations.length === 0 || groupedAttributes.length === 0) return result;
 
       for (let i = 0; i < groupedAttributes.length; i++) {
         const group = groupedAttributes[i];
 
-        if (
-          i === 0 &&
-          targetEdition &&
-          group.values.some((v) => v.value === targetEdition)
-        ) {
+        if (i === 0 && targetEdition && group.values.some((v) => v.value === targetEdition)) {
           result[group.name] = targetEdition;
           continue;
         }
@@ -199,19 +185,10 @@ export default function ProductPageClient({
           variations.some((v) => {
             const matchesPrev = groupedAttributes
               .slice(0, i)
-              .every((g) =>
-                v.attributes?.some(
-                  (a) => a.name === g.name && a.value === result[g.name]
-                )
-              );
-            const matchesCurrent = v.attributes?.some(
-              (a) => a.name === group.name && a.value === candidate.value
-            );
+              .every((g) => v.attributes?.some((a) => a.name === g.name && a.value === result[g.name]));
+            const matchesCurrent = v.attributes?.some((a) => a.name === group.name && a.value === candidate.value);
             const matchesRegion = regionInfo
-              ? v.attributes?.some(
-                  (a) =>
-                    a.name === regionInfo.name && a.value === regionInfo.value
-                )
+              ? v.attributes?.some((a) => a.name === regionInfo.name && a.value === regionInfo.value)
               : true;
             return matchesPrev && matchesCurrent && matchesRegion && hasStock(v);
           })
@@ -225,8 +202,8 @@ export default function ProductPageClient({
     [variations, groupedAttributes, regionInfo]
   );
 
-  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(
-    () => findFirstValidAttributes(initialEdition)
+  const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() =>
+    findFirstValidAttributes(initialEdition)
   );
 
   useEffect(() => {
@@ -234,7 +211,27 @@ export default function ProductPageClient({
   }, [findFirstValidAttributes, initialEdition]);
 
   const combinedAggregateVar = useMemo((): VariationCard | null => {
-    if (variations.length === 0) return null;
+    if (variations.length === 0) {
+      if (product.parsedPrice == null) return null;
+      return {
+        databaseId: product.databaseId,
+        name: product.name,
+        slug: product.slug,
+        price: String(product.parsedPrice),
+        regularPrice: String(product.parsedRegularPrice ?? product.parsedPrice),
+        salePrice: "",
+        imageUrl: product.image?.sourceUrl ?? "",
+        attributes: [],
+        giftPriceToman: "disabled",
+        codePriceToman: "disabled",
+        parsedPrice: product.parsedPrice,
+        parsedRegularPrice: product.parsedRegularPrice ?? product.parsedPrice,
+        parsedGiftPrice: "disabled",
+        parsedGiftRegularPrice: "disabled",
+        parsedCodePrice: "disabled",
+        parsedCodeRegularPrice: "disabled",
+      };
+    }
 
     const matching = variations.filter((v) => {
       const matchesVisible = groupedAttributes.every((g) => {
@@ -242,9 +239,7 @@ export default function ProductPageClient({
         return attr ? attr.value === selectedAttrs[g.name] : true;
       });
       const matchesRegion = regionInfo
-        ? v.attributes?.some(
-            (a) => a.name === regionInfo.name && a.value === regionInfo.value
-          )
+        ? v.attributes?.some((a) => a.name === regionInfo.name && a.value === regionInfo.value)
         : true;
       return matchesVisible && matchesRegion;
     });
@@ -253,12 +248,7 @@ export default function ProductPageClient({
       matching.length > 0
         ? matching
         : variations.filter((v) =>
-            regionInfo
-              ? v.attributes?.some(
-                  (a) =>
-                    a.name === regionInfo.name && a.value === regionInfo.value
-                )
-              : true
+            regionInfo ? v.attributes?.some((a) => a.name === regionInfo.name && a.value === regionInfo.value) : true
           );
 
     if (candidates.length === 0) return variations[0] ?? null;
@@ -275,42 +265,21 @@ export default function ProductPageClient({
         accPrice = mv.parsedPrice;
         accRegularPrice = mv.parsedRegularPrice ?? mv.parsedPrice;
       }
-      if (
-        typeof mv.parsedGiftPrice === "number" &&
-        (accGift === "disabled" || mv.parsedGiftPrice < (accGift as number))
-      ) {
+      if (typeof mv.parsedGiftPrice === "number" && (accGift === "disabled" || mv.parsedGiftPrice < (accGift as number))) {
         accGift = mv.parsedGiftPrice;
-        accGiftRegular =
-          typeof mv.parsedGiftRegularPrice === "number"
-            ? mv.parsedGiftRegularPrice
-            : mv.parsedGiftPrice;
+        accGiftRegular = typeof mv.parsedGiftRegularPrice === "number" ? mv.parsedGiftRegularPrice : mv.parsedGiftPrice;
       }
-      if (
-        typeof mv.parsedCodePrice === "number" &&
-        (accCode === "disabled" || mv.parsedCodePrice < (accCode as number))
-      ) {
+      if (typeof mv.parsedCodePrice === "number" && (accCode === "disabled" || mv.parsedCodePrice < (accCode as number))) {
         accCode = mv.parsedCodePrice;
-        accCodeRegular =
-          typeof mv.parsedCodeRegularPrice === "number"
-            ? mv.parsedCodeRegularPrice
-            : mv.parsedCodePrice;
+        accCodeRegular = typeof mv.parsedCodeRegularPrice === "number" ? mv.parsedCodeRegularPrice : mv.parsedCodePrice;
       }
 
-      const comboText =
-        mv.attributes?.map((a) => a.value.toLowerCase()).join(" ") ?? "";
-      if (
-        (comboText.includes("گیفت") || comboText.includes("gift")) &&
-        mv.parsedPrice != null &&
-        accGift === "disabled"
-      ) {
+      const comboText = mv.attributes?.map((a) => a.value.toLowerCase()).join(" ") ?? "";
+      if ((comboText.includes("گیفت") || comboText.includes("gift")) && mv.parsedPrice != null && accGift === "disabled") {
         accGift = mv.parsedPrice;
         accGiftRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
       }
-      if (
-        (comboText.includes("کد") || comboText.includes("code")) &&
-        mv.parsedPrice != null &&
-        accCode === "disabled"
-      ) {
+      if ((comboText.includes("کد") || comboText.includes("code")) && mv.parsedPrice != null && accCode === "disabled") {
         accCode = mv.parsedPrice;
         accCodeRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
       }
@@ -325,7 +294,8 @@ export default function ProductPageClient({
       parsedCodePrice: accCode,
       parsedCodeRegularPrice: accCodeRegular,
     };
-  }, [variations, selectedAttrs, groupedAttributes, regionInfo]);
+  }, [variations, selectedAttrs, groupedAttributes, regionInfo, product]);
+
   const allGalleryImages = useMemo(() => {
     const seen = new Set<string>();
     const images: string[] = [];
@@ -350,22 +320,15 @@ export default function ProductPageClient({
     const firstGroup = groupedAttributes[0];
     const selectedVal = selectedAttrs[firstGroup.name];
     return (
-      variations.find(
-        (v) =>
-          v.attributes?.some(
-            (a) => a.name === firstGroup.name && a.value === selectedVal
-          ) && v.imageUrl
-    )?.imageUrl?.trim() ?? null
+      variations.find((v) => v.attributes?.some((a) => a.name === firstGroup.name && a.value === selectedVal) && v.imageUrl)
+        ?.imageUrl?.trim() ?? null
     );
   }, [variations, groupedAttributes, selectedAttrs]);
 
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
 
   const displayImage =
-    selectedGalleryImage ||
-    firstBranchVarImageUrl ||
-    product.image?.sourceUrl?.trim() ||
-    "/placeholder.jpg";
+    selectedGalleryImage || firstBranchVarImageUrl || product.image?.sourceUrl?.trim() || "/placeholder.jpg";
 
   const currentIndex = useMemo(() => {
     const idx = allGalleryImages.indexOf(displayImage);
@@ -376,8 +339,7 @@ export default function ProductPageClient({
     if (!containerRef.current) return;
     const containerWidth = containerRef.current.offsetWidth;
     const itemWidth = 108;
-    const totalWidth =
-      allGalleryImages.length * 100 + (allGalleryImages.length - 1) * 8;
+    const totalWidth = allGalleryImages.length * 100 + (allGalleryImages.length - 1) * 8;
     const maxScroll = Math.max(0, totalWidth - containerWidth);
     const target = currentIndex * itemWidth - containerWidth / 2 + 50;
     setTrackOffset(Math.min(maxScroll, Math.max(0, target)));
@@ -394,16 +356,11 @@ export default function ProductPageClient({
         for (let i = changeIdx + 1; i < groupedAttributes.length; i++) {
           const nextGroup = groupedAttributes[i];
           const stillValid = variations.some((v) => {
-            const upToHere = groupedAttributes.slice(0, i + 1).every((g) =>
-              v.attributes?.some(
-                (a) => a.name === g.name && a.value === draft[g.name]
-              )
-            );
+            const upToHere = groupedAttributes
+              .slice(0, i + 1)
+              .every((g) => v.attributes?.some((a) => a.name === g.name && a.value === draft[g.name]));
             const matchesRegion = regionInfo
-              ? v.attributes?.some(
-                  (a) =>
-                    a.name === regionInfo.name && a.value === regionInfo.value
-                )
+              ? v.attributes?.some((a) => a.name === regionInfo.name && a.value === regionInfo.value)
               : true;
             return upToHere && matchesRegion && hasStock(v);
           });
@@ -413,20 +370,10 @@ export default function ProductPageClient({
               variations.some((v) => {
                 const pastLayers = groupedAttributes
                   .slice(0, i)
-                  .every((g) =>
-                    v.attributes?.some(
-                      (a) => a.name === g.name && a.value === draft[g.name]
-                    )
-                  );
-                const matchesCand = v.attributes?.some(
-                  (a) => a.name === nextGroup.name && a.value === cand.value
-                );
+                  .every((g) => v.attributes?.some((a) => a.name === g.name && a.value === draft[g.name]));
+                const matchesCand = v.attributes?.some((a) => a.name === nextGroup.name && a.value === cand.value);
                 const matchesRegion = regionInfo
-                  ? v.attributes?.some(
-                      (a) =>
-                        a.name === regionInfo.name &&
-                        a.value === regionInfo.value
-                    )
+                  ? v.attributes?.some((a) => a.name === regionInfo.name && a.value === regionInfo.value)
                   : true;
                 return pastLayers && matchesCand && matchesRegion && hasStock(v);
               })
@@ -451,17 +398,10 @@ export default function ProductPageClient({
           <div>
             {category?.image?.sourceUrl && (
               <div className="relative w-8 h-8 overflow-hidden mb-3">
-                <Image
-                  src={category.image.sourceUrl}
-                  alt={category.name}
-                  fill
-                  className="object-cover"
-                />
+                <Image src={category.image.sourceUrl} alt={category.name} fill className="object-cover" />
               </div>
             )}
-            <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">
-              {product.name}
-            </h1>
+            <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
             {product.shortNotify && (
               <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">
                 {product.shortNotify}
@@ -477,8 +417,8 @@ export default function ProductPageClient({
             regionInfo={regionInfo}
           />
 
-          <DeliveryAndPrice 
-            selectedVariation={combinedAggregateVar} 
+          <DeliveryAndPrice
+            selectedVariation={combinedAggregateVar}
             productName={product.name}
             selectedAttrs={selectedAttrs}
             groupedAttributes={groupedAttributes}
@@ -501,27 +441,19 @@ export default function ProductPageClient({
                 <GalleryNavButton
                   direction="prev"
                   disabled={currentIndex === 0}
-                  onClick={() =>
-                    setSelectedGalleryImage(allGalleryImages[currentIndex - 1])
-                  }
+                  onClick={() => setSelectedGalleryImage(allGalleryImages[currentIndex - 1])}
                 />
                 <GalleryNavButton
                   direction="next"
                   disabled={currentIndex === allGalleryImages.length - 1}
-                  onClick={() =>
-                    setSelectedGalleryImage(allGalleryImages[currentIndex + 1])
-                  }
+                  onClick={() => setSelectedGalleryImage(allGalleryImages[currentIndex + 1])}
                 />
               </>
             )}
           </div>
 
           {allGalleryImages.length > 1 && (
-            <div
-              ref={containerRef}
-              className="relative w-full overflow-hidden py-1"
-              dir="rtl"
-            >
+            <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="rtl">
               <div
                 className="flex transition-transform duration-300 ease-in-out will-change-transform"
                 style={{ gap: "8px", transform: `translateX(${trackOffset}px)` }}
@@ -538,13 +470,7 @@ export default function ProductPageClient({
                     }`}
                     aria-label={`تصویر ${idx + 1}`}
                   >
-                    <Image
-                      src={imgUrl}
-                      alt={`گالری ${idx + 1}`}
-                      fill
-                      quality={75}
-                      className="object-cover"
-                    />
+                    <Image src={imgUrl} alt={`گالری ${idx + 1}`} fill quality={75} className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -564,15 +490,10 @@ export default function ProductPageClient({
 
       {(product.secondaryGallery?.length ?? 0) > 0 && (
         <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
-          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
-            آیتم‌های محصول
-          </h2>
+          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">آیتم‌های محصول</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {product.secondaryGallery!.map((item, index) => (
-              <div
-                key={index}
-                className="bg-brand-menu border border-brand-surface_hover flex flex-col overflow-hidden shadow-md"
-              >
+              <div key={index} className="bg-brand-menu border border-brand-surface_hover flex flex-col overflow-hidden shadow-md">
                 {item.imageUrl && (
                   <div className="relative w-full aspect-[16/9] bg-brand-surface">
                     <Image
@@ -585,11 +506,7 @@ export default function ProductPageClient({
                     />
                   </div>
                 )}
-                {item.description && (
-                  <p className="text-brand-surface_m text-xs leading-7 p-4">
-                    {item.description}
-                  </p>
-                )}
+                {item.description && <p className="text-brand-surface_m text-xs leading-7 p-4">{item.description}</p>}
               </div>
             ))}
           </div>
@@ -598,9 +515,7 @@ export default function ProductPageClient({
 
       {product.description && (
         <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
-          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
-            توضیحات تکمیلی محصول
-          </h2>
+          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">توضیحات تکمیلی محصول</h2>
           <div
             className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none bg-brand-menu p-6 border border-brand-surface_hover"
             dangerouslySetInnerHTML={{ __html: product.description }}
