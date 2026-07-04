@@ -1,5 +1,6 @@
+import "server-only";
 import { fetchGraphQL } from "./client";
-import { formatProducts } from "./utils";
+import { formatProducts, sanitizeHtml } from "./utils";
 import { HeaderCategoryNode, ProductNode } from "./types";
 import {
   CATEGORY_BASIC_FIELDS,
@@ -39,10 +40,7 @@ export async function getHeaderCategories() {
 
   const nodes: HeaderCategoryNode[] = data?.productCategories?.nodes ?? [];
   return nodes
-    .filter(
-      (cat) =>
-        !["home", "uncategorized"].includes(cat.slug) && cat.image?.sourceUrl
-    )
+    .filter((cat) => !["home", "uncategorized"].includes(cat.slug) && cat.image?.sourceUrl)
     .map((cat) => ({
       title: cat.name,
       img: cat.image!.sourceUrl,
@@ -50,13 +48,8 @@ export async function getHeaderCategories() {
     }));
 }
 
-export async function getProducts(
-  categorySlug?: string,
-  activeRegion: string = "eu"
-) {
-  const tags = categorySlug
-    ? ["products", `category-${categorySlug}`]
-    : ["products"];
+export async function getProducts(categorySlug?: string, activeRegion: string = "eu") {
+  const tags = categorySlug ? ["products", `category-${categorySlug}`] : ["products"];
   const data = await fetchGraphQL(
     `
       ${PRODUCT_CARD_FIELDS}
@@ -73,10 +66,7 @@ export async function getProducts(
   return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
 }
 
-export async function getCategoryArchive(
-  slug: string,
-  activeRegion: string = "eu"
-) {
+export async function getCategoryArchive(slug: string, activeRegion: string = "eu") {
   if (!slug) return null;
 
   const [categoryData, bannersData] = await Promise.all([
@@ -125,7 +115,6 @@ export async function getCategoryArchive(
 }
 
 export async function getHomePageData(activeRegion: string = "eu") {
-
   const data = await fetchGraphQL(
     `
       ${PRODUCT_CARD_FIELDS}
@@ -205,10 +194,15 @@ export async function getPostDetail(slug: string) {
     [`post-${slug}`]
   );
 
-  return data?.post ?? null;
+  if (!data?.post) return null;
+
+  return {
+    ...data.post,
+    content: sanitizeHtml(data.post.content) ?? "",
+  };
 }
 
-export async function getProductDetail(slug: string) {
+export async function getProductDetail(slug: string, activeRegion: string = "eu") {
   if (!slug) return null;
 
   const data = await fetchGraphQL(
@@ -229,7 +223,7 @@ export async function getProductDetail(slug: string) {
   );
 
   if (!data?.product) return null;
-  const formatted = formatProducts([data.product], false);
+  const formatted = formatProducts([data.product], false, activeRegion);
   return formatted[0] ?? null;
 }
 
