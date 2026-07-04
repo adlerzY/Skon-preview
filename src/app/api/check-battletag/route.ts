@@ -2,31 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_TRACKED_IPS = 5000;
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function pruneIfNeeded(now: number) {
-  if (rateLimitMap.size <= MAX_TRACKED_IPS) return;
-  for (const [key, value] of rateLimitMap) {
-    if (now > value.resetAt) rateLimitMap.delete(key);
-  }
-  if (rateLimitMap.size > MAX_TRACKED_IPS) {
-    const excess = rateLimitMap.size - MAX_TRACKED_IPS;
-    const keys = rateLimitMap.keys();
-    for (let i = 0; i < excess; i++) {
-      const k = keys.next().value;
-      if (k) rateLimitMap.delete(k);
-    }
-  }
-}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  pruneIfNeeded(now);
-
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
@@ -67,10 +48,7 @@ async function getBattleTagsList(): Promise<string[]> {
 
 export async function POST(request: NextRequest) {
   const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { valid: false, message: "تعداد درخواست‌ها بیش از حد مجاز است" },
@@ -83,14 +61,20 @@ export async function POST(request: NextRequest) {
     const { battleTag } = body;
 
     if (!battleTag || typeof battleTag !== "string") {
-      return NextResponse.json({ valid: false, message: "بتل‌تگ ارسال نشده" }, { status: 400 });
+      return NextResponse.json(
+        { valid: false, message: "بتل‌تگ ارسال نشده" },
+        { status: 400 }
+      );
     }
 
     const trimmedTag = battleTag.trim();
 
     if (!isValidBattleTagFormat(trimmedTag)) {
       return NextResponse.json(
-        { valid: false, message: "فرمت بتل‌تگ نامعتبر است. مثال صحیح: PlayerName#1234" },
+        {
+          valid: false,
+          message: "فرمت بتل‌تگ نامعتبر است. مثال صحیح: PlayerName#1234",
+        },
         { status: 400 }
       );
     }
@@ -99,17 +83,29 @@ export async function POST(request: NextRequest) {
     const exists = friendsList.includes(trimmedTag);
 
     if (exists) {
+      // حالت اول: تگ در لیست فرندها هست
       return NextResponse.json(
-        { valid: true, isFriend: true, message: "شما در فرند لیست ما هستید، ثبت سفارش شما در کمتر از یک ساعت انجام می‌شود." },
+        { 
+          valid: true, 
+          isFriend: true, 
+          message: "شما در فرند لیست ما هستید، ثبت سفارش شما در کمتر از یک ساعت انجام می‌شود." 
+        },
         { status: 200 }
       );
     } else {
       return NextResponse.json(
-        { valid: true, isFriend: false, message: "سفارش شما با این بتل‌تگ جدید در سبد خرید ثبت شد." },
+        { 
+          valid: true, 
+          isFriend: false, 
+          message: "سفارش شما با این بتل‌تگ جدید در سبد خرید ثبت شد." 
+        },
         { status: 200 }
       );
     }
   } catch {
-    return NextResponse.json({ valid: false, message: "خطای سرور در بررسی بتل‌تگ" }, { status: 500 });
+    return NextResponse.json(
+      { valid: false, message: "خطای سرور در بررسی بتل‌تگ" },
+      { status: 500 }
+    );
   }
 }
