@@ -215,6 +215,20 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
           secondaryGallery { description imageUrl }
           galleryImages { nodes { sourceUrl(size: LARGE) } }
           attributes { nodes { name options } }
+          averageRating
+          reviewCount
+          reviews(first: 20) {
+            nodes {
+              id
+              content
+              date
+              author {
+                node {
+                  name
+                }
+              }
+            }
+          }
         }
       }
     `,

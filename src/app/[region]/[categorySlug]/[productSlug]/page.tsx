@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";
 import { cookies } from "next/headers";
+import { getCurrentUser } from "@/lib/auth/session";
 
 interface ProductPageProps {
   params: Promise<{
@@ -24,10 +25,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const resolvedSearchParams = await searchParams;
 
   const currentSlug = resolvedParams.productSlug || resolvedParams.slug;
-
-  if (!currentSlug) {
-    notFound();
-  }
+  if (!currentSlug) notFound();
 
   const urlRegion = resolvedParams.region?.toLowerCase();
   const cookieStore = await cookies();
@@ -38,11 +36,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
   const activeRegion = urlRegion || resolvedSearchParams.region || cookieRegion;
 
-  const product = await getProductDetail(currentSlug, activeRegion);
+  const [product, user] = await Promise.all([
+    getProductDetail(currentSlug, activeRegion),
+    getCurrentUser().catch(() => null),
+  ]);
 
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">
@@ -50,6 +49,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         product={product}
         initialEdition={resolvedSearchParams.edition}
         activeRegion={activeRegion}
+        isLoggedIn={Boolean(user)}
       />
     </main>
   );

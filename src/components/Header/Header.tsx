@@ -11,37 +11,41 @@ import { Download, HelpCircle } from "lucide-react";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql";
+import { getCurrentUser } from "@/lib/auth/session";
 
-const ACTION_BUTTON_CLASSES = 
+const ACTION_BUTTON_CLASSES =
   "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
-const ICON_WRAPPER_CLASSES = 
+const ICON_WRAPPER_CLASSES =
   "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
 export default async function Header() {
   const cookieStore = await cookies();
   const activeRegion = cookieStore.get("store_region")?.value || "eu";
 
-  const [shopGames, blogCats, regions] = await Promise.all([
+  const [shopGames, blogCats, regions, user] = await Promise.all([
     getHeaderCategories(),
     getHeaderBlogCategories(),
-    getRegions().catch(() => [])
+    getRegions().catch(() => []),
+    getCurrentUser().catch(() => null),
   ]);
 
   return (
     <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-[#15171e]" dir="rtl">
       <div className="hidden lg:flex w-full justify-between items-center h-[60px] px-6 max-w-[1600px] mx-auto">
         <div className="flex items-center h-full gap-8">
-            <Link href={`/${activeRegion}`} className="flex items-center shrink-0" aria-label="صفحه اصلی">            <Image
+          <Link href={`/${activeRegion}`} className="flex items-center shrink-0" aria-label="صفحه اصلی">
+            <Image
               src="/images/arena2battleLogo.webp"
               alt="Arena2Battle"
               width={100}
               height={40}
               className="h-10 w-auto object-contain"
               priority
-              style={{ width: "auto" }} 
+              style={{ width: "auto" }}
             />
           </Link>
-          <DesktopNavLinks activeRegion={activeRegion} />        </div>
+          <DesktopNavLinks activeRegion={activeRegion} />
+        </div>
 
         <div className="flex items-center">
           <Link href="/download" className={ACTION_BUTTON_CLASSES}>
@@ -58,7 +62,7 @@ export default async function Header() {
             <span>پشتیبانی</span>
           </Link>
 
-          <UserActions />
+          <UserActions user={user ? { name: user.name } : null} />
         </div>
       </div>
 

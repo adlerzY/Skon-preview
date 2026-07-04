@@ -18,6 +18,7 @@ interface Props {
   product: ProductNode;
   initialEdition?: string;
   activeRegion?: string;
+  isLoggedIn?: boolean;
 }
 
 function hasStock(v: VariationCard): boolean {
@@ -87,6 +88,7 @@ export default function ProductPageClient({
   product,
   initialEdition,
   activeRegion,
+  isLoggedIn
 }: Props) {
   const variations = product.variationCards ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
@@ -419,6 +421,7 @@ export default function ProductPageClient({
 
           <DeliveryAndPrice
             selectedVariation={combinedAggregateVar}
+            productId={product.databaseId}
             productName={product.name}
             selectedAttrs={selectedAttrs}
             groupedAttributes={groupedAttributes}
@@ -523,7 +526,13 @@ export default function ProductPageClient({
         </div>
       )}
 
-      <ProductReviews />
+      <ProductReviews
+        productId={product.databaseId}
+        isLoggedIn={Boolean(isLoggedIn)}
+        reviews={product.reviews?.nodes}
+        averageRating={product.averageRating ?? 0}
+        reviewCount={product.reviewCount}
+      />
     </div>
   );
 }
