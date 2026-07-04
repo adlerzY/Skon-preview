@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag, revalidatePath } from "next/cache";
-import { timingSafeEqual } from "crypto";
-
-const RATE_LIMIT = 20;
-const WINDOW_MS = 60 * 1000;
-const MAX_TRACKED_IPS = 5000;
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function pruneIfNeeded(now: number) {
-  if (rateLimitMap.size <= MAX_TRACKED_IPS) return;
-  for (const [key, value] of rateLimitMap) {
-    if (now > value.resetAt) rateLimitMap.delete(key);
-  }
-  if (rateLimitMap.size > MAX_TRACKED_IPS) {
-    const excess = rateLimitMap.size - MAX_TRACKED_IPS;
-    const keys = rateLimitMap.keys();
-    for (let i = 0; i < excess; i++) {
-      const k = keys.next().value;
-      if (k) rateLimitMap.delete(k);
-    }
-  }
-}
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60 * 1000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  pruneIfNeeded(now);
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
@@ -36,32 +17,22 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) {
-    timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return timingSafeEqual(bufA, bufB);
-}
-
 export async function POST(request: NextRequest) {
   try {
     const secret = request.headers.get("x-revalidate-secret");
-    const expected = process.env.REVALIDATION_SECRET;
 
-    if (!expected || !secret || !safeCompare(secret, expected)) {
+    if (secret !== process.env.REVALIDATION_SECRET) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
       "unknown";
-
     if (!checkRateLimit(ip)) {
-      return NextResponse.json({ message: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
+      return NextResponse.json(
+        { message: "Too many requests" },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
     }
 
     const body = await request.json();
@@ -95,7 +66,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ revalidated: true, tag, now: Date.now() });
+    return NextResponse.json({
+      revalidated: true,
+      tag,
+      now: Date.now(),
+    });
   } catch (error) {
     console.error("Revalidation error:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });

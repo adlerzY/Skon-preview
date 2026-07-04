@@ -1,10 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { getClientCookie, setClientCookie, removeClientCookie } from "@/lib/cookies";
+
+const CART_COOKIE = "a2b_cart";
+const CART_COOKIE_DAYS = 30;
 
 export interface CartItem {
   id: string;
   databaseId: number;
+  productId?: number;
+  variationId?: number;
   name: string;
   price: number;
   regularPrice?: number;
@@ -44,6 +50,7 @@ interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
+  clearCart: () => void;
   totalPrice: number;
 }
 
@@ -54,10 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      setCart(parseStoredCart(localStorage.getItem("cart")));
-    } catch {
-    }
+    setCart(parseStoredCart(getClientCookie(CART_COOKIE)));
     setIsMounted(true);
   }, []);
 
@@ -65,7 +69,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isMounted) return;
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem("cart", JSON.stringify(cart));
+        setClientCookie(CART_COOKIE, JSON.stringify(cart), { days: CART_COOKIE_DAYS });
       } catch {
       }
     }, 300);
@@ -83,10 +87,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart([]);
+    removeClientCookie(CART_COOKIE);
+  }, []);
+
   const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, totalPrice }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, totalPrice }}>
       {children}
     </CartContext.Provider>
   );

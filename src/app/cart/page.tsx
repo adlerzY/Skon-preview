@@ -1,12 +1,23 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import Button from "@/components/ui/Button"; 
-import { Trash2, Globe, Sliders } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { Trash2, Globe, Sliders, Loader2 } from "lucide-react";
+import { getClientCookie } from "@/lib/cookies";
+import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 
 export default function CartPage() {
   const { cart, removeFromCart } = useCart();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+
+  useEffect(() => {
+    setIsLoggedIn(getClientCookie(LOGGED_IN_COOKIE) === "1");
+  }, []);
+
   const totalOriginalPrice = cart?.reduce((sum: number, item: any) => {
     const regular = Number(item.regularPrice) || Number(item.price) || 0;
     return sum + regular;
@@ -25,6 +36,46 @@ export default function CartPage() {
         return { label: "کد اورجینال (آنی)", color: "text-brand-sabz bg-brand-sabz/10 border-brand-sabz/20" };
       default:
         return { label: method, color: "text-brand-m_khonsa bg-brand-surface" };
+    }
+  };
+
+  const handleCheckout = async () => {
+    setCheckoutError("");
+
+    if (!isLoggedIn) {
+      window.location.href = "/my-account";
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch("/api/checkout/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart.map((item) => ({
+            productId: item.productId,
+            variationId: item.variationId,
+            quantity: 1,
+            deliveryMethod: item.deliveryMethod,
+            region: item.region,
+            variationName: item.variationName,
+            customFields: item.customFields,
+          })),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setCheckoutError(data?.error || "خطا در ثبت سفارش");
+        return;
+      }
+
+      window.location.href = data.redirectUrl;
+    } catch {
+      setCheckoutError("خطا در ارتباط با سرور");
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -63,7 +114,7 @@ export default function CartPage() {
               >
                 <div className="flex flex-col gap-2.5">
                   <h3 className="font-bold text-base md:text-lg text-brand-active">{item.name}</h3>
-                  
+
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className={`px-2.5 py-1 border font-bold ${delivery.color}`}>
                       {delivery.label}
@@ -143,11 +194,33 @@ export default function CartPage() {
             </div>
           </div>
 
+          {!isLoggedIn && (
+            <p className="text-[11px] text-brand-zard bg-brand-zard/10 border border-brand-zard/20 p-2.5">
+              برای تکمیل خرید ابتدا باید وارد حساب کاربری شوید.
+            </p>
+          )}
+
+          {checkoutError && (
+            <p className="text-xs text-red-500 font-medium bg-red-500/10 border border-red-500/20 p-3">
+              {checkoutError}
+            </p>
+          )}
+
           <Button
             variant="primary"
-            className="w-full py-4 mt-2"
+            onClick={handleCheckout}
+            disabled={isCheckingOut}
+            className="w-full py-4 mt-2 disabled:opacity-60"
           >
-            تکمیل سفارش و پرداخت
+            {isCheckingOut ? (
+              <span className="flex items-center gap-2">
+                <Loader2 size={16} className="animate-spin" /> در حال انتقال...
+              </span>
+            ) : isLoggedIn ? (
+              "تکمیل سفارش و پرداخت"
+            ) : (
+              "ورود و تکمیل سفارش"
+            )}
           </Button>
         </div>
       </div>

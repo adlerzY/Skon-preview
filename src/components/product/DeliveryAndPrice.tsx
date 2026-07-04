@@ -142,6 +142,7 @@ function getRegularPrice(v: VariationCard, type: DeliveryType): number | null {
 
 interface DeliveryAndPriceProps {
   selectedVariation: VariationCard | null;
+  productId: number;
   productName: string;
   selectedAttrs: Record<string, string>;
   groupedAttributes: { name: string; values: any[] }[];
@@ -150,6 +151,7 @@ interface DeliveryAndPriceProps {
 
 export default function DeliveryAndPrice({
   selectedVariation,
+  productId,
   productName,
   selectedAttrs,
   groupedAttributes,
@@ -256,10 +258,14 @@ export default function DeliveryAndPrice({
       .map((g) => selectedAttrs[g.name])
       .filter(Boolean);
     const variationNameValue = traitValues.length > 0 ? traitValues.join(" - ") : undefined;
+    const variationIdValue =
+      selectedVariation.databaseId !== productId ? selectedVariation.databaseId : undefined;
 
     addToCart({
       id: `${selectedVariation.databaseId}-${deliveryType}`,
       databaseId: selectedVariation.databaseId,
+      productId,
+      variationId: variationIdValue,
       name: productName,
       price: currentPrice || 0,
       regularPrice: regularPrice || undefined,

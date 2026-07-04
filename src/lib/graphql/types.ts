@@ -42,6 +42,16 @@ export interface ProductNode {
   defaultVariationId?: number;
   defaultEdition?: string;
   activeRegion?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  reviews?: {
+    nodes: Array<{
+      id: string;
+      content: string;
+      date?: string;
+      author?: { node?: { name?: string } };
+    }>;
+  };
   productCategories?: {
     nodes: Array<{
       name: string;

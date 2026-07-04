@@ -29,7 +29,8 @@ export async function fetchGraphQL(
   query: string,
   variables: Record<string, unknown> = {},
   tags: string[] = [],
-  cacheStrategy: CacheStrategy | RequestCache = "force-cache"
+  cacheStrategy: CacheStrategy | RequestCache = "force-cache",
+  authToken?: string
 ) {
   const strategy: CacheStrategy =
     typeof cacheStrategy === "string"
@@ -42,7 +43,10 @@ export async function fetchGraphQL(
     next?: { tags?: string[]; revalidate?: number };
   } = {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
     body: JSON.stringify({ query, variables }),
   };
 
