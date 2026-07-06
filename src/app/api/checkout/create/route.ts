@@ -11,7 +11,7 @@ interface CheckoutCartItem {
   deliveryMethod: string;
   region?: string;
   variationName?: string;
-  customFields?: { email?: string; battleTag?: string };
+  customFields?: { email?: string; battleTag?: string; password?: string;};
 }
 
 export async function POST(request: NextRequest) {
@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
         { key: "روش تحویل", value: item.deliveryMethod },
         ...(item.region ? [{ key: "ریجن", value: item.region }] : []),
         ...(item.variationName ? [{ key: "ویژگی", value: item.variationName }] : []),
-        ...(item.customFields?.email ? [{ key: "ایمیل اکانت", value: item.customFields.email }] : []),
-        ...(item.customFields?.battleTag ? [{ key: "بتل‌تگ", value: item.customFields.battleTag }] : []),
+        ...(item.customFields?.email ? [{ key: "_secure_email", value: item.customFields.email }] : []),
+        ...(item.customFields?.password ? [{ key: "_secure_password", value: item.customFields.password }] : []),
+        ...(item.customFields?.battleTag ? [{ key: "_secure_battletag", value: item.customFields.battleTag }] : []),
       ],
     }));
 

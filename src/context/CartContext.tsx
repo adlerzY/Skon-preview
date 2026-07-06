@@ -20,6 +20,7 @@ export interface CartItem {
   customFields?: {
     battleTag?: string;
     email?: string;
+    password?: string;
   };
 }
 

@@ -43,25 +43,19 @@ export const CUSTOMER_ORDERS_QUERY = `
       databaseId
       orders(first: 30) {
         nodes {
-          id
-          databaseId
-          orderNumber
-          status
-          date
-          total
+          id databaseId orderNumber status date total
           lineItems {
             nodes {
-              productId
-              quantity
-              total
-              product {
-                node {
-                  name
-                }
-              }
+              id databaseId quantity total
+              fulfillmentStatus
+              product { node { name databaseId } }
+              metaData { key value }
             }
           }
         }
+      }
+      downloadableItems {
+        nodes { downloadId url product { node { databaseId } } }
       }
     }
   }
