@@ -14,6 +14,11 @@ interface OrderNode {
   lineItems?: { nodes?: OrderLineItem[] };
 }
 
+interface OrdersListProps {
+  orders: OrderNode[];
+  downloadableItems: any[];
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PENDING: { label: "در انتظار پرداخت", color: "text-brand-zard bg-brand-zard/10 border-brand-zard/20" },
   PROCESSING: { label: "در حال پردازش", color: "text-brand-blue bg-brand-blue/10 border-brand-blue/20" },
@@ -24,7 +29,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   FAILED: { label: "ناموفق", color: "text-red-500 bg-red-500/10 border-red-500/20" },
 };
 
-export default function OrdersList({ orders }: { orders: OrderNode[] }) {
+export default function OrdersList({ orders, downloadableItems }: OrdersListProps) {
   if (!orders || orders.length === 0) {
     return (
       <div className="bg-brand-surface border border-brand-surface_hover p-10 text-center text-brand-m_khonsa">

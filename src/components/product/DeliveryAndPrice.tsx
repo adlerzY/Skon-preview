@@ -7,15 +7,19 @@ import { User, Gift, FileCheck } from "lucide-react";
 
 function DirectForm({
   email,
+  password,
   onEmailChange,
+  onPasswordChange,
 }: {
   email: string;
+  password: string;
   onEmailChange: (v: string) => void;
+  onPasswordChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs text-brand-blue font-bold">
-        🔑 ایمیل اکانت جهت خرید مستقیم:
+        🔑 اطلاعات ورود اکانت جهت خرید مستقیم:
       </p>
       <input
         type="email"
@@ -24,10 +28,19 @@ function DirectForm({
         placeholder="ایمیل اکانت"
         className="w-full bg-brand-bg border border-brand-surface_hover p-3 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
         dir="ltr"
-        autoComplete="email"
+        autoComplete="off"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => onPasswordChange(e.target.value)}
+        placeholder="پسورد اکانت"
+        className="w-full bg-brand-bg border border-brand-surface_hover p-3 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
+        dir="ltr"
+        autoComplete="new-password"
       />
       <p className="text-[11px] text-brand-m_khonsa">
-        پسورد خود را اینجا وارد نکنید — پس از تأیید سفارش از طریق پیام با شما در ارتباط خواهیم بود.
+        🔒 اطلاعات شما پیش از ذخیره‌سازی رمزنگاری می‌شود و فقط تیم پشتیبانی برای انجام سفارش به آن دسترسی دارد.
       </p>
     </div>
   );
@@ -162,6 +175,7 @@ export default function DeliveryAndPrice({
   const [isMounted, setIsMounted] = useState(false);
   const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(null);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [battleTag, setBattleTag] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<"idle" | "friend" | "new-tag" | "error">("idle");
@@ -179,6 +193,7 @@ export default function DeliveryAndPrice({
     }
     setDeliveryType(getDefaultDelivery(selectedVariation));
     setEmail("");
+    setPassword("");
     setBattleTag("");
     setVerifyStatus("idle");
     setServerMessage("");
@@ -244,7 +259,7 @@ export default function DeliveryAndPrice({
 
   const isFormValid = (): boolean => {
     if (!deliveryType) return false;
-    if (deliveryType === "direct") return email.trim().length > 3;
+    if (deliveryType === "direct") return email.trim().length > 3 && password.trim().length > 0;
     if (deliveryType === "gift") return verifyStatus === "friend" || verifyStatus === "new-tag";
     if (deliveryType === "code") return true;
     return false;
@@ -276,7 +291,7 @@ export default function DeliveryAndPrice({
         deliveryType === "gift"
           ? { battleTag }
           : deliveryType === "direct"
-          ? { email }
+          ? { email, password }
           : undefined,
     });
 
@@ -299,7 +314,7 @@ export default function DeliveryAndPrice({
       tooltip: {
         title: "فست متد",
         titleColor: "text-brand-blue",
-        body: "سریع‌ترین حالت فعال‌سازی. نیازمند ایمیل اکانت شما.",
+        body: "سریع‌ترین حالت فعال‌سازی. نیازمند اطلاعات ورود اکانت شما.",
       },
       icon: <User size={22} strokeWidth={2} />,
     },
@@ -370,7 +385,12 @@ export default function DeliveryAndPrice({
       {deliveryType && (
         <div className="bg-brand-surface p-2 border border-brand-surface_hover animate-in fade-in duration-300">
           {deliveryType === "direct" && (
-            <DirectForm email={email} onEmailChange={setEmail} />
+            <DirectForm
+              email={email}
+              password={password}
+              onEmailChange={setEmail}
+              onPasswordChange={setPassword}
+            />
           )}
           {deliveryType === "gift" && (
             <GiftForm
