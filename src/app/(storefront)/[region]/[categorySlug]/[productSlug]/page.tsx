@@ -1,8 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { getProductDetail } from "@/lib/graphql";
+import { getProductDetail, getWishlistProductIds } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";
 import { cookies } from "next/headers";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthToken, getCurrentUser } from "@/lib/auth/session";
 
 interface ProductPageProps {
   params: Promise<{
@@ -36,12 +36,16 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
   const activeRegion = urlRegion || resolvedSearchParams.region || cookieRegion;
 
-  const [product, user] = await Promise.all([
+  const [product, user, token] = await Promise.all([
     getProductDetail(currentSlug, activeRegion),
     getCurrentUser().catch(() => null),
+    getAuthToken(),
   ]);
 
   if (!product) notFound();
+
+  const wishlistIds = user ? await getWishlistProductIds(token) : [];
+  const isInWishlist = wishlistIds.includes(product.databaseId);
 
   return (
     <main className="container mx-auto px-6 py-5 max-w-site">
@@ -50,6 +54,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         initialEdition={resolvedSearchParams.edition}
         activeRegion={activeRegion}
         isLoggedIn={Boolean(user)}
+        initialInWishlist={isInWishlist}
       />
     </main>
   );

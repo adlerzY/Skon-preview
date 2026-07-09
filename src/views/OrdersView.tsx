@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { getAuthToken, getCurrentUser } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
-import OrdersList from "@/components/account/OrdersList";
+import OrdersTable from "@/components/account/OrdersTable";
 
 const SUCCESSFUL_STATUSES = ["PROCESSING", "COMPLETED"];
 
@@ -14,7 +14,7 @@ export default async function OrdersView() {
 
   const token = await getAuthToken();
   const data = await fetchGraphQL(CUSTOMER_ORDERS_QUERY, {}, [], "no-store", token || undefined);
-  
+
   const allOrders = data?.customer?.orders?.nodes ?? [];
   const orders = allOrders.filter((o: any) => SUCCESSFUL_STATUSES.includes(o.status));
 
@@ -30,8 +30,8 @@ export default async function OrdersView() {
         بازگشت به حساب کاربری
       </Link>
       <h1 className="text-2xl font-black mb-6">سفارش‌های من</h1>
-      
-      <OrdersList orders={orders} downloadableItems={downloadableItems} />
+
+      <OrdersTable orders={orders} downloadableItems={downloadableItems} />
     </main>
   );
 }
