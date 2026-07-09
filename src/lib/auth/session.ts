@@ -8,6 +8,7 @@ export interface SessionUser {
   databaseId: number;
   name: string;
   email: string;
+  avatarUrl?: string | null;
 }
 
 const VIEWER_QUERY = `
@@ -17,6 +18,7 @@ const VIEWER_QUERY = `
       databaseId
       name
       email
+      avatarUrl
     }
   }
 `;

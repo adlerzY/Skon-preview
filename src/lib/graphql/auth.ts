@@ -87,3 +87,37 @@ export const CREATE_ORDER_MUTATION = `
     }
   }
 `;
+
+export const UPDATE_AVATAR_MUTATION = `
+  mutation UpdateUserAvatar($avatarUrl: String!) {
+    updateUserAvatar(input: { avatarUrl: $avatarUrl }) {
+      success
+      avatarUrl
+    }
+  }
+`;
+export const CUSTOMER_ORDERS_LIGHT_QUERY = `
+  query GetCustomerOrdersLight {
+    customer {
+      orders(first: 30) {
+        nodes { databaseId orderNumber date }
+      }
+    }
+  }
+`;
+
+export const CREATE_SUPPORT_TICKET_MUTATION = `
+  mutation CreateSupportTicket($title: String!, $content: String!, $linkedOrderId: Int) {
+    createSupportTicket(input: { title: $title, content: $content, linkedOrderId: $linkedOrderId }) {
+      ticketId
+    }
+  }
+`;
+
+export const TOGGLE_WISHLIST_MUTATION = `
+  mutation ToggleWishlistItem($productId: Int!) {
+    toggleWishlistItem(input: { productId: $productId }) {
+      inWishlist
+    }
+  }
+`;
