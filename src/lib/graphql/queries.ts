@@ -1,3 +1,4 @@
+// FILE: src/lib/graphql/queries.ts
 import "server-only";
 import { fetchGraphQL } from "./client";
 import { formatProducts, sanitizeHtml } from "./utils";
@@ -66,32 +67,24 @@ export async function getProducts(categorySlug?: string, activeRegion: string = 
   return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
 }
 
-export async function getProductsByIds(ids: number[], activeRegion: string = "eu") {
+export async function getProductsByIds(ids: number[], activeRegion: string = "eu"): Promise<ProductNode[]> {
   if (!ids || ids.length === 0) return [];
 
-  const results = await Promise.all(
-    ids.map((id) =>
-      fetchGraphQL(
-        `
-          ${PRODUCT_CARD_FIELDS}
-          query GetProductById($id: ID!) {
-            product(id: $id, idType: DATABASE_ID) {
-              ...ProductCardFields
-            }
-          }
-        `,
-        { id: String(id) },
-        [],
-        "no-store"
-      )
-    )
+  const data = await fetchGraphQL(
+    `
+      ${PRODUCT_CARD_FIELDS}
+      query GetProductsByIds($include: [Int]) {
+        products(first: 100, where: { include: $include, status: "PUBLISH" }) {
+          nodes { ...ProductCardFields }
+        }
+      }
+    `,
+    { include: ids },
+    [],
+    "no-store"
   );
 
-  const products = results
-    .map((data) => data?.product)
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
-
-  return formatProducts(products as ProductNode[], true, activeRegion);
+  return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
 }
 
 export async function getCategoryArchive(slug: string, activeRegion: string = "eu") {
@@ -253,6 +246,9 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
               author {
                 node {
                   name
+                  ... on User {
+                    avatarUrl
+                  }
                 }
               }
             }

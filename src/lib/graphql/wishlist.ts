@@ -4,9 +4,7 @@ import { fetchGraphQL } from "./client";
 const WISHLIST_IDS_QUERY = `
   query GetWishlistIds {
     viewer {
-      wishlist {
-        databaseId
-      }
+      wishlistIds
     }
   }
 `;
@@ -14,6 +12,6 @@ const WISHLIST_IDS_QUERY = `
 export async function getWishlistProductIds(token?: string | null): Promise<number[]> {
   if (!token) return [];
   const data = await fetchGraphQL(WISHLIST_IDS_QUERY, {}, [], "no-store", token);
-  const nodes = data?.viewer?.wishlist ?? [];
-  return nodes.map((p: any) => p.databaseId).filter((id: any) => typeof id === "number");
+  const ids = data?.viewer?.wishlistIds ?? [];
+  return Array.isArray(ids) ? ids.filter((id: any) => typeof id === "number") : [];
 }
