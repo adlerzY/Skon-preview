@@ -10,14 +10,14 @@ interface MetaEntry { key: string; value: string; }
 interface LineItem {
   id: string; databaseId: number; quantity?: number; total?: string;
   fulfillmentStatus?: string;
-  product?: { node?: { name?: string; databaseId?: number } };
+  product?: { name?: string; databaseId?: number };
   metaData?: MetaEntry[];
 }
 interface OrderNode {
   id: string; databaseId: number; orderNumber?: string; status?: string; date?: string; total?: string;
   lineItems?: { nodes?: LineItem[] };
 }
-interface DownloadableItem { downloadId: string; url: string; product?: { node?: { databaseId?: number } }; }
+interface DownloadableItem { downloadId: string; url: string; product?: { databaseId?: number }; }
 
 const STATUS_LABELS: Record<string, { label: string; tone: "blue" | "sabz" | "zard" | "red" | "neutral" }> = {
   PENDING: { label: "در انتظار پرداخت", tone: "zard" },
@@ -82,11 +82,11 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
                       const deliveryMethod = getMeta(item, "روش تحویل");
                       const region = getMeta(item, "ریجن");
                       const variationName = getMeta(item, "ویژگی");
-                      const download = downloadableItems.find((d) => d.product?.node?.databaseId === item.product?.node?.databaseId);
+                      const download = downloadableItems.find((d) => d.product?.databaseId === item.product?.databaseId);
 
                       return (
                         <tr key={item.id} className="border-b border-brand-surface_hover/60 last:border-0">
-                          <td className="p-3 align-top text-white font-medium">{item.product?.node?.name}</td>
+                          <td className="p-3 align-top text-white font-medium">{item.product?.name}</td>
                           <td className="p-3 align-top">
                             <div className="flex flex-wrap gap-1.5">
                               {region && <Badge tone="blue">ریجن: {region}</Badge>}

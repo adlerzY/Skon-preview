@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getAuthToken, getCurrentUser } from "@/lib/auth/session";
+import { getWishlistProductIds, getProductsByIds } from "@/lib/graphql";
 import WishlistGrid from "@/components/account/WishlistGrid";
-import { fetchGraphQL, formatProducts, PRODUCT_CARD_FIELDS } from "@/lib/graphql";
 
 export const dynamic = "force-dynamic";
 
@@ -13,24 +13,8 @@ export default async function WishlistPage() {
   const cookieStore = await cookies();
   const activeRegion = cookieStore.get("store_region")?.value || "eu";
 
-  const data = await fetchGraphQL(
-    `
-      ${PRODUCT_CARD_FIELDS}
-      query GetWishlist {
-        viewer {
-          wishlist {
-            ...ProductCardFields
-          }
-        }
-      }
-    `,
-    {},
-    [],
-    "no-store",
-    token || undefined
-  );
-
-  const products = formatProducts(data?.viewer?.wishlist ?? [], true, activeRegion);
+  const ids = await getWishlistProductIds(token);
+  const products = await getProductsByIds(ids, activeRegion);
 
   return (
     <div>

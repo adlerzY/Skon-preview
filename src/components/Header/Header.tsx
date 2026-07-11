@@ -62,7 +62,7 @@ export default async function Header() {
             <span>پشتیبانی</span>
           </Link>
 
-          <UserActions user={user ? { name: user.name } : null} />
+          <UserActions user={user ? { name: user.name, avatarUrl: user.avatarUrl } : null} />
         </div>
       </div>
 

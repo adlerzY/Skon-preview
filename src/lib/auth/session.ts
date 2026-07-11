@@ -1,14 +1,16 @@
+// FILE: src/lib/auth/session.ts
 import "server-only";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { AUTH_TOKEN_COOKIE } from "./constants";
+import { resolveAvatarUrl } from "@/lib/avatars";
 
 export interface SessionUser {
   id: string;
   databaseId: number;
   name: string;
   email: string;
-  avatarUrl?: string | null;
+  avatarUrl: string | null;
 }
 
 const VIEWER_QUERY = `
@@ -35,7 +37,11 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
     const data = await fetchGraphQL(VIEWER_QUERY, {}, [], "no-store", token);
     if (!data?.viewer?.id) return null;
-    return data.viewer as SessionUser;
+
+    const viewer = data.viewer;
+    const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl);
+
+    return { ...viewer, avatarUrl } as SessionUser;
   } catch {
     return null;
   }

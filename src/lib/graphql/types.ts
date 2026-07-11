@@ -49,7 +49,7 @@ export interface ProductNode {
       id: string;
       content: string;
       date?: string;
-      author?: { node?: { name?: string } };
+      author?: { node?: { name?: string; avatarUrl?: string } };
     }>;
   };
   productCategories?: {

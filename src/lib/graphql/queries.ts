@@ -1,3 +1,4 @@
+// FILE: src/lib/graphql/queries.ts
 import "server-only";
 import { fetchGraphQL } from "./client";
 import { formatProducts, sanitizeHtml } from "./utils";
@@ -61,6 +62,26 @@ export async function getProducts(categorySlug?: string, activeRegion: string = 
     `,
     categorySlug ? { categoryIn: [categorySlug] } : {},
     tags
+  );
+
+  return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
+}
+
+export async function getProductsByIds(ids: number[], activeRegion: string = "eu"): Promise<ProductNode[]> {
+  if (!ids || ids.length === 0) return [];
+
+  const data = await fetchGraphQL(
+    `
+      ${PRODUCT_CARD_FIELDS}
+      query GetProductsByIds($include: [Int]) {
+        products(first: 100, where: { include: $include, status: "PUBLISH" }) {
+          nodes { ...ProductCardFields }
+        }
+      }
+    `,
+    { include: ids },
+    [],
+    "no-store"
   );
 
   return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
@@ -225,6 +246,9 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
               author {
                 node {
                   name
+                  ... on User {
+                    avatarUrl
+                  }
                 }
               }
             }

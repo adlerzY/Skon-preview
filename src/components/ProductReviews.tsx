@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 interface ReviewNode {
   id: string;
   content: string;
   date?: string;
-  author?: { node?: { name?: string } };
+  author?: { node?: { name?: string; avatarUrl?: string } };
 }
 
 interface ProductReviewsProps {
@@ -168,10 +169,13 @@ export default function ProductReviews({
             ) : (
               reviews.map((review) => (
                 <div key={review.id} className="bg-brand-menu p-5 border border-brand-surface_hover flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-brand-active">
-                      {review.author?.node?.name || "کاربر"}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <UserAvatar src={review.author?.node?.avatarUrl} name={review.author?.node?.name} size="sm" />
+                      <span className="text-sm font-bold text-brand-active">
+                        {review.author?.node?.name || "کاربر"}
+                      </span>
+                    </div>
                     {review.date && (
                       <span className="text-xs text-brand-m_khonsa">
                         {new Date(review.date).toLocaleDateString("fa-IR")}
