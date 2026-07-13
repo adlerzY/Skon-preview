@@ -316,11 +316,14 @@ export async function getBlogCategoryArchive(slug: string) {
   return data?.category ?? null;
 }
 
-export async function getAllBlogPosts() {
+export async function getAllBlogPosts(options: { search?: string; after?: string } = {}) {
+  const { search, after } = options;
+
   const data = await fetchGraphQL(
     `
-      query GetAllBlogPosts {
-        posts(first: 20) {
+      query GetAllBlogPosts($after: String, $search: String) {
+        posts(first: 12, after: $after, where: { search: $search }) {
+          pageInfo { hasNextPage endCursor }
           nodes {
             id title slug date
             featuredImage { node { sourceUrl(size: MEDIUM) } }
@@ -330,9 +333,13 @@ export async function getAllBlogPosts() {
         }
       }
     `,
-    {},
-    ["all-blog-posts"]
+    { after, search },
+    search ? [] : ["all-blog-posts"],
+    search ? "no-store" : "force-cache"
   );
 
-  return data?.posts?.nodes ?? [];
+  return {
+    posts: data?.posts?.nodes ?? [],
+    pageInfo: data?.posts?.pageInfo ?? { hasNextPage: false, endCursor: null },
+  };
 }

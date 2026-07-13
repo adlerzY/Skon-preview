@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { fetchGraphQL } from "@/lib/graphql";
-import { LOGIN_MUTATION } from "@/lib/graphql/auth";
+import { LOGIN_MUTATION, REGISTER_SESSION_MUTATION } from "@/lib/graphql/auth";
 import {
   AUTH_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   LOGGED_IN_COOKIE,
+  SESSION_ID_COOKIE,
   AUTH_TOKEN_MAX_AGE,
   REFRESH_TOKEN_MAX_AGE,
 } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { detectDeviceLabel } from "@/lib/deviceLabel";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -35,6 +38,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "نام کاربری یا رمز عبور اشتباه است" }, { status: 401 });
     }
 
+    const sessionId = randomUUID();
+    const userAgent = request.headers.get("user-agent") || "";
+
+    await fetchGraphQL(
+      REGISTER_SESSION_MUTATION,
+      { sessionId, deviceLabel: detectDeviceLabel(userAgent), ipAddress: ip, userAgent },
+      [],
+      "no-store",
+      result.authToken
+    );
+
     const isProd = process.env.NODE_ENV === "production";
     const response = NextResponse.json({
       success: true,
@@ -53,6 +67,10 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(LOGGED_IN_COOKIE, "1", {
       httpOnly: false, secure: isProd, sameSite: "lax", path: "/", maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    response.cookies.set(SESSION_ID_COOKIE, sessionId, {
+      httpOnly: true, secure: isProd, sameSite: "lax", path: "/", maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     return response;

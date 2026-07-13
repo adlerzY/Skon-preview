@@ -1,13 +1,13 @@
-// src/app/api/auth/refresh/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
-import { REFRESH_TOKEN_MUTATION } from "@/lib/graphql/auth";
-import { AUTH_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, AUTH_TOKEN_MAX_AGE } from "@/lib/auth/constants";
+import { REFRESH_TOKEN_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/graphql/auth";
+import { AUTH_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, SESSION_ID_COOKIE, AUTH_TOKEN_MAX_AGE } from "@/lib/auth/constants";
 
 export async function POST() {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
+  const sessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
 
   if (!refreshToken) {
     return NextResponse.json({ error: "نشست شما منقضی شده، دوباره وارد شوید" }, { status: 401 });
@@ -19,6 +19,10 @@ export async function POST() {
 
     if (!newToken) {
       return NextResponse.json({ error: "امکان تمدید نشست وجود ندارد" }, { status: 401 });
+    }
+
+    if (sessionId) {
+      await fetchGraphQL(TOUCH_SESSION_MUTATION, { sessionId }, [], "no-store", newToken);
     }
 
     const response = NextResponse.json({ success: true });

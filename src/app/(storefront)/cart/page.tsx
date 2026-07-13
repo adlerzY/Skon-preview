@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useCart } from "@/context/CartContext";
+import { useState, useEffect, useMemo } from "react";
+import { useCart, itemNeedsCredentials } from "@/context/CartContext";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { Trash2, Globe, Sliders, Loader2, Minus, Plus } from "lucide-react";
 import { getClientCookie } from "@/lib/cookies";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
+import MissingCredentialsForm from "@/components/cart/MissingCredentialsForm";
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, totalQuantity } = useCart();
@@ -17,6 +18,8 @@ export default function CartPage() {
   useEffect(() => {
     setIsLoggedIn(getClientCookie(LOGGED_IN_COOKIE) === "1");
   }, []);
+
+  const itemsNeedingCredentials = useMemo(() => cart.filter(itemNeedsCredentials), [cart]);
 
   const totalOriginalPrice = cart?.reduce((sum: number, item) => {
     const regular = Number(item.regularPrice) || Number(item.price) || 0;
@@ -44,6 +47,11 @@ export default function CartPage() {
 
     if (!isLoggedIn) {
       window.location.href = "/my-account";
+      return;
+    }
+
+    if (itemsNeedingCredentials.length > 0) {
+      setCheckoutError("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید");
       return;
     }
 
@@ -107,12 +115,13 @@ export default function CartPage() {
         <div className="lg:col-span-2 flex flex-col gap-4">
           {cart.map((item) => {
             const delivery = getDeliveryLabel(item.deliveryMethod);
+            const needsCreds = itemNeedsCredentials(item);
             return (
               <div
                 key={item.id}
                 className="bg-brand-surface border border-brand-surface_hover p-4 md:p-5 flex flex-col md:flex-row justify-between gap-4 relative animate-in fade-in duration-200"
               >
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-base md:text-lg text-brand-active">{item.name}</h3>
                     {item.quantity > 1 && (
@@ -150,6 +159,8 @@ export default function CartPage() {
                       </span>
                     )}
                   </div>
+
+                  {needsCreds && <MissingCredentialsForm item={item} />}
 
                   <div className="flex items-center gap-2 mt-1">
                     <button
@@ -224,6 +235,12 @@ export default function CartPage() {
           {!isLoggedIn && (
             <p className="text-[11px] text-brand-zard bg-brand-zard/10 border border-brand-zard/20 p-2.5">
               برای تکمیل خرید ابتدا باید وارد حساب کاربری شوید.
+            </p>
+          )}
+
+          {itemsNeedingCredentials.length > 0 && (
+            <p className="text-[11px] text-brand-zard bg-brand-zard/10 border border-brand-zard/20 p-2.5">
+              {itemsNeedingCredentials.length.toLocaleString("fa-IR")} آیتم نیازمند تکمیل اطلاعات است.
             </p>
           )}
 

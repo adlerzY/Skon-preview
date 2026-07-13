@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { VariationCard } from "@/lib/graphql";
 import { useCart } from "@/context/CartContext";
-import { User, Gift, FileCheck } from "lucide-react";
+import { User, Gift, FileCheck, Eye, EyeOff, ClipboardPaste } from "lucide-react";
 
 function DirectForm({
   email,
@@ -16,31 +16,75 @@ function DirectForm({
   onEmailChange: (v: string) => void;
   onPasswordChange: (v: string) => void;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const pasteInto = async (setter: (v: string) => void) => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) setter(text.trim());
+    } catch {
+      // دسترسی به کلیپ‌بورد رد شد؛ کاربر می‌تواند دستی تایپ کند
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs text-brand-blue font-bold">
         🔑 اطلاعات ورود اکانت جهت خرید مستقیم:
       </p>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => onEmailChange(e.target.value)}
-        placeholder="ایمیل اکانت"
-        className="w-full bg-brand-bg border border-brand-surface_hover p-3 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
-        dir="ltr"
-        autoComplete="off"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => onPasswordChange(e.target.value)}
-        placeholder="پسورد اکانت"
-        className="w-full bg-brand-bg border border-brand-surface_hover p-3 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
-        dir="ltr"
-        autoComplete="new-password"
-      />
+      <div className="relative">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          placeholder="ایمیل اکانت"
+          className="w-full bg-brand-bg border border-brand-surface_hover p-3 pl-10 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
+          dir="ltr"
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          onClick={() => pasteInto(onEmailChange)}
+          className="absolute left-2 top-1/2 -translate-y-1/2 text-brand-m_khonsa hover:text-brand-blue transition-colors p-1"
+          aria-label="چسباندن ایمیل"
+          tabIndex={-1}
+        >
+          <ClipboardPaste size={15} />
+        </button>
+      </div>
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => onPasswordChange(e.target.value)}
+          placeholder="پسورد اکانت"
+          className="w-full bg-brand-bg border border-brand-surface_hover p-3 pl-16 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
+          dir="ltr"
+          autoComplete="new-password"
+        />
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => pasteInto(onPasswordChange)}
+            className="text-brand-m_khonsa hover:text-brand-blue transition-colors p-1"
+            aria-label="چسباندن پسورد"
+            tabIndex={-1}
+          >
+            <ClipboardPaste size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="text-brand-m_khonsa hover:text-brand-blue transition-colors p-1"
+            aria-label={showPassword ? "مخفی کردن پسورد" : "نمایش پسورد"}
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+      </div>
       <p className="text-[11px] text-brand-m_khonsa">
-        🔒 اطلاعات شما پیش از ذخیره‌سازی رمزنگاری می‌شود و فقط تیم پشتیبانی برای انجام سفارش به آن دسترسی دارد.
+        🔒 اطلاعات شما فقط تا زمانی که این تب باز است نگه‌داری می‌شود و پیش از ارسال، رمزنگاری می‌شود.
       </p>
     </div>
   );
@@ -61,22 +105,41 @@ function GiftForm({
   onVerify: () => void;
   serverMessage: string;
 }) {
+  const pasteBattleTag = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) onBattleTagChange(text.trim());
+    } catch {
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs text-brand-zard font-bold">
         💡 بتل‌تگ خود را جهت بررسی وارد کنید:
       </p>
       <div className="flex items-stretch gap-2">
-        <input
-          type="text"
-          value={battleTag}
-          onChange={(e) => onBattleTagChange(e.target.value)}
-          placeholder="BattleTag#1234"
-          className="flex-1 bg-brand-bg border border-brand-surface_hover p-4 text-sm text-brand-active focus:outline-none focus:border-brand-zard font-mono text-left"
-          dir="ltr"
-          autoComplete="off"
-          spellCheck={false}
-        />
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={battleTag}
+            onChange={(e) => onBattleTagChange(e.target.value)}
+            placeholder="BattleTag#1234"
+            className="w-full bg-brand-bg border border-brand-surface_hover p-4 pl-10 text-sm text-brand-active focus:outline-none focus:border-brand-zard font-mono text-left"
+            dir="ltr"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button
+            type="button"
+            onClick={pasteBattleTag}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-brand-m_khonsa hover:text-brand-zard transition-colors p-1"
+            aria-label="چسباندن بتل‌تگ"
+            tabIndex={-1}
+          >
+            <ClipboardPaste size={15} />
+          </button>
+        </div>
         <button
           type="button"
           onClick={onVerify}

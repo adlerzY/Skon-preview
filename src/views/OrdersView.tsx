@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { getAuthToken, getCurrentUser } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
-import OrdersTable from "@/components/account/OrdersTable";
+import OrdersPaginated from "@/components/account/OrdersPaginated";
 
 const SUCCESSFUL_STATUSES = ["PROCESSING", "COMPLETED"];
 
@@ -13,11 +13,16 @@ export default async function OrdersView() {
   if (!user) redirect("/my-account");
 
   const token = await getAuthToken();
-  const data = await fetchGraphQL(CUSTOMER_ORDERS_QUERY, {}, [], "no-store", token || undefined);
+  const data = await fetchGraphQL(
+    CUSTOMER_ORDERS_QUERY,
+    { statuses: SUCCESSFUL_STATUSES },
+    [],
+    "no-store",
+    token || undefined
+  );
 
-  const allOrders = data?.customer?.orders?.nodes ?? [];
-  const orders = allOrders.filter((o: any) => SUCCESSFUL_STATUSES.includes(o.status));
-
+  const orders = data?.customer?.orders?.nodes ?? [];
+  const pageInfo = data?.customer?.orders?.pageInfo ?? { hasNextPage: false, endCursor: null };
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
 
   return (
@@ -31,7 +36,7 @@ export default async function OrdersView() {
       </Link>
       <h1 className="text-2xl font-black mb-6">سفارش‌های من</h1>
 
-      <OrdersTable orders={orders} downloadableItems={downloadableItems} />
+      <OrdersPaginated initialOrders={orders} initialPageInfo={pageInfo} downloadableItems={downloadableItems} />
     </main>
   );
 }

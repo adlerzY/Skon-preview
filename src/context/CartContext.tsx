@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { getClientCookie, setClientCookie, removeClientCookie } from "@/lib/cookies";
+import { saveCredentials, getCredentials, removeCredentials } from "@/lib/secureCartStorage";
 
 const CART_COOKIE = "a2b_cart";
 const CART_COOKIE_DAYS = 30;
@@ -40,6 +41,11 @@ function buildIdentityKey(item: NewCartItem): string {
   ].join("::");
 }
 
+function stripSensitiveFields(item: CartItem): CartItem {
+  const { customFields, ...rest } = item;
+  return rest;
+}
+
 function isValidCartItem(item: unknown): item is CartItem {
   if (!item || typeof item !== "object") return false;
   const i = item as Record<string, unknown>;
@@ -59,10 +65,23 @@ function parseStoredCart(raw: string | null): CartItem[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidCartItem);
+    return parsed.filter(isValidCartItem).map((item: CartItem) => {
+      const credentials = getCredentials(item.id);
+      return credentials ? { ...item, customFields: credentials } : item;
+    });
   } catch {
     return [];
   }
+}
+
+export function itemNeedsCredentials(item: CartItem): boolean {
+  if (item.deliveryMethod === "direct") {
+    return !item.customFields?.email || !item.customFields?.password;
+  }
+  if (item.deliveryMethod === "gift") {
+    return !item.customFields?.battleTag;
+  }
+  return false;
 }
 
 interface CartContextType {
@@ -70,6 +89,7 @@ interface CartContextType {
   addToCart: (item: NewCartItem) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateCredentials: (id: string, credentials: NonNullable<CartItem["customFields"]>) => void;
   clearCart: () => void;
   totalPrice: number;
   totalQuantity: number;
@@ -90,7 +110,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isMounted) return;
     const timer = setTimeout(() => {
       try {
-        setClientCookie(CART_COOKIE, JSON.stringify(cart), { days: CART_COOKIE_DAYS });
+        const sanitized = cart.map(stripSensitiveFields);
+        setClientCookie(CART_COOKIE, JSON.stringify(sanitized), { days: CART_COOKIE_DAYS });
       } catch {
       }
     }, 300);
@@ -101,6 +122,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCart((prev) => {
       const key = buildIdentityKey(item);
       const existingIndex = prev.findIndex((p) => buildIdentityKey(p) === key);
+
+      if (item.customFields) {
+        saveCredentials(key, item.customFields);
+      }
 
       if (existingIndex !== -1) {
         const updated = [...prev];
@@ -116,27 +141,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const removeFromCart = useCallback((id: string) => {
+    removeCredentials(id);
     setCart((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
     setCart((prev) => {
-      if (quantity <= 0) return prev.filter((item) => item.id !== id);
+      if (quantity <= 0) {
+        removeCredentials(id);
+        return prev.filter((item) => item.id !== id);
+      }
       return prev.map((item) => (item.id === id ? { ...item, quantity } : item));
     });
   }, []);
 
+  const updateCredentials = useCallback((id: string, credentials: NonNullable<CartItem["customFields"]>) => {
+    saveCredentials(id, credentials);
+    setCart((prev) => prev.map((item) => (item.id === id ? { ...item, customFields: credentials } : item)));
+  }, []);
+
   const clearCart = useCallback(() => {
+    cart.forEach((item) => removeCredentials(item.id));
     setCart([]);
     removeClientCookie(CART_COOKIE);
-  }, []);
+  }, [cart]);
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice, totalQuantity }}
+      value={{ cart, addToCart, removeFromCart, updateQuantity, updateCredentials, clearCart, totalPrice, totalQuantity }}
     >
       {children}
     </CartContext.Provider>

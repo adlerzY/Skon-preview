@@ -1,43 +1,29 @@
-import { cookies } from "next/headers";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
+import Image from "next/image";
 import { getPostDetail } from "@/lib/graphql";
 
 interface PostPageProps {
-  params: Promise<{
-    region: string;
-    categorySlug: string;
-    postSlug: string;
-  }>;
+  params: Promise<{ region: string; categorySlug: string; postSlug: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function BlogPostPage({ params }: PostPageProps) {
-  const { region, categorySlug, postSlug } = await params;
-
-  const knownRegions = ["eu", "us", "tr"];
-  const cookieStore = await cookies();
-  const activeRegion = cookieStore.get("store_region")?.value || "eu";
-
-  if (!knownRegions.includes(region.toLowerCase())) {
-    redirect(`/${activeRegion}/blog/${categorySlug}/${postSlug}`);
-  }
-
+  const { postSlug } = await params;
   const post = await getPostDetail(postSlug);
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   return (
     <main className="container mx-auto px-6 py-12 text-white max-w-[1200px]">
       <article className="bg-brand-surface p-6 md:p-10 rounded-2xl border border-white/5 space-y-6">
         {post.featuredImage?.node?.sourceUrl && (
           <div className="w-full h-[300px] md:h-[500px] relative rounded-xl overflow-hidden bg-white/5">
-            <img 
-              src={post.featuredImage.node.sourceUrl} 
+            <Image
+              src={post.featuredImage.node.sourceUrl}
               alt={post.title}
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 1200px) 100vw, 1200px"
+              className="object-cover"
+              priority
             />
           </div>
         )}

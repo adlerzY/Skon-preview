@@ -19,8 +19,6 @@ interface Props {
   product: ProductNode;
   initialEdition?: string;
   activeRegion?: string;
-  isLoggedIn?: boolean;
-  initialInWishlist?: boolean;
 }
 
 function hasStock(v: VariationCard): boolean {
@@ -90,8 +88,6 @@ export default function ProductPageClient({
   product,
   initialEdition,
   activeRegion,
-  isLoggedIn,
-  initialInWishlist = false,
 }: Props) {
   const variations = product.variationCards ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
@@ -399,11 +395,7 @@ export default function ProductPageClient({
   return (
     <div className="flex flex-col gap-12 w-full min-h-screen" dir="rtl">
       <div className="flex justify-start">
-        <WishlistButton
-          productId={product.databaseId}
-          initialActive={initialInWishlist}
-          isLoggedIn={Boolean(isLoggedIn)}
-        />
+        <WishlistButton productId={product.databaseId} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start w-full">
@@ -539,7 +531,7 @@ export default function ProductPageClient({
 
       <ProductReviews
         productId={product.databaseId}
-        isLoggedIn={Boolean(isLoggedIn)}
+        isLoggedIn={false}
         reviews={product.reviews?.nodes}
         averageRating={product.averageRating ?? 0}
         reviewCount={product.reviewCount}

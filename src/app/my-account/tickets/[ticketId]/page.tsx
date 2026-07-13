@@ -5,6 +5,7 @@ import { getAuthToken, getCurrentUser } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { Card } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import TicketReplyThread from "@/components/account/TicketReplyThread";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,13 @@ const TICKET_QUERY = `
       date
       ticketStatus
       linkedOrderId
+      replies {
+        id
+        authorRole
+        authorName
+        content
+        createdAt
+      }
     }
   }
 `;
@@ -79,9 +87,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ t
         </p>
       </Card>
 
-      <div className="text-xs text-brand-m_khonsa bg-brand-surface border border-brand-surface_hover p-4">
-        پاسخ پشتیبانی به‌زودی از طریق همین صفحه یا ایمیل شما ارسال می‌شود.
-      </div>
+      <Card className="p-6">
+        <TicketReplyThread ticketId={idNum} replies={ticket.replies ?? []} />
+      </Card>
     </div>
   );
 }

@@ -1,17 +1,11 @@
 import { getHomePageData } from "@/lib/graphql"; 
 import CategoryHero from "@/components/Hero"; 
 import nextDynamic from "next/dynamic";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import Skeleton from "@/components/ui/Skeleton";
 
 interface HomeProps {
-  params: Promise<{
-    region: string;
-  }>;
+  params: Promise<{ region: string }>;
 }
-
-export const dynamic = "force-dynamic";
 
 const DynamicProductGrid = nextDynamic(() => import("@/components/ProductGrid"), {
   loading: () => (
@@ -28,19 +22,10 @@ const DynamicProductGrid = nextDynamic(() => import("@/components/ProductGrid"),
 
 export default async function Home({ params }: HomeProps) {
   const { region } = await params;
-  const knownRegions = ["eu", "us", "tr"];
-
-  const cookieStore = await cookies();
-  const activeRegion = cookieStore.get("store_region")?.value || "eu";
-
-  if (!knownRegions.includes(region.toLowerCase())) {
-    redirect(`/${activeRegion}/${region}`);
-  }
-
   const { banners, featured, latest } = await getHomePageData(region);
 
   return (
-    <main className="container mx-auto px-6 max-w-[1600px] pb-12">
+    <main className="container mx-auto px-6 max-w-site pb-12">
       <CategoryHero banners={banners} />
       <DynamicProductGrid title="محصولات ویژه و پرطرفدار" products={featured} activeRegion={region} />
       <DynamicProductGrid title="جدیدترین محصولات" products={latest} activeRegion={region} />

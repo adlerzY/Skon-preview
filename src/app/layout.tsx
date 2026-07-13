@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import AuthRefresher from "@/components/account/AuthRefresher";
 
 const yekanFont = localFont({
   src: "./fonts/Yekan.woff",
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="fa" dir="rtl">
       <body className={`${yekanFont.variable} font-sans antialiased`}>
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <AuthRefresher />
+          {children}
+        </CartProvider>
       </body>
     </html>
   );

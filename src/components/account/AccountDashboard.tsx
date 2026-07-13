@@ -3,6 +3,7 @@ import { Package, Heart, LifeBuoy, UserCog, ChevronLeft, Download, HelpCircle, S
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
+import XPLevelCard from "./XPLevelCard";
 import type { SessionUser } from "@/lib/auth/session";
 
 interface OrderSummary {
@@ -87,6 +88,8 @@ export default function AccountDashboard({
           </div>
         </div>
       </div>
+
+      <XPLevelCard successfulOrdersCount={successfulOrdersCount} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard href="/my-account/orders" icon={<Package size={20} />} label="سفارش‌های موفق" value={successfulOrdersCount} tone="blue" />

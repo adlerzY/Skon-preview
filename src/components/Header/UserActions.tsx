@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/Skeleton";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { useLogout } from "@/lib/hooks/useLogout";
 
 interface UserActionsProps {
   user: { name: string; avatarUrl?: string | null } | null;
@@ -13,7 +14,7 @@ interface UserActionsProps {
 export default function UserActions({ user }: UserActionsProps) {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { logout, isLoggingOut } = useLogout();
 
   useEffect(() => {
     setIsMounted(true);
@@ -31,16 +32,6 @@ export default function UserActions({ user }: UserActionsProps) {
   const isLoggedIn = Boolean(user);
   const prefetchAccount = () => router.prefetch("/my-account");
   const prefetchOrders = () => router.prefetch("/my-account/orders");
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      router.push("/");
-      router.refresh();
-    }
-  };
 
   return (
     <div className="relative group/user">
@@ -72,7 +63,7 @@ export default function UserActions({ user }: UserActionsProps) {
             <Link href="/my-account" onMouseEnter={prefetchAccount} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">پیشخوان من</Link>
             <Link href="/my-account/orders" onMouseEnter={prefetchOrders} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">سفارشات</Link>
             <button
-              onClick={handleLogout}
+              onClick={logout}
               disabled={isLoggingOut}
               className="w-full text-right flex items-center gap-2.5 p-2.5 text-[#ff5c5c] hover:bg-[#ff5c5c]/10 text-[13px] font-semibold transition-colors mt-1 rounded disabled:opacity-50"
             >

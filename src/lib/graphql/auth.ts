@@ -38,10 +38,11 @@ export const WRITE_REVIEW_MUTATION = `
 `;
 
 export const CUSTOMER_ORDERS_QUERY = `
-  query GetCustomerOrders {
+  query GetCustomerOrders($after: String, $statuses: [OrderStatusEnum]) {
     customer {
       databaseId
-      orders(first: 30) {
+      orders(first: 10, after: $after, where: { statuses: $statuses }) {
+        pageInfo { hasNextPage endCursor }
         nodes {
           id databaseId orderNumber status date total
           lineItems {
@@ -158,6 +159,44 @@ export const TOGGLE_WISHLIST_MUTATION = `
   mutation ToggleWishlistItem($productId: Int!) {
     toggleWishlistItem(input: { productId: $productId }) {
       inWishlist
+    }
+  }
+`;
+
+export const REGISTER_SESSION_MUTATION = `
+  mutation RegisterSession($sessionId: String!, $deviceLabel: String, $ipAddress: String, $userAgent: String) {
+    registerSession(input: { sessionId: $sessionId, deviceLabel: $deviceLabel, ipAddress: $ipAddress, userAgent: $userAgent }) {
+      success
+    }
+  }
+`;
+
+export const TOUCH_SESSION_MUTATION = `
+  mutation TouchSession($sessionId: String!) {
+    touchSession(input: { sessionId: $sessionId }) {
+      success
+    }
+  }
+`;
+
+export const REVOKE_SESSION_MUTATION = `
+  mutation RevokeSession($sessionId: String!) {
+    revokeSession(input: { sessionId: $sessionId }) {
+      success
+    }
+  }
+`;
+
+export const GET_SESSIONS_QUERY = `
+  query GetMySessions {
+    viewer {
+      sessions {
+        sessionId
+        deviceLabel
+        ipAddress
+        lastActive
+        createdAt
+      }
     }
   }
 `;
