@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/Skeleton";
 import { Plus } from "lucide-react";
+import { useActiveRegion, buildRegionHref } from "@/lib/hooks/useActiveRegion";
 
 export interface HeaderGameItem {
   title: string;
@@ -17,16 +18,15 @@ interface DesktopGamesNavProps {
   games: HeaderGameItem[];
 }
 
-const KNOWN_REGIONS = ["eu", "us", "tr"];
 const ITEM_WIDTH = 60;
 const OVERFLOW_BUTTON_WIDTH = 50;
 
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(games?.length ?? 0);
   const [isMounted, setIsMounted] = useState(false);
+  const { region: currentRegion, pathnameWithoutRegion } = useActiveRegion();
 
   useEffect(() => {
     setIsMounted(true);
@@ -75,31 +75,6 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
     [games, visibleCount]
   );
 
-  const { currentRegion, pathnameWithoutRegion } = useMemo(() => {
-    if (!isMounted || !pathname) {
-      return { currentRegion: "eu", pathnameWithoutRegion: pathname ?? "" };
-    }
-    const segments = pathname.split("/").filter(Boolean);
-    const hasRegion = KNOWN_REGIONS.includes(segments[0]?.toLowerCase());
-
-    let region = "eu";
-    if (hasRegion) {
-      region = segments[0];
-    } else if (typeof document !== "undefined") {
-      const match = document.cookie.match(/(?:^|;\s*)store_region=([^;]+)/);
-      if (match && KNOWN_REGIONS.includes(match[1].toLowerCase())) {
-        region = match[1];
-      }
-    }
-
-    return {
-      currentRegion: region,
-      pathnameWithoutRegion: hasRegion
-        ? `/${segments.slice(1).join("/")}`
-        : pathname,
-    };
-  }, [isMounted, pathname]);
-
   if (!isMounted || !games?.length) {
     return (
       <div className="flex items-center gap-2 h-full px-2 w-[240px]">
@@ -111,8 +86,7 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   }
 
   function buildHref(gameLink: string): string {
-    const clean = gameLink.startsWith("/") ? gameLink : `/${gameLink}`;
-    return `/${currentRegion}${clean}`;
+    return buildRegionHref(currentRegion, gameLink);
   }
 
   function isActive(gameLink: string): boolean {

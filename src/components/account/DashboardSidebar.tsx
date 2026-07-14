@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, Heart, LifeBuoy, UserCog, LogOut, ArrowRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, Package, Heart, LifeBuoy, UserCog, Monitor, LogOut, ArrowRight } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { useLogout } from "@/lib/hooks/useLogout";
 
 const NAV_ITEMS = [
   { href: "/my-account", label: "پیشخوان", icon: LayoutDashboard, exact: true },
   { href: "/my-account/orders", label: "سفارش‌های من", icon: Package },
   { href: "/my-account/wishlist", label: "علاقه‌مندی‌ها", icon: Heart },
   { href: "/my-account/tickets", label: "تیکت‌های پشتیبانی", icon: LifeBuoy },
+  { href: "/my-account/sessions", label: "مدیریت نشست‌ها", icon: Monitor },
   { href: "/my-account/settings", label: "تنظیمات حساب", icon: UserCog },
 ];
 
@@ -20,13 +22,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ avatarUrl, name }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
-  };
+  const { logout, isLoggingOut } = useLogout();
 
   return (
     <aside className="w-full lg:w-[260px] shrink-0 bg-brand-surface border-l border-brand-surface_hover flex lg:flex-col lg:h-screen lg:sticky lg:top-0">
@@ -57,11 +53,12 @@ export default function DashboardSidebar({ avatarUrl, name }: DashboardSidebarPr
         })}
 
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-5 py-3.5 text-sm font-semibold whitespace-nowrap text-red-500 hover:bg-red-500/10 transition-colors mt-auto shrink-0 lg:border-t lg:border-brand-surface_hover"
+          onClick={logout}
+          disabled={isLoggingOut}
+          className="flex items-center gap-3 px-5 py-3.5 text-sm font-semibold whitespace-nowrap text-red-500 hover:bg-red-500/10 transition-colors mt-auto shrink-0 lg:border-t lg:border-brand-surface_hover disabled:opacity-50"
         >
           <LogOut size={18} strokeWidth={2.25} />
-          خروج از حساب
+          {isLoggingOut ? "در حال خروج..." : "خروج از حساب"}
         </button>
       </nav>
     </aside>

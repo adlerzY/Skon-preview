@@ -148,8 +148,8 @@ export const CUSTOMER_ORDERS_LIGHT_QUERY = `
 `;
 
 export const CREATE_SUPPORT_TICKET_MUTATION = `
-  mutation CreateSupportTicket($title: String!, $content: String!, $linkedOrderId: Int) {
-    createSupportTicket(input: { title: $title, content: $content, linkedOrderId: $linkedOrderId }) {
+  mutation SubmitSupportTicket($title: String!, $content: String!, $linkedOrderId: Int) {
+    submitSupportTicket(input: { title: $title, content: $content, linkedOrderId: $linkedOrderId }) {
       ticketId
     }
   }

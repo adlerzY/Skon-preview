@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Bell } from "lucide-react";
 
 interface NotificationItem { id: string; title: string; body: string; isRead: boolean; }
 
+const POLL_INTERVAL_MS = 45_000;
+
 export default function NotificationBell() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const unreadCount = items.filter((n) => !n.isRead).length;
 
   const fetchNotifications = useCallback(async () => {
@@ -20,8 +23,34 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 45_000);
-    return () => clearInterval(interval);
+
+    const startPolling = () => {
+      if (intervalRef.current) return;
+      intervalRef.current = setInterval(fetchNotifications, POLL_INTERVAL_MS);
+    };
+    const stopPolling = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    startPolling();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        stopPolling();
+      } else {
+        fetchNotifications();
+        startPolling();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchNotifications]);
 
   const handleOpen = async () => {

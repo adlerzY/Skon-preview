@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       token
     );
 
-    const ticketId = data?.createSupportTicket?.ticketId;
+    const ticketId = data?.submitSupportTicket?.ticketId;
     if (!ticketId) {
       return NextResponse.json({ error: "ثبت تیکت با خطا مواجه شد" }, { status: 500 });
     }

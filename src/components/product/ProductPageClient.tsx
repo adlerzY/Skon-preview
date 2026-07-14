@@ -531,7 +531,6 @@ export default function ProductPageClient({
 
       <ProductReviews
         productId={product.databaseId}
-        isLoggedIn={false}
         reviews={product.reviews?.nodes}
         averageRating={product.averageRating ?? 0}
         reviewCount={product.reviewCount}

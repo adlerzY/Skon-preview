@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-  entry.count++;
-  return true;
-}
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 function isValidBattleTagFormat(tag: string): boolean {
   return /^[A-Za-z\u0600-\u06FF0-9]{2,12}#\d{4,7}$/.test(tag);
@@ -47,9 +32,8 @@ async function getBattleTagsList(): Promise<string[]> {
 }
 
 export async function POST(request: NextRequest) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!checkRateLimit(ip)) {
+  const ip = getClientIp(request);
+  if (!checkRateLimit(`battletag:${ip}`, { max: 10, windowMs: 60 * 1000 })) {
     return NextResponse.json(
       { valid: false, message: "تعداد درخواست‌ها بیش از حد مجاز است" },
       { status: 429, headers: { "Retry-After": "60" } }
@@ -83,7 +67,6 @@ export async function POST(request: NextRequest) {
     const exists = friendsList.includes(trimmedTag);
 
     if (exists) {
-      // حالت اول: تگ در لیست فرندها هست
       return NextResponse.json(
         { 
           valid: true, 

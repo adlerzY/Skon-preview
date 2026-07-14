@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { getClientCookie } from "@/lib/cookies";
+import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 
 interface ReviewNode {
   id: string;
@@ -13,7 +15,6 @@ interface ReviewNode {
 
 interface ProductReviewsProps {
   productId: number;
-  isLoggedIn: boolean;
   reviews?: ReviewNode[];
   averageRating?: number;
   reviewCount?: number;
@@ -37,15 +38,21 @@ function stripHtml(html: string) {
 
 export default function ProductReviews({
   productId,
-  isLoggedIn,
   reviews = [],
   averageRating = 0,
   reviewCount,
 }: ProductReviewsProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    setIsLoggedIn(getClientCookie(LOGGED_IN_COOKIE) === "1");
+    setIsChecking(false);
+  }, []);
 
   const totalReviews = reviewCount ?? reviews.length;
 
@@ -94,7 +101,9 @@ export default function ProductReviews({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
         <div className="lg:col-span-8 flex flex-col gap-6 w-full">
-          {isLoggedIn ? (
+          {isChecking ? (
+            <div className="bg-brand-menu p-6 border border-brand-surface_hover h-[220px] animate-pulse" />
+          ) : isLoggedIn ? (
             <form onSubmit={handleSubmit} className="bg-brand-menu p-6 border border-brand-surface_hover flex flex-col gap-4">
               <span className="text-sm font-bold text-brand-active">امتیاز و نظر خود را بنویسید</span>
 
