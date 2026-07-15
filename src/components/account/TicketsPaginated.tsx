@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -52,14 +52,47 @@ export default function TicketsPaginated({
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRun = useRef(true);
+
+  const fetchTickets = async (nextSearch: string, nextStatus: string) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (nextSearch.trim()) params.set("search", nextSearch.trim());
+      if (nextStatus !== "ALL") params.set("status", nextStatus);
+      const res = await fetch(`/api/account/tickets?${params.toString()}`, { cache: "no-store" });
+      const data = await res.json();
+      setTickets(data.tickets ?? []);
+      setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchTickets(search, statusFilter);
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search, statusFilter]);
 
   const handleLoadMore = async () => {
     if (!pageInfo.endCursor) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/account/tickets?after=${encodeURIComponent(pageInfo.endCursor)}`, {
-        cache: "no-store",
-      });
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("search", search.trim());
+      if (statusFilter !== "ALL") params.set("status", statusFilter);
+      params.set("after", pageInfo.endCursor);
+      const res = await fetch(`/api/account/tickets?${params.toString()}`, { cache: "no-store" });
       const data = await res.json();
       setTickets((prev) => [...prev, ...(data.tickets ?? [])]);
       setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
@@ -67,15 +100,6 @@ export default function TicketsPaginated({
       setIsLoading(false);
     }
   };
-
-  const filtered = useMemo(() => {
-    return tickets.filter((t) => {
-      const status = t.ticketStatus ?? "open";
-      if (statusFilter !== "ALL" && status !== statusFilter) return false;
-      if (search.trim() && !t.title.toLowerCase().includes(search.trim().toLowerCase())) return false;
-      return true;
-    });
-  }, [tickets, search, statusFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -103,11 +127,15 @@ export default function TicketsPaginated({
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {isLoading && tickets.length === 0 ? (
+        <div className="flex items-center justify-center py-10 text-brand-m_khonsa gap-2 text-sm">
+          <Loader2 size={16} className="animate-spin" /> در حال بارگذاری...
+        </div>
+      ) : tickets.length === 0 ? (
         <Card className="p-10 text-center text-brand-m_khonsa">تیکتی با این مشخصات یافت نشد.</Card>
       ) : (
         <div className="flex flex-col gap-3">
-          {filtered.map((ticket) => {
+          {tickets.map((ticket) => {
             const status = ticket.ticketStatus ?? "open";
             return (
               <Link key={ticket.id} href={`/my-account/tickets/${ticket.databaseId}`}>
@@ -142,7 +170,7 @@ export default function TicketsPaginated({
         </div>
       )}
 
-      {!search && statusFilter === "ALL" && pageInfo.hasNextPage && (
+      {pageInfo.hasNextPage && (
         <button
           type="button"
           onClick={handleLoadMore}

@@ -1,7 +1,7 @@
-// FILE: src/lib/graphql/queries.ts
 import "server-only";
 import { fetchGraphQL } from "./client";
 import { formatProducts, sanitizeHtml } from "./utils";
+import { resolveAvatarUrl } from "@/lib/avatars";
 import { HeaderCategoryNode, ProductNode } from "./types";
 import {
   CATEGORY_BASIC_FIELDS,
@@ -223,8 +223,6 @@ export async function getPostDetail(slug: string) {
   };
 }
 
-import { resolveAvatarForAuthor } from "@/lib/avatars";
-
 export async function getProductDetail(slug: string, activeRegion: string = "eu") {
   if (!slug) return null;
 
@@ -275,7 +273,6 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
     product.reviews.nodes = await Promise.all(
       product.reviews.nodes.map(async (r: any) => {
         const authorNode = r.author?.node;
-        const authorName = authorNode?.name || "چرا اسم ندارم";
         const originalAvatar = authorNode?.avatarUrl || null;
 
         return {
@@ -284,7 +281,7 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
             ...r.author,
             node: {
               ...authorNode,
-              avatarUrl: await resolveAvatarForAuthor(authorName, originalAvatar),
+              avatarUrl: await resolveAvatarUrl(originalAvatar),
             },
           },
         };

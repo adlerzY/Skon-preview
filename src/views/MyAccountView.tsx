@@ -23,8 +23,9 @@ export default async function MyAccountView() {
   const allOrders = data?.customer?.orders?.nodes ?? [];
   const successfulOrders = allOrders.filter((o: any) => SUCCESSFUL_STATUSES.includes(o.status));
   const wishlistIds = data?.viewer?.wishlistIds ?? [];
-  const tickets = data?.supportTickets?.nodes ?? [];
+  const tickets = data?.myTickets?.nodes ?? [];
   const openTickets = tickets.filter((t: any) => (t.ticketStatus ?? "open") !== "closed");
+  const reviewsCount = data?.myReviews?.totalCount ?? 0;
 
   return (
     <main className="container mx-auto px-4 md:px-6 max-w-5xl py-10 md:py-16 text-brand-active" dir="rtl">
@@ -35,6 +36,7 @@ export default async function MyAccountView() {
         wishlistCount={wishlistIds.length}
         recentTickets={tickets.slice(0, 3)}
         openTicketsCount={openTickets.length}
+        reviewsCount={reviewsCount}
       />
     </main>
   );

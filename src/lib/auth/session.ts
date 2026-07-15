@@ -48,7 +48,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     if (data.viewer.activeSessionValid === false) return null;
 
     const viewer = data.viewer;
-    const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl, viewer.databaseId);
+    const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl);
 
     return { ...viewer, avatarUrl, isStaff: Boolean(viewer.isStaff) } as SessionUser;
   } catch {

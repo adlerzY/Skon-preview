@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Heart, LifeBuoy, UserCog, ChevronLeft, Download, HelpCircle, ShoppingBag } from "lucide-react";
+import { Package, Heart, LifeBuoy, UserCog, ChevronLeft, Download, HelpCircle, ShoppingBag, MessageSquare } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
@@ -30,6 +30,7 @@ interface AccountDashboardProps {
   wishlistCount: number;
   recentTickets: TicketSummary[];
   openTicketsCount: number;
+  reviewsCount: number;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -55,6 +56,7 @@ export default function AccountDashboard({
   wishlistCount,
   recentTickets,
   openTicketsCount,
+  reviewsCount,
 }: AccountDashboardProps) {
   const completionChecks = [Boolean(user.avatarUrl), Boolean(user.email), successfulOrdersCount > 0];
   const completionPercentage = (completionChecks.filter(Boolean).length / completionChecks.length) * 100;
@@ -91,9 +93,10 @@ export default function AccountDashboard({
 
       <XPLevelCard successfulOrdersCount={successfulOrdersCount} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard href="/my-account/orders" icon={<Package size={20} />} label="سفارش‌های موفق" value={successfulOrdersCount} tone="blue" />
         <StatCard href="/my-account/wishlist" icon={<Heart size={20} />} label="علاقه‌مندی‌ها" value={wishlistCount} tone="zard" />
+        <StatCard href="/my-account/reviews" icon={<MessageSquare size={20} />} label="دیدگاه‌های من" value={reviewsCount} tone="blue" />
         <StatCard href="/my-account/tickets" icon={<LifeBuoy size={20} />} label="تیکت‌های باز" value={openTicketsCount} tone="sabz" />
         <StatCard href="/my-account/settings" icon={<UserCog size={20} />} label="تنظیمات حساب" value={null} tone="neutral" />
       </div>

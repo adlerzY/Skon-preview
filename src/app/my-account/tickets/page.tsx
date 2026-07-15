@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const TICKETS_QUERY = `
   query GetMyTickets($after: String) {
-    supportTickets(first: 20, after: $after) {
+    myTickets(first: 20, after: $after) {
       pageInfo { hasNextPage endCursor }
       nodes {
         id
@@ -29,8 +29,8 @@ export default async function TicketsPage() {
 
   const token = await getAuthToken();
   const data = await fetchGraphQL(TICKETS_QUERY, {}, [], "no-store", token || undefined);
-  const tickets = data?.supportTickets?.nodes ?? [];
-  const pageInfo = data?.supportTickets?.pageInfo ?? { hasNextPage: false, endCursor: null };
+  const tickets = data?.myTickets?.nodes ?? [];
+  const pageInfo = data?.myTickets?.pageInfo ?? { hasNextPage: false, endCursor: null };
 
   return (
     <div className="flex flex-col gap-4">

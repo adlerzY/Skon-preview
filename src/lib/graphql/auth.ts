@@ -80,7 +80,7 @@ export const DASHBOARD_SUMMARY_QUERY = `
     viewer {
       wishlistIds
     }
-    supportTickets(first: 10) {
+    myTickets(first: 10) {
       nodes {
         id
         databaseId
@@ -88,6 +88,9 @@ export const DASHBOARD_SUMMARY_QUERY = `
         date
         ticketStatus
       }
+    }
+    myReviews(first: 1) {
+      totalCount
     }
   }
 `;
@@ -201,10 +204,31 @@ export const GET_SESSIONS_QUERY = `
     }
   }
 `;
+
 export const REFRESH_TOKEN_MUTATION = `
   mutation RefreshToken($refreshToken: String!) {
     refreshJwtAuthToken(input: { jwtRefreshToken: $refreshToken }) {
       authToken
+    }
+  }
+`;
+
+export const MY_REVIEWS_QUERY = `
+  query GetMyReviews($after: String) {
+    myReviews(first: 10, after: $after) {
+      pageInfo { hasNextPage endCursor }
+      totalCount
+      nodes {
+        databaseId
+        content
+        rating
+        date
+        approved
+        productId
+        productName
+        productSlug
+        replies { content date authorName }
+      }
     }
   }
 `;

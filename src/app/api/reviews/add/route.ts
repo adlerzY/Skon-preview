@@ -3,8 +3,17 @@ import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { WRITE_REVIEW_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  if (!checkRateLimit(`review:${ip}`, { max: 5, windowMs: 15 * 60 * 1000 })) {
+    return NextResponse.json(
+      { error: "تعداد نظرات ثبت‌شده بیش از حد مجاز است. کمی بعد دوباره تلاش کنید" },
+      { status: 429, headers: { "Retry-After": "900" } }
+    );
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value;

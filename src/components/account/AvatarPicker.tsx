@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, Check, Loader2 } from "lucide-react";
+import { Camera, Check, Loader2, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Modal from "@/components/ui/Modal";
@@ -14,6 +14,8 @@ interface AvatarPickerProps {
 export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [avatars, setAvatars] = useState<string[]>([]);
+  const [adminAvatars, setAdminAvatars] = useState<string[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [selected, setSelected] = useState(currentAvatar ?? "");
   const [pendingSelection, setPendingSelection] = useState(currentAvatar ?? "");
@@ -24,12 +26,14 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
     setIsOpen(true);
     setMessage("");
     setPendingSelection(selected);
-    if (avatars.length > 0) return;
+    if (hasLoaded) return;
     setIsFetching(true);
     try {
       const res = await fetch("/api/avatars");
       const data = await res.json();
       setAvatars(data?.avatars ?? []);
+      setAdminAvatars(data?.adminAvatars ?? []);
+      setHasLoaded(true);
     } finally {
       setIsFetching(false);
     }
@@ -58,6 +62,31 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
       setIsSaving(false);
     }
   };
+
+  const renderGrid = (list: string[]) => (
+    <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+      {list.map((avatar) => {
+        const isSelected = pendingSelection === avatar;
+        return (
+          <button
+            key={avatar}
+            type="button"
+            onClick={() => setPendingSelection(avatar)}
+            className={`relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105 ${
+              isSelected ? "border-brand-blue shadow-[0_0_0_4px_rgba(0,116,224,0.2)]" : "border-transparent hover:border-brand-surface_hover"
+            }`}
+          >
+            <Image src={avatar} alt="avatar" fill className="object-cover" sizes="64px" />
+            {isSelected && (
+              <span className="absolute inset-0 bg-brand-blue/40 flex items-center justify-center">
+                <Check size={20} className="text-white" />
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="flex items-center gap-5">
@@ -88,45 +117,34 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
           <div className="flex items-center justify-center py-10 gap-2 text-brand-m_khonsa text-sm">
             <Loader2 size={16} className="animate-spin" /> در حال بارگذاری...
           </div>
-        ) : avatars.length === 0 ? (
+        ) : avatars.length === 0 && adminAvatars.length === 0 ? (
           <div className="text-center py-10 text-sm text-brand-m_khonsa">
-            هنوز هیچ آواتاری در public/avatars قرار نگرفته است.
+            هنوز هیچ آواتاری تعریف نشده است.
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
-              {avatars.map((avatar) => {
-                const isSelected = pendingSelection === avatar;
-                return (
-                  <button
-                    key={avatar}
-                    type="button"
-                    onClick={() => setPendingSelection(avatar)}
-                    className={`relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105 ${
-                      isSelected ? "border-brand-blue shadow-[0_0_0_4px_rgba(0,116,224,0.2)]" : "border-transparent hover:border-brand-surface_hover"
-                    }`}
-                  >
-                    <Image src={avatar} alt="avatar" fill className="object-cover" sizes="64px" />
-                    {isSelected && (
-                      <span className="absolute inset-0 bg-brand-blue/40 flex items-center justify-center">
-                        <Check size={20} className="text-white" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex flex-col gap-6">
+            {renderGrid(avatars)}
+
+            {adminAvatars.length > 0 && (
+              <div className="flex flex-col gap-3 border-t border-brand-surface_hover pt-5">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-brand-blue">
+                  <ShieldCheck size={14} />
+                  آواتارهای مخصوص ادمین
+                </span>
+                {renderGrid(adminAvatars)}
+              </div>
+            )}
 
             <button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full mt-6 bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
+              className="w-full bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
             >
               {isSaving && <Loader2 size={16} className="animate-spin" />}
               {isSaving ? "در حال ذخیره..." : "ذخیره تغییرات"}
             </button>
-          </>
+          </div>
         )}
       </Modal>
     </div>

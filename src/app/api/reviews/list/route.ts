@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchGraphQL } from "@/lib/graphql";
-import { resolveAvatarForAuthor } from "@/lib/avatars";
+import { resolveAvatarUrl } from "@/lib/avatars";
 
 const GET_PRODUCT_REVIEWS_QUERY = `
   query GetProductReviews($id: ID!, $after: String) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       author: {
         node: {
           ...r.author?.node,
-          avatarUrl: await resolveAvatarForAuthor(r.author?.node?.name, r.author?.node?.avatarUrl),
+          avatarUrl: await resolveAvatarUrl(r.author?.node?.avatarUrl),
         },
       },
     }))

@@ -2,69 +2,67 @@ import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
 
-const AVATARS_DIR = path.join(process.cwd(), "public", "avatars");
+const AVATARS_ROOT = path.join(process.cwd(), "public", "avatars");
+const USERS_DIR = path.join(AVATARS_ROOT, "users");
+const ADMIN_DIR = path.join(AVATARS_ROOT, "admin");
 const ALLOWED_EXT = [".webp", ".png", ".jpg", ".jpeg"];
-const CACHE_TTL_MS = 5 * 60 * 1000; 
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
-let cachedAvatars: string[] | null = null;
-let cachedAt = 0;
+interface AvatarCache {
+  users: string[];
+  admin: string[];
+  cachedAt: number;
+}
 
-async function readAvatarsFromDisk(): Promise<string[]> {
+let cache: AvatarCache | null = null;
+
+async function readDir(dir: string, urlPrefix: string): Promise<string[]> {
   try {
-    const files = await fs.readdir(AVATARS_DIR);
+    const files = await fs.readdir(dir);
     return files
       .filter((f) => ALLOWED_EXT.includes(path.extname(f).toLowerCase()))
       .sort()
-      .map((f) => `/avatars/${f}`);
+      .map((f) => `${urlPrefix}/${f}`);
   } catch {
     return [];
   }
 }
 
-export async function listAvatars(): Promise<string[]> {
+async function loadAvatars(): Promise<AvatarCache> {
   const now = Date.now();
-  if (cachedAvatars && now - cachedAt < CACHE_TTL_MS) {
-    return cachedAvatars;
+  if (cache && now - cache.cachedAt < CACHE_TTL_MS) {
+    return cache;
   }
-  const avatars = await readAvatarsFromDisk();
-  cachedAvatars = avatars;
-  cachedAt = now;
-  return avatars;
+
+  const [users, admin] = await Promise.all([
+    readDir(USERS_DIR, "/avatars/users"),
+    readDir(ADMIN_DIR, "/avatars/admin"),
+  ]);
+
+  cache = { users, admin, cachedAt: now };
+  return cache;
+}
+
+export async function listAvatars(scope: "users" | "admin" | "all" = "users"): Promise<string[]> {
+  const { users, admin } = await loadAvatars();
+  if (scope === "admin") return admin;
+  if (scope === "all") return [...users, ...admin];
+  return users;
 }
 
 export async function getDefaultAvatarUrl(): Promise<string | null> {
-  const avatars = await listAvatars();
-  return avatars[0] ?? null;
+  const { users } = await loadAvatars();
+  const explicit = users.find((u) => /\/default\.(webp|png|jpe?g)$/i.test(u));
+  return explicit ?? users[0] ?? null;
 }
 
-function hashToIndex(seed: string, length: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash) % length;
+export async function isValidAvatarPath(avatarUrl: string, allowAdmin: boolean): Promise<boolean> {
+  const { users, admin } = await loadAvatars();
+  const pool = allowAdmin ? [...users, ...admin] : users;
+  return pool.includes(avatarUrl);
 }
 
-export async function getAvatarForSeed(seed?: string | number | null): Promise<string | null> {
-  const avatars = await listAvatars();
-  if (avatars.length === 0) return null;
-  if (!seed) return avatars[0];
-  return avatars[hashToIndex(String(seed), avatars.length)];
-}
-
-export async function resolveAvatarUrl(
-  avatarUrl?: string | null,
-  seed?: string | number | null
-): Promise<string | null> {
+export async function resolveAvatarUrl(avatarUrl?: string | null): Promise<string | null> {
   if (avatarUrl) return avatarUrl;
-  return getAvatarForSeed(seed);
-}
-
-export async function resolveAvatarForAuthor(
-  name?: string | null,
-  avatarUrl?: string | null
-): Promise<string | null> {
-  if (avatarUrl) return avatarUrl;
-  return getAvatarForSeed(name);
+  return getDefaultAvatarUrl();
 }

@@ -4,6 +4,8 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { UPDATE_AVATAR_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { getCurrentUser } from "@/lib/auth/session";
+import { isValidAvatarPath } from "@/lib/avatars";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -17,11 +19,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
   }
 
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const avatarPath = typeof body?.avatarPath === "string" ? body.avatarPath.trim() : "";
 
-    if (!avatarPath.startsWith("/avatars/")) {
+    const isValid = await isValidAvatarPath(avatarPath, user.isStaff);
+    if (!isValid) {
       return NextResponse.json({ error: "مسیر آواتار نامعتبر است" }, { status: 400 });
     }
 
