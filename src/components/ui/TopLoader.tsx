@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const START_DELAY_MS = 150;
-const TRICKLE_INTERVAL_MS = 180;
-const FINISH_HOLD_MS = 250;
+const START_DELAY_MS = 100;
+const TRICKLE_INTERVAL_MS = 120;
+const FINISH_HOLD_MS = 120;
 
 export default function TopLoader() {
   const pathname = usePathname();
@@ -38,9 +38,9 @@ export default function TopLoader() {
 
     startTimerRef.current = setTimeout(() => {
       setVisible(true);
-      setProgress(15);
+      setProgress(30);
       trickleRef.current = setInterval(() => {
-        setProgress((p) => (p >= 90 ? p : p + Math.max(0.5, (90 - p) * 0.06)));
+        setProgress((p) => (p >= 92 ? p : p + Math.max(1, (92 - p) * 0.12)));
       }, TRICKLE_INTERVAL_MS);
     }, START_DELAY_MS);
   };
@@ -95,7 +95,7 @@ export default function TopLoader() {
   return (
     <div className="fixed top-0 right-0 left-0 z-[100001] h-[3px] bg-transparent pointer-events-none" dir="ltr">
       <div
-        className="h-full bg-brand-blue shadow-[0_0_10px_rgba(0,116,224,0.6)] transition-[width] duration-300 ease-out"
+        className="h-full bg-brand-blue shadow-[0_0_10px_rgba(0,116,224,0.6)] transition-[width] duration-200 ease-out"
         style={{ width: `${progress}%` }}
       />
     </div>

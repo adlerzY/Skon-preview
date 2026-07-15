@@ -9,7 +9,7 @@ import { isValidAvatarPath } from "@/lib/avatars";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`avatar:${ip}`, { max: 15, windowMs: 10 * 60 * 1000 })) {
+  if (!checkRateLimit(`avatar-ip:${ip}`, { max: 30, windowMs: 10 * 60 * 1000 })) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 
@@ -22,6 +22,10 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(`avatar-user:${user.databaseId}`, { max: 10, windowMs: 10 * 60 * 1000 })) {
+    return NextResponse.json({ error: "تعداد تغییر عکس پروفایل بیش از حد مجاز است" }, { status: 429 });
   }
 
   try {

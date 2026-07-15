@@ -10,7 +10,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/my-account");
 
   return (
-    <div className="flex flex-col gap-6 max-w-xl">
+    <div className="flex flex-col gap-6 max-w-2xl">
       <div>
         <h1 className="text-xl font-black text-white mb-1">تنظیمات حساب</h1>
         <p className="text-sm text-brand-m_khonsa">مدیریت اطلاعات نمایشی و عکس پروفایل حساب کاربری شما</p>

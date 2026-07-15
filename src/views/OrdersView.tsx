@@ -26,7 +26,7 @@ export default async function OrdersView() {
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
 
   return (
-    <main className="container mx-auto px-4 md:px-6 max-w-4xl py-10 md:py-16 text-brand-active" dir="rtl">
+    <div className="max-w-4xl mx-auto">
       <Link
         href="/my-account"
         className="inline-flex items-center gap-1 text-sm text-brand-m_khonsa hover:text-white transition-colors mb-6"
@@ -37,6 +37,6 @@ export default async function OrdersView() {
       <h1 className="text-2xl font-black mb-6">سفارش‌های من</h1>
 
       <OrdersPaginated initialOrders={orders} initialPageInfo={pageInfo} downloadableItems={downloadableItems} />
-    </main>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "./constants";
@@ -37,7 +38,7 @@ export async function getSessionId(): Promise<string | null> {
   return cookieStore.get(SESSION_ID_COOKIE)?.value ?? null;
 }
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = await getAuthToken();
   if (!token) return null;
 
@@ -54,4 +55,4 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
-}
+});

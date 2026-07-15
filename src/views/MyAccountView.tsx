@@ -11,9 +11,9 @@ export default async function MyAccountView() {
 
   if (!user) {
     return (
-      <main className="container mx-auto px-4 md:px-6 max-w-2xl py-10 md:py-16 text-brand-active" dir="rtl">
+      <div className="max-w-2xl mx-auto">
         <LoginForm />
-      </main>
+      </div>
     );
   }
 
@@ -28,7 +28,7 @@ export default async function MyAccountView() {
   const reviewsCount = data?.myReviews?.totalCount ?? 0;
 
   return (
-    <main className="container mx-auto px-4 md:px-6 max-w-5xl py-10 md:py-16 text-brand-active" dir="rtl">
+    <div className="max-w-6xl mx-auto">
       <AccountDashboard
         user={user}
         recentOrders={allOrders.slice(0, 3)}
@@ -38,6 +38,6 @@ export default async function MyAccountView() {
         openTicketsCount={openTickets.length}
         reviewsCount={reviewsCount}
       />
-    </main>
+    </div>
   );
 }
