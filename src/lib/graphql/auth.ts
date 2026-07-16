@@ -232,3 +232,19 @@ export const MY_REVIEWS_QUERY = `
     }
   }
 `;
+
+export const DELETE_MY_REVIEW_MUTATION = `
+  mutation DeleteMyReview($reviewId: Int!) {
+    deleteMyReview(input: { reviewId: $reviewId }) {
+      success
+    }
+  }
+`;
+
+export const EDIT_MY_REVIEW_MUTATION = `
+  mutation EditMyReview($reviewId: Int!, $content: String!, $rating: Int!) {
+    editMyReview(input: { reviewId: $reviewId, content: $content, rating: $rating }) {
+      success
+    }
+  }
+`;

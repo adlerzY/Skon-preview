@@ -1,37 +1,56 @@
+export interface GamificationStats {
+  successfulOrdersCount: number;
+  reviewsCount: number;
+}
+
 export interface LevelInfo {
   level: number;
   title: string;
-  currentCount: number;
-  countForCurrentLevel: number;
-  countForNextLevel: number | null;
+  currentXp: number;
+  xpForCurrentLevel: number;
+  xpForNextLevel: number | null;
   progressPercent: number;
 }
 
 const LEVEL_TITLES = ["تازه‌وارد", "بازیکن", "جنگجو", "قهرمان", "استاد", "افسانه"];
-const LEVEL_THRESHOLDS = [0, 1, 3, 7, 15, 30];
+const LEVEL_XP_THRESHOLDS = [0, 20, 50, 100, 200, 400];
 
-export function computeLevel(successfulOrdersCount: number): LevelInfo {
+const XP_PER_ORDER = 10;
+const XP_PER_REVIEW = 10;
+const FIRST_ORDER_BONUS = 20;
+const FIRST_REVIEW_BONUS = 20;
+
+export function computeXp(stats: GamificationStats): number {
+  let xp = stats.successfulOrdersCount * XP_PER_ORDER + stats.reviewsCount * XP_PER_REVIEW;
+  if (stats.successfulOrdersCount > 0) xp += FIRST_ORDER_BONUS;
+  if (stats.reviewsCount > 0) xp += FIRST_REVIEW_BONUS;
+  return xp;
+}
+
+export function computeLevel(stats: GamificationStats): LevelInfo {
+  const xp = computeXp(stats);
+
   let levelIndex = 0;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (successfulOrdersCount >= LEVEL_THRESHOLDS[i]) {
+  for (let i = LEVEL_XP_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_XP_THRESHOLDS[i]) {
       levelIndex = i;
       break;
     }
   }
 
-  const countForCurrentLevel = LEVEL_THRESHOLDS[levelIndex];
-  const nextThreshold = LEVEL_THRESHOLDS[levelIndex + 1] ?? null;
+  const xpForCurrentLevel = LEVEL_XP_THRESHOLDS[levelIndex];
+  const nextThreshold = LEVEL_XP_THRESHOLDS[levelIndex + 1] ?? null;
 
   const progressPercent = nextThreshold
-    ? Math.min(100, ((successfulOrdersCount - countForCurrentLevel) / (nextThreshold - countForCurrentLevel)) * 100)
+    ? Math.min(100, ((xp - xpForCurrentLevel) / (nextThreshold - xpForCurrentLevel)) * 100)
     : 100;
 
   return {
     level: levelIndex + 1,
     title: LEVEL_TITLES[levelIndex],
-    currentCount: successfulOrdersCount,
-    countForCurrentLevel,
-    countForNextLevel: nextThreshold,
+    currentXp: xp,
+    xpForCurrentLevel,
+    xpForNextLevel: nextThreshold,
     progressPercent,
   };
 }

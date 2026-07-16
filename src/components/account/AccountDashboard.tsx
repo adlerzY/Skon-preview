@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Heart, LifeBuoy, UserCog, ChevronLeft, Download, HelpCircle, ShoppingBag, MessageSquare } from "lucide-react";
+import { Package, Heart, LifeBuoy, ChevronLeft, MessageSquare } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
@@ -62,26 +62,26 @@ export default function AccountDashboard({
   const completionPercentage = (completionChecks.filter(Boolean).length / completionChecks.length) * 100;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-brand-surface border border-brand-surface_hover p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        <UserAvatar src={user.avatarUrl} name={user.name} size="xl" ring />
+    <div className="h-full flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
+        <div className="lg:col-span-2 bg-brand-surface border border-brand-surface_hover p-5 flex items-center gap-5">
+          <UserAvatar src={user.avatarUrl} name={user.name} size="lg" ring />
 
-        <div className="flex-1 flex flex-col gap-2 text-center sm:text-right w-full">
-          <span className="font-black text-xl text-white">{user.name}</span>
-          <span className="text-xs text-brand-m_khonsa" dir="ltr">{user.email}</span>
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <span className="font-black text-lg text-white truncate">{user.name}</span>
+            <span className="text-xs text-brand-m_khonsa truncate" dir="ltr">{user.email}</span>
 
-          <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
-            <Link href="/my-account/settings" className="text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-1.5 transition-colors">
-              ویرایش پروفایل
-            </Link>
-            <Link href="/my-account/orders" className="text-xs font-bold text-brand-m_khonsa hover:text-white border border-brand-surface_hover hover:bg-brand-surface_hover px-3 py-1.5 transition-colors">
-              مشاهده سفارش‌ها
-            </Link>
+            <div className="flex flex-wrap gap-2 mt-1.5">
+              <Link href="/my-account/settings" className="text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-1.5 transition-colors">
+                ویرایش پروفایل
+              </Link>
+              <Link href="/my-account/orders" className="text-xs font-bold text-brand-m_khonsa hover:text-white border border-brand-surface_hover hover:bg-brand-surface_hover px-3 py-1.5 transition-colors">
+                مشاهده سفارش‌ها
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex flex-col items-center gap-1">
+          <div className="hidden sm:flex flex-col items-center gap-1 shrink-0">
             <ProfileCompletionRing percentage={completionPercentage} />
             <span className="text-[10px] text-brand-m_khonsa flex items-center">
               تکمیل حساب
@@ -89,19 +89,18 @@ export default function AccountDashboard({
             </span>
           </div>
         </div>
+
+        <XPLevelCard successfulOrdersCount={successfulOrdersCount} reviewsCount={reviewsCount} />
       </div>
 
-      <XPLevelCard successfulOrdersCount={successfulOrdersCount} />
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard href="/my-account/orders" icon={<Package size={20} />} label="سفارش‌های موفق" value={successfulOrdersCount} tone="blue" />
-        <StatCard href="/my-account/wishlist" icon={<Heart size={20} />} label="علاقه‌مندی‌ها" value={wishlistCount} tone="zard" />
-        <StatCard href="/my-account/reviews" icon={<MessageSquare size={20} />} label="دیدگاه‌های من" value={reviewsCount} tone="blue" />
-        <StatCard href="/my-account/tickets" icon={<LifeBuoy size={20} />} label="تیکت‌های باز" value={openTicketsCount} tone="sabz" />
-        <StatCard href="/my-account/settings" icon={<UserCog size={20} />} label="تنظیمات حساب" value={null} tone="neutral" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
+        <StatCard href="/my-account/orders" icon={<Package size={18} />} label="سفارش‌های موفق" value={successfulOrdersCount} tone="blue" />
+        <StatCard href="/my-account/wishlist" icon={<Heart size={18} />} label="علاقه‌مندی‌ها" value={wishlistCount} tone="zard" />
+        <StatCard href="/my-account/reviews" icon={<MessageSquare size={18} />} label="دیدگاه‌های من" value={reviewsCount} tone="blue" />
+        <StatCard href="/my-account/tickets" icon={<LifeBuoy size={18} />} label="تیکت‌های باز" value={openTicketsCount} tone="sabz" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
         <PreviewPanel title="آخرین سفارش‌ها" viewAllHref="/my-account/orders" isEmpty={recentOrders.length === 0} emptyText="هنوز سفارشی ثبت نکرده‌اید.">
           {recentOrders.map((order) => {
             const info = STATUS_LABELS[order.status ?? ""] ?? { label: order.status ?? "نامشخص", color: "text-brand-m_khonsa bg-brand-surface" };
@@ -125,7 +124,7 @@ export default function AccountDashboard({
               <Link
                 key={ticket.id}
                 href={`/my-account/tickets/${ticket.databaseId}`}
-                className="flex items-center justify-between gap-3 py-3 border-b border-brand-surface_hover last:border-0 hover:bg-white/5 transition-colors -mx-2 px-2"
+                className="flex items-center justify-between gap-3 py-3 border-b border-brand-surface_hover last:border-0 hover:bg-white/5 transition-colors rounded-none px-2"
               >
                 <div className="flex flex-col gap-1 min-w-0">
                   <span className="text-sm font-bold text-white truncate">{ticket.title}</span>
@@ -136,16 +135,6 @@ export default function AccountDashboard({
             );
           })}
         </PreviewPanel>
-      </div>
-
-      <div className="bg-brand-surface border border-brand-surface_hover p-5">
-        <span className="text-xs font-bold text-brand-surface_m uppercase tracking-wide mb-3 block">دسترسی سریع</span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <QuickAction href="/download" icon={<Download size={18} />} label="دانلود بازی" />
-          <QuickAction href="/support" icon={<HelpCircle size={18} />} label="پشتیبانی" />
-          <QuickAction href="/my-account/tickets/new" icon={<LifeBuoy size={18} />} label="تیکت جدید" />
-          <QuickAction href="/" icon={<ShoppingBag size={18} />} label="فروشگاه" />
-        </div>
       </div>
     </div>
   );
@@ -160,14 +149,14 @@ function StatCard({ href, icon, label, value, tone }: { href: string; icon: Reac
   };
 
   return (
-    <Link href={href} className="bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-4 flex flex-col gap-3 transition-colors group">
+    <Link href={href} className="bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-3.5 flex flex-col gap-2.5 transition-colors group">
       <div className="flex items-center justify-between">
-        <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${toneClasses[tone]}`}>{icon}</span>
-        <ChevronLeft size={16} className="text-brand-surface_m group-hover:text-white transition-colors" />
+        <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${toneClasses[tone]}`}>{icon}</span>
+        <ChevronLeft size={15} className="text-brand-surface_m group-hover:text-white transition-colors" />
       </div>
       <div className="flex flex-col">
-        {value !== null && <span className="text-2xl font-black text-white leading-none mb-1">{value.toLocaleString("fa-IR")}</span>}
-        <span className="text-xs text-brand-m_khonsa font-medium">{label}</span>
+        {value !== null && <span className="text-xl font-black text-white leading-none mb-1">{value.toLocaleString("fa-IR")}</span>}
+        <span className="text-[11px] text-brand-m_khonsa font-medium">{label}</span>
       </div>
     </Link>
   );
@@ -175,21 +164,16 @@ function StatCard({ href, icon, label, value, tone }: { href: string; icon: Reac
 
 function PreviewPanel({ title, viewAllHref, isEmpty, emptyText, children }: { title: string; viewAllHref: string; isEmpty: boolean; emptyText: string; children: React.ReactNode }) {
   return (
-    <div className="bg-brand-surface border border-brand-surface_hover p-5">
-      <div className="flex items-center justify-between mb-2 border-b border-brand-surface_hover pb-3">
+    <div className="bg-brand-surface border border-brand-surface_hover p-5 h-full flex flex-col min-h-0">
+      <div className="flex items-center rounded-none justify-between mb-2 border-b border-brand-surface_hover pb-3 shrink-0">
         <span className="text-sm font-bold text-white">{title}</span>
         <Link href={viewAllHref} className="text-xs text-brand-blue hover:text-white transition-colors font-bold">مشاهده همه</Link>
       </div>
-      {isEmpty ? <div className="py-8 text-center text-xs text-brand-m_khonsa">{emptyText}</div> : <div className="flex flex-col">{children}</div>}
+      {isEmpty ? (
+        <div className="flex-1 flex items-center justify-center text-center text-xs text-brand-m_khonsa">{emptyText}</div>
+      ) : (
+        <div className="flex-1 min-h-0 rounded-none overflow-y-auto flex flex-col">{children}</div>
+      )}
     </div>
-  );
-}
-
-function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <Link href={href} className="flex flex-col items-center justify-center gap-2 bg-brand-bg hover:bg-brand-surface_hover border border-brand-surface_hover p-4 text-center transition-colors group">
-      <span className="text-brand-m_khonsa group-hover:text-brand-blue transition-colors">{icon}</span>
-      <span className="text-[11px] font-bold text-brand-m_khonsa group-hover:text-white transition-colors">{label}</span>
-    </Link>
   );
 }

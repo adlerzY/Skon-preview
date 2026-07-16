@@ -42,7 +42,7 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
   });
 
   if (!orders?.length) {
-    return <div className="bg-brand-surface border border-brand-surface_hover p-10 text-center text-brand-m_khonsa">هنوز هیچ سفارش موفقی ثبت نشده است.</div>;
+    return <div className="bg-brand-surface border border-brand-surface_hover p-10 text-center text-brand-m_khonsa">هنوز هیچ سفارشی ثبت نشده است.</div>;
   }
 
   return (

@@ -28,7 +28,7 @@ export default async function MyAccountView() {
   const reviewsCount = data?.myReviews?.totalCount ?? 0;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className=" mx-auto h-full">
       <AccountDashboard
         user={user}
         recentOrders={allOrders.slice(0, 3)}

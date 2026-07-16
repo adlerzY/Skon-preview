@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import FilterTabs from "@/components/ui/FilterTabs";
 
 interface TicketNode {
   id: string;
@@ -34,7 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_OPTIONS = [
-  { value: "ALL", label: "همه وضعیت‌ها" },
+  { value: "ALL", label: "همه" },
   { value: "open", label: "باز" },
   { value: "answered", label: "پاسخ داده‌شده" },
   { value: "closed", label: "بسته‌شده" },
@@ -102,30 +103,19 @@ export default function TicketsPaginated({
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-surface_m" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="جستجو در عنوان تیکت..."
-            className="w-full bg-brand-surface border border-brand-surface_hover pr-9 pl-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
-          />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-brand-surface border border-brand-surface_hover px-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue"
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+    <div className="flex flex-col gap-3">
+      <div className="relative">
+        <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-surface_m" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="جستجو در عنوان تیکت..."
+          className="w-full bg-brand-surface border border-brand-surface_hover pr-9 pl-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
+        />
       </div>
+
+      <FilterTabs options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter} />
 
       {isLoading && tickets.length === 0 ? (
         <div className="flex items-center justify-center py-10 text-brand-m_khonsa gap-2 text-sm">

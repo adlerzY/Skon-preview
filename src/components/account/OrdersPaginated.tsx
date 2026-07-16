@@ -3,13 +3,16 @@
 import { useState, useMemo } from "react";
 import { Loader2, Search } from "lucide-react";
 import OrdersTable from "./OrdersTable";
+import FilterTabs from "@/components/ui/FilterTabs";
 
 interface PageInfo { hasNextPage: boolean; endCursor: string | null; }
 
 const STATUS_OPTIONS = [
-  { value: "ALL", label: "همه سفارش‌های موفق" },
+  { value: "ALL", label: "همه" },
+  { value: "PENDING", label: "در انتظار" },
   { value: "PROCESSING", label: "در حال پردازش" },
   { value: "COMPLETED", label: "تکمیل‌شده" },
+  { value: "CANCELLED", label: "لغو‌شده" },
 ];
 
 export default function OrdersPaginated({
@@ -62,28 +65,19 @@ export default function OrdersPaginated({
   }, [orders, search]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-surface_m" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="جستجو بر اساس شماره سفارش..."
-            className="w-full bg-brand-surface border border-brand-surface_hover pr-9 pl-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
-          />
-        </div>
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          className="bg-brand-surface border border-brand-surface_hover px-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue"
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+    <div className="flex flex-col gap-3">
+      <div className="relative">
+        <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-surface_m" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="جستجو بر اساس شماره سفارش..."
+          className="w-full bg-brand-surface border border-brand-surface_hover pr-9 pl-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
+        />
       </div>
+
+      <FilterTabs options={STATUS_OPTIONS} value={status} onChange={handleStatusChange} />
 
       {isLoading && orders.length === 0 ? (
         <div className="flex items-center justify-center py-10 text-brand-m_khonsa gap-2 text-sm">

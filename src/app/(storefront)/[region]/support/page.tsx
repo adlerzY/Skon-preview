@@ -1,5 +1,10 @@
 import SupportPage from "@/views/SupportPage";
 
-export default function Page() {
-  return <SupportPage />;
+interface SupportRoutePageProps {
+  params: Promise<{ region: string }>;
+}
+
+export default async function Page({ params }: SupportRoutePageProps) {
+  const { region } = await params;
+  return <SupportPage region={region} />;
 }

@@ -4,7 +4,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 
-const SUCCESSFUL_STATUSES = ["PROCESSING", "COMPLETED"];
+const ALL_STATUSES = ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"];
 
 export async function GET(request: NextRequest) {
   const token = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value;
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const after = request.nextUrl.searchParams.get("after") || undefined;
   const statusParam = request.nextUrl.searchParams.get("status");
-  const statuses = statusParam && statusParam !== "ALL" ? [statusParam] : SUCCESSFUL_STATUSES;
+  const statuses = statusParam && statusParam !== "ALL" ? [statusParam] : ALL_STATUSES;
 
   const data = await fetchGraphQL(CUSTOMER_ORDERS_QUERY, { after, statuses }, [], "no-store", token);
 

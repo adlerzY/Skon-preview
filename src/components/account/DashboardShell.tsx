@@ -47,6 +47,9 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const toggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), []);
 
+  const isDashboardRoot = pathname === "/my-account";
+  const isFixedDashboard = isDesktop && isDashboardRoot;
+
   return (
     <div className="h-screen w-full bg-brand-bg flex overflow-hidden" dir="rtl">
       {!isDesktop && isSidebarOpen && (
@@ -86,7 +89,9 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
           </div>
           <NotificationBell />
         </div>
-        <main className="flex-1 min-h-0 overflow-y-auto w-full p-4 md:p-6">{children}</main>
+        <main className={`flex-1 min-h-0 w-full p-4 md:p-6 ${isFixedDashboard ? "overflow-hidden" : "overflow-y-auto"}`}>
+          <div className={isFixedDashboard ? "h-full" : ""}>{children}</div>
+        </main>
       </div>
     </div>
   );

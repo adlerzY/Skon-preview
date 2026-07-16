@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, Heart, LifeBuoy, MessageSquare, UserCog, Monitor, LogOut, ArrowRight, X } from "lucide-react";
+import { LayoutDashboard, Package, Heart, LifeBuoy, MessageSquare, UserCog, LogOut, ArrowRight, X } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Skeleton from "@/components/ui/Skeleton";
 import { useLogout } from "@/lib/hooks/useLogout";
@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { href: "/my-account/wishlist", label: "علاقه‌مندی‌ها", icon: Heart },
   { href: "/my-account/reviews", label: "دیدگاه‌های من", icon: MessageSquare },
   { href: "/my-account/tickets", label: "تیکت‌های پشتیبانی", icon: LifeBuoy },
-  { href: "/my-account/sessions", label: "مدیریت نشست‌ها", icon: Monitor },
   { href: "/my-account/settings", label: "تنظیمات حساب", icon: UserCog },
 ];
 
