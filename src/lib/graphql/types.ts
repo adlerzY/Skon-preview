@@ -11,6 +11,7 @@ export interface VariationCard {
   giftRegularPriceToman?: string;
   codePriceToman: string;
   codeRegularPriceToman?: string;
+  codeStockCount?: number;
   parsedPrice?: number | null;
   parsedRegularPrice?: number | null;
   parsedGiftPrice?: number | "disabled";

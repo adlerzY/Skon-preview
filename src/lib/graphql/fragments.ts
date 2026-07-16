@@ -49,6 +49,7 @@ export const PRODUCT_CARD_FIELDS = `
 
         codePriceToman
         codeRegularPriceToman
+        codeStockCount
 
         attributes {
           name

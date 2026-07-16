@@ -10,6 +10,7 @@ interface MetaEntry { key: string; value: string; }
 interface LineItem {
   id: string; databaseId: number; quantity?: number; total?: string;
   fulfillmentStatus?: string;
+  cdkeyReady?: boolean;
   product?: { node?: { name?: string; databaseId?: number } };
   metaData?: MetaEntry[];
 }
@@ -102,7 +103,11 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
                                 <Download size={14} /> دانلود فایل
                               </a>
                             ) : deliveryMethod === "code" ? (
-                              <SecretReveal orderId={order.databaseId} itemId={item.databaseId} />
+                              item.cdkeyReady ? (
+                                <SecretReveal orderId={order.databaseId} itemId={item.databaseId} />
+                              ) : (
+                                <span className="text-xs text-brand-zard font-bold">در حال آماده‌سازی کد...</span>
+                              )
                             ) : deliveryMethod === "direct" || deliveryMethod === "gift" ? (
                               <FulfillmentStepper status={item.fulfillmentStatus || "queued"} />
                             ) : (
