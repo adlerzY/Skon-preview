@@ -8,9 +8,10 @@ import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 
 interface WishlistButtonProps {
   productId: number;
+  size?: number;
 }
 
-export default function WishlistButton({ productId }: WishlistButtonProps) {
+export default function WishlistButton({ productId, size = 22 }: WishlistButtonProps) {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [active, setActive] = useState(false);
@@ -69,14 +70,15 @@ export default function WishlistButton({ productId }: WishlistButtonProps) {
       type="button"
       onClick={handleClick}
       disabled={isLoading || isChecking}
-      className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border transition-colors ${
-        active
-          ? "bg-brand-blue/10 border-brand-blue text-brand-blue"
-          : "bg-brand-surface border-brand-surface_hover text-brand-m_khonsa hover:text-white"
-      }`}
+      aria-pressed={active}
+      title={active ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
+      className="inline-flex items-center justify-center shrink-0 text-brand-m_khonsa hover:text-brand-blue transition-colors disabled:opacity-50"
     >
-      {isLoading || isChecking ? <Loader2 size={15} className="animate-spin" /> : <Heart size={15} fill={active ? "currentColor" : "none"} />}
-      {active ? "در لیست علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
+      {isLoading || isChecking ? (
+        <Loader2 size={size} className="animate-spin" />
+      ) : (
+        <Heart size={size} className={active ? "text-brand-blue" : ""} fill={active ? "currentColor" : "none"} />
+      )}
     </button>
   );
 }

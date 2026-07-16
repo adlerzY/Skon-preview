@@ -50,6 +50,7 @@ export const CUSTOMER_ORDERS_QUERY = `
             nodes {
               id databaseId quantity total
               fulfillmentStatus
+              cdkeyReady
               product { node { name databaseId } }
               metaData { key value }
             }

@@ -21,11 +21,17 @@ interface Props {
   activeRegion?: string;
 }
 
+function isCodeViable(v: VariationCard): boolean {
+  if (v.parsedCodePrice == null || v.parsedCodePrice === "disabled") return false;
+  if (typeof v.codeStockCount === "number" && v.codeStockCount <= 0) return false;
+  return true;
+}
+
 function hasStock(v: VariationCard): boolean {
   return (
     v.parsedPrice != null ||
     (v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled") ||
-    (v.parsedCodePrice != null && v.parsedCodePrice !== "disabled")
+    isCodeViable(v)
   );
 }
 
@@ -260,6 +266,7 @@ export default function ProductPageClient({
     let accGiftRegular: number | "disabled" = "disabled";
     let accCode: number | "disabled" = "disabled";
     let accCodeRegular: number | "disabled" = "disabled";
+    let accCodeStock: number | undefined = undefined;
 
     for (const mv of candidates) {
       if (mv.parsedPrice != null && (accPrice === null || mv.parsedPrice < accPrice)) {
@@ -273,6 +280,7 @@ export default function ProductPageClient({
       if (typeof mv.parsedCodePrice === "number" && (accCode === "disabled" || mv.parsedCodePrice < (accCode as number))) {
         accCode = mv.parsedCodePrice;
         accCodeRegular = typeof mv.parsedCodeRegularPrice === "number" ? mv.parsedCodeRegularPrice : mv.parsedCodePrice;
+        accCodeStock = mv.codeStockCount;
       }
 
       const comboText = mv.attributes?.map((a) => a.value.toLowerCase()).join(" ") ?? "";
@@ -283,6 +291,7 @@ export default function ProductPageClient({
       if ((comboText.includes("کد") || comboText.includes("code")) && mv.parsedPrice != null && accCode === "disabled") {
         accCode = mv.parsedPrice;
         accCodeRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
+        accCodeStock = mv.codeStockCount;
       }
     }
 
@@ -294,6 +303,7 @@ export default function ProductPageClient({
       parsedGiftRegularPrice: accGiftRegular,
       parsedCodePrice: accCode,
       parsedCodeRegularPrice: accCodeRegular,
+      codeStockCount: accCodeStock,
     };
   }, [variations, selectedAttrs, groupedAttributes, regionInfo, product]);
 
@@ -394,10 +404,6 @@ export default function ProductPageClient({
 
   return (
     <div className="flex flex-col gap-12 w-full min-h-screen" dir="rtl">
-      <div className="flex justify-start">
-        <WishlistButton productId={product.databaseId} />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start w-full">
         <div className="lg:col-span-4 flex flex-col gap-6 w-full">
           <div>
@@ -406,7 +412,10 @@ export default function ProductPageClient({
                 <Image src={category.image.sourceUrl} alt={category.name} fill className="object-cover" />
               </div>
             )}
-            <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
+              <WishlistButton productId={product.databaseId} size={22} />
+            </div>
             {product.shortNotify && (
               <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">
                 {product.shortNotify}
