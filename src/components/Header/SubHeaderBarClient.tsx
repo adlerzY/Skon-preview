@@ -1,24 +1,28 @@
+// src/components/Header/SubHeaderBarClient.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+
+const HIDDEN_ROUTES = ["support", "cart"];
 
 export default function SubHeaderBarClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const pathSegments = pathname.split("/").filter(Boolean);
-  
-  const knownRegions = ["eu", "us", "tr"]; 
+
+  const knownRegions = ["eu", "us", "tr"];
   const isOnlyRegion = pathSegments.length === 1 && knownRegions.includes(pathSegments[0].toLowerCase());
 
   if (pathname === "/" || pathSegments.length === 0 || isOnlyRegion) return null;
 
-  const filteredSegments = knownRegions.includes(pathSegments[0].toLowerCase()) 
-    ? pathSegments.slice(1) 
+  const filteredSegments = knownRegions.includes(pathSegments[0].toLowerCase())
+    ? pathSegments.slice(1)
     : pathSegments;
 
   if (filteredSegments.length === 0) return null;
+  if (HIDDEN_ROUTES.includes(filteredSegments[0].toLowerCase())) return null;
 
   const edition = searchParams.get("edition");
 
