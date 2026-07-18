@@ -62,13 +62,13 @@ export async function getProducts(categorySlug?: string, activeRegion: string = 
   const data = await fetchGraphQL(
     `
       ${PRODUCT_CARD_FIELDS}
-      query GetProducts($categoryIn: [String]) {
-        products(first: 12, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
+      query GetProducts($categoryIn: [String], $regionSlug: String) {
+        products(first: 12, where: { categoryIn: $categoryIn, status: "PUBLISH", regionSlug: $regionSlug }) {
           nodes { ...ProductCardFields }
         }
       }
     `,
-    categorySlug ? { categoryIn: [categorySlug] } : {},
+    categorySlug ? { categoryIn: [categorySlug], regionSlug: activeRegion } : { regionSlug: activeRegion },
     tags
   );
 
@@ -105,19 +105,19 @@ export async function getCategoryArchive(slug: string, activeRegion: string = "e
       `
         ${CATEGORY_BASIC_FIELDS}
         ${PRODUCT_CARD_FIELDS}
-        query GetCategoryProducts($id: ID!, $categoryIn: [String]) {
+        query GetCategoryProducts($id: ID!, $categoryIn: [String], $regionSlug: String) {
           productCategory(id: $id, idType: SLUG) {
             ...CategoryBasicFields
             children(where: { hideEmpty: true }) {
               nodes { id databaseId name slug }
             }
           }
-          products(first: 100, where: { categoryIn: $categoryIn, status: "PUBLISH" }) {
+          products(first: 100, where: { categoryIn: $categoryIn, status: "PUBLISH", regionSlug: $regionSlug }) {
             nodes { ...ProductCardFields }
           }
         }
       `,
-      { id: slug, categoryIn: [slug] },
+      { id: slug, categoryIn: [slug], regionSlug: activeRegion },
       ["products", `category-${slug}`]
     ),
     fetchGraphQL(
@@ -153,20 +153,20 @@ export async function getHomePageData(activeRegion: string = "eu") {
       ${PRODUCT_CARD_FIELDS}
       ${BANNER_FIELDS}
       ${HERO_TAB_FIELDS}
-      query GetHomePage {
+      query GetHomePage($regionSlug: String) {
         homeBanners: productCategory(id: "home", idType: SLUG) {
           banners { ...BannerFields }
           heroTabs { ...HeroTabFields }
         }
-        featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH" }) {
+        featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH", regionSlug: $regionSlug }) {
           nodes { ...ProductCardFields }
         }
-        latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC } }) {
+        latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC }, regionSlug: $regionSlug }) {
           nodes { ...ProductCardFields }
         }
       }
     `,
-    {},
+    { regionSlug: activeRegion },
     ["products", "banners", "home"],
     "force-cache"
   );

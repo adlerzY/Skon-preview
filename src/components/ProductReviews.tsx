@@ -187,8 +187,8 @@ function ReviewCard({
                 <div className="flex items-center gap-2">
                   <UserAvatar src={reply.author?.node?.avatarUrl} name={reply.author?.node?.name} size="xs" />
                   <span className="text-xs font-bold text-brand-active flex items-center gap-1.5">
-                    {reply.author?.node?.name || "پشتیبانی"}
-                    <AdminBadge />
+                    {reply.author?.node?.name || (reply.isStaffReply ? "پشتیبانی" : "کاربر")}
+                    {reply.isStaffReply && <AdminBadge />}
                   </span>
                 </div>
                 {reply.date && (

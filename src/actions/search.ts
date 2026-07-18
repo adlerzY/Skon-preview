@@ -17,15 +17,15 @@ export async function searchProductsByKeyword(keyword: string) {
     const data = await fetchGraphQL(
       `
         ${PRODUCT_CARD_FIELDS}
-        query SearchProducts($search: String!) {
-          products(first: 5, where: { search: $search, status: "PUBLISH" }) {
+        query SearchProducts($search: String!, $regionSlug: String) {
+          products(first: 5, where: { search: $search, status: "PUBLISH", regionSlug: $regionSlug }) {
             nodes {
               ...ProductCardFields
             }
           }
         }
       `,
-      { search: safeKeyword },
+      { search: safeKeyword, regionSlug: activeRegion },
       [],
       "no-store"
     );

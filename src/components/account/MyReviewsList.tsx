@@ -202,18 +202,16 @@ export default function MyReviewsList({
               <p className="text-sm text-brand-active leading-7">{review.content}</p>
             )}
 
-            {!isEditing && (
+            {!isEditing && !review.approved && (
               <div className="flex items-center gap-2 pt-1 border-t border-brand-surface_hover/60 mt-1">
-                {!review.approved && (
-                  <button
-                    type="button"
-                    onClick={() => startEdit(review)}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-brand-blue hover:text-white transition-colors"
-                  >
-                    <Pencil size={12} />
-                    ویرایش
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => startEdit(review)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-brand-blue hover:text-white transition-colors"
+                >
+                  <Pencil size={12} />
+                  ویرایش
+                </button>
 
                 {isConfirmingDelete ? (
                   <div className="flex items-center gap-2 text-[11px]">
