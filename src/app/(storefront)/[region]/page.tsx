@@ -29,7 +29,7 @@ export default async function Home({ params }: HomeProps) {
     <main className="container mx-auto px-6 max-w-site pb-12">
       <CategoryHero banners={banners} />
       <DynamicProductGrid title="محصولات ویژه و پرطرفدار" products={featured} activeRegion={region} />
-      <SecondaryHero sectionTitle="پیشنهاد ویژه این هفته" tabs={heroTabs} />
+      {/* <SecondaryHero sectionTitle="پیشنهاد ویژه این هفته" tabs={heroTabs} /> */}
       <DynamicProductGrid title="جدیدترین محصولات" products={latest} activeRegion={region} />
       
     </main>

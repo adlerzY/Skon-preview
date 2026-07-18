@@ -63,8 +63,8 @@ export default function CategoryHero({ banners }: Props) {
               />
             </div>
           ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111215] via-transparent to-transparent opacity-90 md:opacity-0 z-20"></div>
-          <div className="absolute inset-0 bg-gradient-to-l from-[#111215] via-[#111215]/80 to-transparent w-full md:w-2/3 z-20"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111215] via-transparent to-transparent opacity-90 block lg:hidden z-20"></div>
+          <div className="absolute inset-0 bg-gradient-to-l from-[#111215] via-[#111215]/80 to-transparent w-full z-20 block lg:hidden"></div>
         </div>
 
         <div key={activeIndex} className="relative h-full flex flex-col justify-center px-[5.5rem] md:px-[5.5rem] w-full max-w-2xl z-30 animate-in fade-in duration-700">

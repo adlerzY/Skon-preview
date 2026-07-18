@@ -68,7 +68,7 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
   return (
     <Link
       href={href}
-      className="group flex flex-col bg-brand-surface duration-200 hover:bg-brand-surface_hover overflow-hidden relative h-full min-h-[340px]"
+      className="group flex flex-col bg-brand-surface duration-200 hover:bg-brand-surface_hover overflow-hidden relative h-full min-h-[380px]"
     >
       {variant === "price" && badges.length > 0 && (
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
@@ -80,13 +80,13 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
         </div>
       )}
 
-      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0b0c10] flex-shrink-0">
+      <div className="relative w-full aspect-[16/10] rounded-none overflow-hidden bg-[#0b0c10] flex-shrink-0">
         {product.image?.sourceUrl ? (
           <Image
             src={product.image.sourceUrl}
             alt={product.name || "تصویر محصول"}
             fill
-            className="object-cover transition-all duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110"
+            className="object-cover transition-all rounded-none duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (

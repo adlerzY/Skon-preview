@@ -138,14 +138,14 @@ export default function VariationSelector({
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => state.available && onAttributeSelect(group.name, opt.value)}
+                  onClick={() => state.available && onAttributeSelect(group.name, opt.value)}
                     disabled={!state.available}
-                    className={`w-full flex items-center gap-3 p-3.5 border-r-4 text-right transition-all duration-150 ${
+                    className={`w-full flex items-center gap-3 p-6 text-right transition-all duration-150 border border-brand-surface_hover ${
                       isSelected
-                        ? "bg-brand-blue/10 border-r-brand-blue"
+                        ? "bg-brand-surface border-r-8 border-r-brand-blue"
                         : state.available
-                        ? "bg-brand-menu border-r-transparent hover:bg-brand-surface_hover"
-                        : "bg-brand-menu/40 border-r-transparent cursor-not-allowed"
+                        ? "bg-brand-menu border-r-1 border-r-brand-surface_hover hover:bg-brand-surface_hover"
+                        : "bg-brand-menu/40 border-brand-surface_hover/40 border-r-1 border-r-brand-surface_hover/40 cursor-not-allowed"
                     }`}
                   >
                     {opt.flagUrl && (
