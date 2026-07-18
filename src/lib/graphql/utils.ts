@@ -28,6 +28,25 @@ export function regionsMatch(a?: string | null, b?: string | null): boolean {
   return normalizeRegionToken(a) === normalizeRegionToken(b);
 }
 
+type PriceTier = { price: number; regularPrice: number };
+
+function pickLowest(
+  vars: any[],
+  priceKey: "parsedPrice" | "parsedGiftPrice" | "parsedCodePrice",
+  regularKey: "parsedRegularPrice" | "parsedGiftRegularPrice" | "parsedCodeRegularPrice"
+): PriceTier | null {
+  const valid = vars.filter((v) => {
+    const p = v[priceKey];
+    if (typeof p !== "number" || p <= 0) return false;
+    if (priceKey === "parsedCodePrice" && typeof v.codeStockCount === "number" && v.codeStockCount <= 0) return false;
+    return true;
+  });
+  if (valid.length === 0) return null;
+  const lowest = valid.reduce((min, v) => (v[priceKey] < min[priceKey] ? v : min));
+  const reg = lowest[regularKey];
+  return { price: lowest[priceKey], regularPrice: typeof reg === "number" ? reg : lowest[priceKey] };
+}
+
 export const formatProducts = (
   products: ProductNode[],
   archiveMode: boolean = false,
@@ -74,24 +93,23 @@ export const formatProducts = (
       const hasRegionAttr = parsedVariationCards.some((v) => !!v.regionSlug);
       const regionVars = parsedVariationCards.filter((v) => regionsMatch(v.regionSlug, activeRegion));
       const targetVars = regionVars.length > 0 ? regionVars : parsedVariationCards;
-      const validPrices = targetVars.filter((v) => typeof v.parsedPrice === "number" && v.parsedPrice > 0);
 
-      if (validPrices.length > 0) {
-        const lowestVar = validPrices.reduce((min, p) => (p.parsedPrice! < min.parsedPrice! ? p : min), validPrices[0]);
-        finalPrice = lowestVar.parsedPrice;
-        finalRegularPrice = lowestVar.parsedRegularPrice;
-      } else {
-        finalPrice = targetVars[0]?.parsedPrice ?? null;
-        finalRegularPrice = targetVars[0]?.parsedRegularPrice ?? null;
-      }
+      const picked =
+        pickLowest(targetVars, "parsedPrice", "parsedRegularPrice") ??
+        pickLowest(targetVars, "parsedGiftPrice", "parsedGiftRegularPrice") ??
+        pickLowest(targetVars, "parsedCodePrice", "parsedCodeRegularPrice");
 
+      finalPrice = picked?.price ?? null;
+      finalRegularPrice = picked?.regularPrice ?? null;
+
+      const hasDirectPrice = targetVars.some((v) => typeof v.parsedPrice === "number" && v.parsedPrice > 0);
       const hasGiftOrCode = targetVars.some(
         (v) => typeof v.parsedGiftPrice === "number" || typeof v.parsedCodePrice === "number"
       );
 
       isAvailableInRegion = hasRegionAttr
-        ? regionVars.length > 0 && (validPrices.length > 0 || hasGiftOrCode)
-        : validPrices.length > 0 || hasGiftOrCode || finalPrice != null;
+        ? regionVars.length > 0 && (hasDirectPrice || hasGiftOrCode)
+        : hasDirectPrice || hasGiftOrCode || finalPrice != null;
     } else {
       finalPrice = parsePrice(product.price);
       finalRegularPrice = parsePrice(product.regularPrice);

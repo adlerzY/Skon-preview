@@ -8,9 +8,11 @@ import { Trash2, Globe, Sliders, Loader2, Minus, Plus } from "lucide-react";
 import { getClientCookie } from "@/lib/cookies";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 import MissingCredentialsForm from "@/components/cart/MissingCredentialsForm";
+import { useToast } from "@/context/ToastContext";
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, totalQuantity } = useCart();
+  const { showToast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
@@ -40,6 +42,11 @@ export default function CartPage() {
       default:
         return { label: method, color: "text-brand-m_khonsa bg-brand-surface" };
     }
+  };
+
+  const handleRemove = (id: string) => {
+    removeFromCart(id);
+    showToast("از سبد خرید حذف شد");
   };
 
   const handleCheckout = async () => {
@@ -186,7 +193,7 @@ export default function CartPage() {
                 <div className="flex md:flex-col justify-between items-end gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-brand-surface_hover">
                   <Button
                     variant="ghost"
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => handleRemove(item.id)}
                     className="!text-red-500 hover:!text-red-400 text-xs font-bold flex items-center gap-1 order-2 md:order-1"
                   >
                     <Trash2 size={15} />

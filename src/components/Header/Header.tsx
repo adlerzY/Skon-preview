@@ -10,8 +10,8 @@ import RegionSwitcher from "./RegionSwitcher";
 import { Download, HelpCircle } from "lucide-react";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { getHeaderCategories, getHeaderBlogCategories, getRegions } from "@/lib/graphql";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getHeaderCategories, getHeaderBlogCategories, getRegions, getWishlistProductIds } from "@/lib/graphql";
+import { getCurrentUser, getAuthToken } from "@/lib/auth/session";
 import Skeleton from "@/components/ui/Skeleton";
 
 const ACTION_BUTTON_CLASSES =
@@ -23,11 +23,12 @@ export default async function Header() {
   const cookieStore = await cookies();
   const activeRegion = cookieStore.get("store_region")?.value || "eu";
 
-  const [shopGames, blogCats, regions, user] = await Promise.all([
+  const [shopGames, blogCats, regions, user, wishlistIds] = await Promise.all([
     getHeaderCategories(),
     getHeaderBlogCategories(),
     getRegions().catch(() => []),
     getCurrentUser().catch(() => null),
+    getAuthToken().then((token) => (token ? getWishlistProductIds(token) : [])).catch(() => []),
   ]);
 
   return (
@@ -63,7 +64,10 @@ export default async function Header() {
             <span>پشتیبانی</span>
           </Link>
 
-          <UserActions user={user ? { name: user.name, avatarUrl: user.avatarUrl, isStaff: user.isStaff } : null} />
+          <UserActions
+            user={user ? { name: user.name, avatarUrl: user.avatarUrl, isStaff: user.isStaff } : null}
+            wishlistCount={wishlistIds.length}
+          />
         </div>
       </div>
 

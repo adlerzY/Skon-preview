@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { ToastProvider } from "@/context/ToastContext";
 import AuthRefresher from "@/components/account/AuthRefresher";
 import TopLoader from "@/components/ui/TopLoader";
 
@@ -23,10 +24,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Suspense fallback={null}>
           <TopLoader />
         </Suspense>
-        <CartProvider>
-          <AuthRefresher />
-          {children}
-        </CartProvider>
+        <ToastProvider>
+          <CartProvider>
+            <AuthRefresher />
+            {children}
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

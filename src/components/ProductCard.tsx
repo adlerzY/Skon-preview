@@ -5,6 +5,7 @@ import Link from "next/link";
 import { memo, useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { ProductNode } from "@/lib/graphql";
+import { useToast } from "@/context/ToastContext";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
 
@@ -16,6 +17,7 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWishlist }: ProductCardProps) {
+  const { showToast } = useToast();
   const [isRemoving, setIsRemoving] = useState(false);
   const [removed, setRemoved] = useState(false);
 
@@ -57,6 +59,7 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
       if (res.ok && data.inWishlist === false) {
         setRemoved(true);
         onRemovedFromWishlist?.(product.databaseId);
+        showToast("از علاقه‌مندی‌ها حذف شد");
       }
     } finally {
       setIsRemoving(false);

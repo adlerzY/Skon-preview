@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Heart, Loader2 } from "lucide-react";
 import { getClientCookie } from "@/lib/cookies";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
+import { useToast } from "@/context/ToastContext";
 
 interface WishlistButtonProps {
   productId: number;
@@ -13,6 +14,7 @@ interface WishlistButtonProps {
 
 export default function WishlistButton({ productId, size = 22 }: WishlistButtonProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [active, setActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +61,7 @@ export default function WishlistButton({ productId, size = 22 }: WishlistButtonP
       const data = await res.json();
       if (res.ok && typeof data.inWishlist === "boolean") {
         setActive(data.inWishlist);
+        showToast(data.inWishlist ? "به علاقه‌مندی‌ها اضافه شد ❤️" : "از علاقه‌مندی‌ها حذف شد");
       }
     } finally {
       setIsLoading(false);

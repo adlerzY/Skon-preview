@@ -5,6 +5,7 @@ import { VariationCard } from "@/lib/graphql";
 import { useCart } from "@/context/CartContext";
 import { User, Gift, FileCheck, Eye, EyeOff, ClipboardPaste } from "lucide-react";
 import { PriceDisplay } from "./PriceDisplay";
+import { useToast } from "@/context/ToastContext";
 
 const BATTLETAG_REGEX = /^[A-Za-z\u0600-\u06FF0-9]{2,12}#\d{4,7}$/;
 
@@ -211,6 +212,7 @@ export default function DeliveryAndPrice({
   regionInfo,
 }: DeliveryAndPriceProps) {
   const { addToCart } = useCart();
+  const { showToast } = useToast();
 
   const [isMounted, setIsMounted] = useState(false);
   const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(null);
@@ -293,6 +295,7 @@ export default function DeliveryAndPrice({
           : undefined,
     });
 
+    showToast("به سبد خرید اضافه شد 🛒");
     setTimeout(() => setIsAddingToCart(false), 1000);
   };
 
