@@ -131,24 +131,27 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
 
         <div className="mt-auto flex items-end justify-between pt-3">
           {variant === "price" ? (
-            <div className="flex flex-col gap-1 w-full">
+            <div className="w-full flex flex-col justify-end h-[44px]">
               {currentMinPrice ? (
                 <>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[#8e98b0] text-[11px] font-medium shrink-0">شروع قیمت:</span>
+                  {isActualSale && (
+                    <del className="text-[#8e98b0] text-[12px] opacity-70 line-through self-end mb-0.5">
+                      {formatToPersianDigits(regularMinPrice!)}
+                    </del>
+                  )}
+
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[#8e98b0] text-[11px] font-medium">شروع قیمت:</span>
                     <span className={`font-bold text-base md:text-[17px] flex items-center gap-1.5 ${isActualSale ? "text-[#75dd04]" : "text-white"}`}>
                       {formatToPersianDigits(currentMinPrice)}
                       <span className={`text-[12px] font-normal ${isActualSale ? "text-white" : "text-[#8e98b0]"}`}>تومان</span>
                     </span>
                   </div>
-                  {isActualSale && (
-                    <del className="text-[#8e98b0] text-[12px] opacity-70 self-end">
-                      {formatToPersianDigits(regularMinPrice!)}
-                    </del>
-                  )}
                 </>
               ) : (
-                <span className="text-[#ff4e4e] font-bold text-sm md:text-base mt-2">ناموجود</span>
+                <div className="flex items-center justify-start w-full">
+                  <span className="text-[#ff4e4e] font-bold text-sm md:text-base">ناموجود</span>
+                </div>
               )}
             </div>
           ) : (
