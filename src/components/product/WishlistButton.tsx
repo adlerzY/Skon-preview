@@ -18,16 +18,12 @@ export default function WishlistButton({ productId, size = 22 }: WishlistButtonP
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [active, setActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const loggedIn = getClientCookie(LOGGED_IN_COOKIE) === "1";
     setIsLoggedIn(loggedIn);
 
-    if (!loggedIn) {
-      setIsChecking(false);
-      return;
-    }
+    if (!loggedIn) return;
 
     let cancelled = false;
     fetch(`/api/account/wishlist/status?productId=${productId}`, { cache: "no-store" })
@@ -35,10 +31,7 @@ export default function WishlistButton({ productId, size = 22 }: WishlistButtonP
       .then((data) => {
         if (!cancelled) setActive(Boolean(data?.inWishlist));
       })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsChecking(false);
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
@@ -72,12 +65,12 @@ export default function WishlistButton({ productId, size = 22 }: WishlistButtonP
     <button
       type="button"
       onClick={handleClick}
-      disabled={isLoading || isChecking}
+      disabled={isLoading}
       aria-pressed={active}
       title={active ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
       className="inline-flex items-center justify-center shrink-0 text-brand-m_khonsa hover:text-brand-blue transition-colors disabled:opacity-50"
     >
-      {isLoading || isChecking ? (
+      {isLoading ? (
         <Loader2 size={size} className="animate-spin" />
       ) : (
         <Heart size={size} className={active ? "text-brand-blue" : ""} fill={active ? "currentColor" : "none"} />

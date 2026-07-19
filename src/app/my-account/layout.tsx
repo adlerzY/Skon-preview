@@ -15,7 +15,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
   }
 
   return (
-    <DashboardShell user={{ avatarUrl: user.avatarUrl, name: user.name }}>
+    <DashboardShell user={{ avatarUrl: user.avatarUrl, name: user.name, isStaff: user.isStaff }}>
       {children}
     </DashboardShell>
   );

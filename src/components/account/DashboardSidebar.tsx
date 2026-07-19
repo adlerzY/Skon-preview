@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, Heart, LifeBuoy, MessageSquare, UserCog, LogOut, ArrowRight, X } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
+import AdminBadge from "@/components/ui/AdminBadge";
 import Skeleton from "@/components/ui/Skeleton";
 import { useLogout } from "@/lib/hooks/useLogout";
 
@@ -20,12 +21,13 @@ const NAV_ITEMS = [
 interface DashboardSidebarProps {
   avatarUrl?: string | null;
   name?: string | null;
+  isStaff?: boolean;
   isOpen: boolean;
   isDesktop: boolean;
   onClose: () => void;
 }
 
-export default function DashboardSidebar({ avatarUrl, name, isOpen, isDesktop, onClose }: DashboardSidebarProps) {
+export default function DashboardSidebar({ avatarUrl, name, isStaff = false, isOpen, isDesktop, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
   const [isMounted, setIsMounted] = useState(false);
@@ -47,6 +49,10 @@ export default function DashboardSidebar({ avatarUrl, name, isOpen, isDesktop, o
       </aside>
     );
   }
+
+  const navItems = isStaff
+    ? NAV_ITEMS.filter((item) => item.href !== "/my-account/wishlist" && item.href !== "/my-account/orders")
+    : NAV_ITEMS;
 
   const containerClasses = isDesktop
     ? `shrink-0 h-screen bg-brand-surface rounded-none border-l border-brand-surface_hover overflow-hidden transition-[width] duration-300 ease-in-out ${
@@ -71,6 +77,7 @@ export default function DashboardSidebar({ avatarUrl, name, isOpen, isDesktop, o
             </button>
           )}
           <UserAvatar src={avatarUrl} name={name} size="lg" ring />
+          {isStaff && <AdminBadge />}
           <span className="text-sm font-bold text-white truncate max-w-full">{name}</span>
           <Link href="/" className="text-xs text-brand-m_khonsa hover:text-white flex items-center gap-1.5 transition-colors">
             <ArrowRight size={14} />
@@ -79,7 +86,7 @@ export default function DashboardSidebar({ avatarUrl, name, isOpen, isDesktop, o
         </div>
 
         <nav className="flex flex-col rounded-none flex-1 overflow-y-auto">
-          {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+          {navItems.map(({ href, label, icon: Icon, exact }) => {
             const active = exact ? pathname === href : pathname?.startsWith(href);
             return (
               <Link

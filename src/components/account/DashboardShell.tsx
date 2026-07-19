@@ -8,7 +8,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 import NotificationBell from "./NotificationBell";
 
 interface DashboardShellProps {
-  user: { avatarUrl?: string | null; name: string };
+  user: { avatarUrl?: string | null; name: string; isStaff?: boolean };
   children: React.ReactNode;
 }
 
@@ -63,6 +63,7 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
       <DashboardSidebar
         avatarUrl={user.avatarUrl}
         name={user.name}
+        isStaff={user.isStaff}
         isOpen={isSidebarOpen}
         isDesktop={isDesktop}
         onClose={closeSidebar}
