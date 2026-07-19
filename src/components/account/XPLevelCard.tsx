@@ -1,12 +1,32 @@
 import { computeLevel } from "@/lib/gamification";
-import { Trophy } from "lucide-react";
+import { Trophy, Crown } from "lucide-react";
 
 interface XPLevelCardProps {
-  successfulOrdersCount: number;
-  reviewsCount: number;
+  successfulOrdersCount?: number;
+  reviewsCount?: number;
+  isAdmin?: boolean;
 }
 
-export default function XPLevelCard({ successfulOrdersCount, reviewsCount }: XPLevelCardProps) {
+export default function XPLevelCard({ successfulOrdersCount = 0, reviewsCount = 0, isAdmin = false }: XPLevelCardProps) {
+  if (isAdmin) {
+    return (
+      <div className="bg-brand-surface border border-brand-surface_hover p-5 flex flex-col gap-3 justify-center">
+        <div className="flex items-center gap-2.5">
+          <span className="w-10 h-10 rounded-full bg-brand-zard/10 text-brand-zard flex items-center justify-center shrink-0">
+            <Crown size={20} />
+          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-white">سطح: مالک Arena2Battle 👑</span>
+            <span className="text-[11px] text-brand-m_khonsa">شما مدیر ارشد این پلتفرمید، نیازی به امتیاز و سطح نیست</span>
+          </div>
+        </div>
+        <div className="w-full h-2 bg-brand-bg overflow-hidden">
+          <div className="h-full bg-gradient-to-l from-brand-zard to-brand-blue w-full" />
+        </div>
+      </div>
+    );
+  }
+
   const level = computeLevel({ successfulOrdersCount, reviewsCount });
 
   return (
