@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { REFRESH_TOKEN_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/graphql/auth";
@@ -8,8 +8,14 @@ import {
   SESSION_ID_COOKIE, 
   AUTH_TOKEN_MAX_AGE 
 } from "@/lib/auth/constants";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  if (!checkRateLimit(`auth-refresh:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 })) {
+    return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
+  }
+
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value;
   const sessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;

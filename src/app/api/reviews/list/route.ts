@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchGraphQL } from "@/lib/graphql";
 import { resolveAvatarUrl } from "@/lib/avatars";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const GET_PRODUCT_REVIEWS_QUERY = `
   query GetProductReviews($id: ID!, $after: String) {
@@ -27,6 +28,11 @@ const GET_PRODUCT_REVIEWS_QUERY = `
 `;
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request);
+  if (!checkRateLimit(`reviews-list:${ip}`, { max: 60, windowMs: 60 * 1000 })) {
+    return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
+  }
+
   const productId = Number(request.nextUrl.searchParams.get("productId"));
   const after = request.nextUrl.searchParams.get("after") || undefined;
 
