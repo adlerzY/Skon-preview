@@ -20,6 +20,93 @@
 }
 
 @layer components {
+  .prose {
+    color: #c2c2c4;
+    line-height: 1.9;
+    font-size: 0.95rem;
+  }
+  .prose > * + * { margin-top: 1.25em; }
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    color: #0074e0;
+    font-weight: 800;
+    line-height: 1.4;
+    scroll-margin-top: 90px;
+  }
+  .prose h2 { font-size: 1.35rem; margin-top: 2em; }
+  .prose h3 { font-size: 1.15rem; margin-top: 1.75em; }
+  .prose p { margin-top: 1.1em; }
+  .prose a { color: #0074e0; text-decoration: underline; text-underline-offset: 2px; }
+  .prose strong { color: #f8f5f9; font-weight: 700; }
+  .prose ul, .prose ol { padding-right: 1.5em; margin-top: 1em; display: flex; flex-direction: column; gap: 0.5em; }
+  .prose ul { list-style: disc; }
+  .prose ol { list-style: decimal; }
+  .prose blockquote {
+    border-right: 3px solid #0074e0;
+    padding-right: 1em;
+    color: #88898c;
+    font-style: normal;
+    margin-top: 1.5em;
+  }
+  .prose code {
+    background: #1a1c23;
+    padding: 0.15em 0.4em;
+    font-size: 0.85em;
+    direction: ltr;
+    display: inline-block;
+  }
+  .prose pre {
+    background: #1a1c23;
+    padding: 1em;
+    overflow-x: auto;
+    direction: ltr;
+    text-align: left;
+  }
+  .prose pre code { background: transparent; padding: 0; }
+  .prose hr { border-color: #313339; margin-top: 2em; }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5em;
+    font-size: 0.85em;
+    display: block;
+    overflow-x: auto;
+  }
+  .prose th, .prose td {
+    border: 1px solid #313339;
+    padding: 0.6em 0.8em;
+    text-align: right;
+  }
+  .prose th { background: #23252b; color: #f8f5f9; }
+  .prose img,
+  .prose .wp-block-image img {
+    max-height: 300px;
+    width: auto;
+    max-width: 100%;
+    margin: 1.5em auto;
+    display: block;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+  .prose .alignfull img,
+  .prose .alignwide img,
+  .prose .wp-block-image.size-full img,
+  .prose .wp-block-cover img {
+    max-height: none;
+    width: 100%;
+    height: auto;
+  }
+  .prose figcaption {
+    text-align: center;
+    font-size: 0.75em;
+    color: #88898c;
+    margin-top: 0.5em;
+  }
+  .prose .wp-block-embed {
+    position: relative;
+    margin-top: 1.5em;
+  }
+  .prose .has-text-align-center { text-align: center; }
+  .prose .has-text-align-left { text-align: left; direction: ltr; }
   .matn-p {
     @apply font-bold text-[12px] text-brand-blue md:text-[14px] leading-6;
   }

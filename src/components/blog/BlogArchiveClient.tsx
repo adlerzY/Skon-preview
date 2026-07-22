@@ -28,9 +28,7 @@ export default function BlogArchiveClient({
       isFirstRun.current = false;
       return;
     }
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
     debounceRef.current = setTimeout(() => {
       startTransition(async () => {
         const res = await fetch(`/api/blog/posts${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, {
@@ -41,7 +39,6 @@ export default function BlogArchiveClient({
         setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
       });
     }, 400);
-
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -74,9 +71,7 @@ export default function BlogArchiveClient({
           placeholder="جستجو در مقالات..."
           className="w-full bg-brand-surface border border-white/5 rounded-xl pr-10 pl-4 py-3 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors"
         />
-        {isPending && (
-          <Loader2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-blue animate-spin" />
-        )}
+        {isPending && <Loader2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-blue animate-spin" />}
       </div>
 
       {posts.length === 0 ? (
@@ -84,7 +79,7 @@ export default function BlogArchiveClient({
           {query ? "مقاله‌ای با این عبارت یافت نشد." : "هنوز هیچ مقاله‌ای منتشر نشده است."}
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col gap-4">
           {posts.map((post) => (
             <BlogPostCard key={post.id} post={post} region={region} />
           ))}

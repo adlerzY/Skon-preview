@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Newspaper, Package, LifeBuoy, MessageSquare } from "lucide-react";
 
-interface NotificationItem { id: string; title: string; body: string; isRead: boolean; }
+interface NotificationItem { id: string; title: string; body: string; link?: string; isRead: boolean; type?: string; }
 
 const POLL_INTERVAL_MS = 45_000;
+
+const TYPE_ICON: Record<string, React.ElementType> = {
+  blog: Newspaper,
+  order: Package,
+  ticket: LifeBuoy,
+  review: MessageSquare,
+};
 
 export default function NotificationBell() {
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -56,7 +63,11 @@ export default function NotificationBell() {
   const handleOpen = async () => {
     setIsOpen((p) => !p);
     if (unreadCount > 0) {
-      await fetch("/api/account/notifications/mark-read", { method: "POST" });
+      await fetch("/api/account/notifications/mark-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
     }
   };
@@ -76,12 +87,18 @@ export default function NotificationBell() {
           <div className="p-3 border-b border-white/5 text-xs font-bold text-brand-m_khonsa">اعلان‌ها</div>
           {items.length === 0 ? (
             <div className="p-6 text-center text-xs text-brand-m_khonsa">اعلانی وجود ندارد</div>
-          ) : items.map((n) => (
-            <div key={n.id} className={`p-3 border-b border-white/5 ${!n.isRead ? "bg-brand-blue/5" : ""}`}>
-              <p className="text-xs font-bold text-white mb-1">{n.title}</p>
-              <p className="text-[11px] text-brand-m_khonsa leading-relaxed">{n.body}</p>
-            </div>
-          ))}
+          ) : items.map((n) => {
+            const Icon = TYPE_ICON[n.type ?? ""] ?? Bell;
+            return (
+              <a key={n.id} href={n.link || "#"} className={`flex items-start gap-2.5 p-3 border-b border-white/5 hover:bg-white/5 transition-colors ${!n.isRead ? "bg-brand-blue/5" : ""}`}>
+                <Icon size={14} className="text-brand-blue mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-white mb-1">{n.title}</p>
+                  <p className="text-[11px] text-brand-m_khonsa leading-relaxed">{n.body}</p>
+                </div>
+              </a>
+            );
+          })}
         </div>
       )}
     </div>

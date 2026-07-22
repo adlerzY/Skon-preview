@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 
 interface BlogPostCardProps {
   post: {
@@ -7,41 +8,66 @@ interface BlogPostCardProps {
     title: string;
     slug: string;
     date?: string;
+    excerpt?: string;
+    commentsCount?: number;
     featuredImage?: { node?: { sourceUrl?: string } };
     author?: { node?: { name?: string } };
-    categories?: { nodes?: { slug?: string }[] };
+    categories?: { nodes?: { slug?: string; name?: string }[] };
   };
   region: string;
   categorySlug?: string;
 }
 
+function stripHtml(html?: string) {
+  return html ? html.replace(/<[^>]*>/g, "").trim() : "";
+}
+
 export default function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
-  const resolvedCategorySlug = categorySlug || post.categories?.nodes?.[0]?.slug || "uncategorized";
+  const category = post.categories?.nodes?.[0];
+  const resolvedCategorySlug = categorySlug || category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
+  const excerpt = stripHtml(post.excerpt);
 
   return (
     <Link
       href={`/${region}/blog/${resolvedCategorySlug}/${post.slug}`}
-      className="bg-brand-surface border border-white/5 rounded-2xl overflow-hidden hover:border-brand-blue/50 transition-all flex flex-col group"
+      className="group flex bg-brand-surface border border-white/5 hover:border-brand-blue/40 rounded-xl overflow-hidden transition-colors w-full"
     >
-      {imageUrl && (
-        <div className="relative aspect-video w-full overflow-hidden bg-white/5">
+      <div className="relative w-[110px] sm:w-[180px] md:w-[220px] shrink-0 aspect-[4/3] bg-white/5 overflow-hidden">
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt={post.title}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 640px) 110px, (max-width: 768px) 180px, 220px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
-        </div>
-      )}
-      <div className="p-5 flex flex-col flex-1 justify-between space-y-4">
-        <h2 className="font-bold text-lg text-white group-hover:text-brand-blue transition-colors line-clamp-2">
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">بدون تصویر</div>
+        )}
+      </div>
+
+      <div className="flex flex-col justify-center flex-1 min-w-0 p-3 sm:p-4 md:p-5 gap-1.5">
+        {category?.name && (
+          <span className="self-start text-[10px] font-bold text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded-full">
+            {category.name}
+          </span>
+        )}
+        <h2 className="font-bold text-sm sm:text-base md:text-lg text-white group-hover:text-brand-blue transition-colors line-clamp-2">
           {post.title}
         </h2>
-        <div className="flex justify-between items-center text-xs text-brand-m_khonsa border-t border-white/5 pt-3">
+        {excerpt && (
+          <p className="hidden sm:block text-xs text-brand-m_khonsa leading-relaxed line-clamp-2">{excerpt}</p>
+        )}
+        <div className="flex items-center gap-3 text-[11px] text-brand-surface_m mt-1">
           <span>{post.author?.node?.name || "نویسنده"}</span>
-          <span>{post.date ? new Date(post.date).toLocaleDateString("fa-IR") : ""}</span>
+          {post.date && <span>{new Date(post.date).toLocaleDateString("fa-IR")}</span>}
+          {typeof post.commentsCount === "number" && post.commentsCount > 0 && (
+            <span className="flex items-center gap-1">
+              <MessageCircle size={11} />
+              {post.commentsCount.toLocaleString("fa-IR")}
+            </span>
+          )}
         </div>
       </div>
     </Link>
