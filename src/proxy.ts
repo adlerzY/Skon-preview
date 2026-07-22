@@ -1,8 +1,6 @@
-// src/proxy.ts
 import { NextRequest, NextResponse } from "next/server";
+import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
 
-const KNOWN_REGIONS = ["eu", "us", "tr"];
-const DEFAULT_REGION = "eu";
 const REGION_COOKIE = "store_region";
 
 export function proxy(request: NextRequest) {

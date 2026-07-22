@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { cookies } from "next/headers";
+import Link from "next/link";
 import {
   getPostDetail,
   getRelatedPosts,
   getProducts,
+  fetchGraphQL,
 } from "@/lib/graphql";
+import { POST_COMMENTS_QUERY } from "@/lib/graphql/blog";
+import { resolveAvatarUrl } from "@/lib/avatars";
 import { getCurrentUser } from "@/lib/auth/session";
 import SocialShare from "@/components/blog/SocialShare";
 import BlogSidebarInfo from "@/components/blog/BlogSidebarInfo";
@@ -25,7 +28,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const mainCategory = category?.parent?.node ?? category;
   const canonicalSlug = mainCategory?.slug ?? "uncategorized";
 
-  const [user, relatedPosts, relatedProducts] = await Promise.all([
+  const [user, relatedPosts, relatedProducts, commentsData] = await Promise.all([
     getCurrentUser().catch(() => null),
     category
       ? getRelatedPosts({
@@ -37,24 +40,21 @@ export default async function BlogPostPage({ params }: PostPageProps) {
         })
       : Promise.resolve([]),
     mainCategory ? getProducts(mainCategory.slug, region).then((p) => p.slice(0, 5)) : Promise.resolve([]),
+    fetchGraphQL(POST_COMMENTS_QUERY, { id: String(post.databaseId) }, [], "no-store"),
   ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const canonicalUrl = `${siteUrl}/${region}/blog/${canonicalSlug}/${post.slug}`;
 
-  const initialComments = await (async () => {
-    const { fetchGraphQL } = await import("@/lib/graphql");
-    const { POST_COMMENTS_QUERY } = await import("@/lib/graphql/blog");
-    const { resolveAvatarUrl } = await import("@/lib/avatars");
-    const data = await fetchGraphQL(POST_COMMENTS_QUERY, { id: String(post.databaseId) }, [], "no-store");
-    const raw = data?.post?.comments?.nodes ?? [];
-    return Promise.all(
-      raw.map(async (c: any) => ({
-        ...c,
-        author: { node: { ...c.author?.node, avatarUrl: await resolveAvatarUrl(c.author?.node?.avatarUrl) } },
-      }))
-    );
-  })();
+  const rawComments = commentsData?.post?.comments?.nodes ?? [];
+  const initialComments = await Promise.all(
+    rawComments.map(async (c: any) => ({
+      ...c,
+      author: { node: { ...c.author?.node, avatarUrl: await resolveAvatarUrl(c.author?.node?.avatarUrl) } },
+    }))
+  );
+
+  const postTags = post.tags?.nodes ?? [];
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
@@ -77,6 +77,19 @@ export default async function BlogPostPage({ params }: PostPageProps) {
           {post.author?.node?.name && <span>نویسنده: <span className="text-white">{post.author.node.name}</span></span>}
           {post.date && <span>تاریخ: <span className="text-white">{new Date(post.date).toLocaleDateString("fa-IR")}</span></span>}
         </div>
+        {postTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {postTags.map((tag: any) => (
+              <Link
+                key={tag.slug}
+                href={`/${region}/blog/tag/${tag.slug}`}
+                className="text-[11px] font-bold text-brand-m_khonsa bg-white/5 hover:bg-brand-blue hover:text-white border border-white/10 px-2.5 py-1 rounded-full transition-colors"
+              >
+                #{tag.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
@@ -108,6 +121,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
           initialComments={initialComments}
           initialCommentsCount={post.commentsCount ?? 0}
           isLoggedIn={Boolean(user)}
+          isStaff={Boolean(user?.isStaff)}
           writeEndpoint="/api/blog/comments"
           replyEndpoint="/api/blog/comments/reply"
         />

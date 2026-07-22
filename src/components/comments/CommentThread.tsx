@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Send, MessageCircle } from "lucide-react";
+import { Loader2, Send, MessageCircle, CheckCircle2 } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AdminBadge from "@/components/ui/AdminBadge";
 
@@ -20,6 +20,7 @@ interface CommentThreadProps {
   initialComments: CommentNode[];
   initialCommentsCount?: number;
   isLoggedIn: boolean;
+  isStaff?: boolean;
   writeEndpoint: string;
   replyEndpoint: string;
 }
@@ -29,16 +30,19 @@ function stripHtml(html: string) {
 }
 
 function ReplyForm({
+  isStaff,
   onSubmit,
   onCancel,
   isSubmitting,
 }: {
-  onSubmit: (content: string) => Promise<boolean>;
+  isStaff: boolean;
+  onSubmit: (content: string) => Promise<{ ok: boolean; approved: boolean }>;
   onCancel: () => void;
   isSubmitting: boolean;
 }) {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
+  const [pendingNotice, setPendingNotice] = useState(false);
 
   const handleSubmit = async () => {
     const trimmed = content.trim();
@@ -47,9 +51,21 @@ function ReplyForm({
       return;
     }
     setError("");
-    const ok = await onSubmit(trimmed);
-    if (ok) setContent("");
+    const result = await onSubmit(trimmed);
+    if (result.ok) {
+      setContent("");
+      if (!result.approved) setPendingNotice(true);
+    }
   };
+
+  if (pendingNotice) {
+    return (
+      <div className="mt-2 flex items-center gap-2 bg-brand-sabz/10 border border-brand-sabz/20 p-3 text-xs text-brand-sabz font-medium">
+        <CheckCircle2 size={14} />
+        پاسخ شما ثبت شد و پس از تأیید ادمین نمایش داده می‌شود.
+      </div>
+    );
+  }
 
   return (
     <div className="mt-2 flex flex-col gap-2 bg-brand-bg border border-brand-surface_hover p-3">
@@ -83,20 +99,22 @@ function CommentCard({
   comment,
   replies,
   isLoggedIn,
+  isStaff,
   onReplySubmitted,
   replyEndpoint,
 }: {
   comment: CommentNode;
   replies: CommentNode[];
   isLoggedIn: boolean;
+  isStaff: boolean;
   onReplySubmitted: (reply: CommentNode) => void;
   replyEndpoint: string;
 }) {
   const [isReplying, setIsReplying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReply = async (content: string) => {
-    if (!comment.databaseId) return false;
+  const handleReply = async (content: string): Promise<{ ok: boolean; approved: boolean }> => {
+    if (!comment.databaseId) return { ok: false, approved: false };
     setIsSubmitting(true);
     try {
       const res = await fetch(replyEndpoint, {
@@ -105,17 +123,21 @@ function CommentCard({
         body: JSON.stringify({ commentId: comment.databaseId, content }),
       });
       const data = await res.json();
-      if (!res.ok) return false;
+      if (!res.ok) return { ok: false, approved: false };
 
-      onReplySubmitted({
-        id: `local-${Date.now()}`,
-        parentDatabaseId: comment.databaseId,
-        content,
-        date: new Date().toISOString(),
-        author: { node: { name: "شما" } },
-      });
-      setIsReplying(false);
-      return true;
+      const approved = Boolean(data.approved);
+      if (approved) {
+        onReplySubmitted({
+          id: `local-${Date.now()}`,
+          parentDatabaseId: comment.databaseId,
+          isStaffReply: isStaff,
+          content,
+          date: new Date().toISOString(),
+          author: { node: { name: isStaff ? "پشتیبانی" : "شما" } },
+        });
+        setIsReplying(false);
+      }
+      return { ok: true, approved };
     } finally {
       setIsSubmitting(false);
     }
@@ -143,7 +165,7 @@ function CommentCard({
       )}
 
       {isReplying && (
-        <ReplyForm onSubmit={handleReply} onCancel={() => setIsReplying(false)} isSubmitting={isSubmitting} />
+        <ReplyForm isStaff={isStaff} onSubmit={handleReply} onCancel={() => setIsReplying(false)} isSubmitting={isSubmitting} />
       )}
 
       {replies.length > 0 && (
@@ -174,6 +196,7 @@ export default function CommentThread({
   initialComments,
   initialCommentsCount = 0,
   isLoggedIn,
+  isStaff = false,
   writeEndpoint,
   replyEndpoint,
 }: CommentThreadProps) {
@@ -182,6 +205,7 @@ export default function CommentThread({
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [pendingNotice, setPendingNotice] = useState(false);
 
   const topLevel = comments.filter((c) => !c.parentDatabaseId);
   const repliesByParent = new Map<number, CommentNode[]>();
@@ -201,6 +225,7 @@ export default function CommentThread({
       return;
     }
     setError("");
+    setPendingNotice(false);
     setIsSubmitting(true);
     try {
       const res = await fetch(writeEndpoint, {
@@ -213,11 +238,23 @@ export default function CommentThread({
         setError(data?.error || "ثبت نظر با خطا مواجه شد");
         return;
       }
-      setComments((prev) => [
-        ...prev,
-        { id: `local-${Date.now()}`, content: trimmed, date: new Date().toISOString(), author: { node: { name: "شما" } } },
-      ]);
-      setCount((c) => c + 1);
+
+      const approved = Boolean(data.approved);
+      if (approved) {
+        setComments((prev) => [
+          ...prev,
+          {
+            id: `local-${Date.now()}`,
+            content: trimmed,
+            isStaffReply: isStaff,
+            date: new Date().toISOString(),
+            author: { node: { name: isStaff ? "پشتیبانی" : "شما" } },
+          },
+        ]);
+        setCount((c) => c + 1);
+      } else {
+        setPendingNotice(true);
+      }
       setContent("");
     } catch {
       setError("خطا در ارتباط با سرور");
@@ -236,6 +273,12 @@ export default function CommentThread({
       {isLoggedIn ? (
         <form onSubmit={handleSubmit} className="bg-brand-menu p-4 md:p-5 border border-brand-surface_hover flex flex-col gap-3">
           {error && <p className="text-xs text-red-500 font-medium bg-red-500/10 border border-red-500/20 p-2.5">{error}</p>}
+          {pendingNotice && (
+            <p className="text-xs text-brand-sabz font-medium bg-brand-sabz/10 border border-brand-sabz/20 p-2.5 flex items-center gap-1.5">
+              <CheckCircle2 size={14} />
+              نظر شما ثبت شد و پس از تأیید ادمین نمایش داده می‌شود.
+            </p>
+          )}
           <textarea
             rows={3}
             value={content}
@@ -270,6 +313,7 @@ export default function CommentThread({
               comment={c}
               replies={c.databaseId ? repliesByParent.get(c.databaseId) ?? [] : []}
               isLoggedIn={isLoggedIn}
+              isStaff={isStaff}
               replyEndpoint={replyEndpoint}
               onReplySubmitted={(reply) => {
                 setComments((prev) => [...prev, reply]);

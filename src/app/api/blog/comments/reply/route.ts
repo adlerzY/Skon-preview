@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ثبت پاسخ با خطا مواجه شد" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, approved: Boolean(data.replyToBlogComment.approved) });
   } catch (error) {
     console.error("Reply blog comment error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });

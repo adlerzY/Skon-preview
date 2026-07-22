@@ -33,6 +33,7 @@ export const WRITE_BLOG_COMMENT_MUTATION = `
   mutation WriteBlogComment($postId: Int!, $content: String!) {
     writeBlogComment(input: { postId: $postId, content: $content }) {
       success
+      approved
     }
   }
 `;
@@ -41,6 +42,7 @@ export const REPLY_BLOG_COMMENT_MUTATION = `
   mutation ReplyToBlogComment($commentId: Int!, $content: String!) {
     replyToBlogComment(input: { commentId: $commentId, content: $content }) {
       success
+      approved
     }
   }
 `;

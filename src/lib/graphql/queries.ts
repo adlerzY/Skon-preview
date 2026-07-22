@@ -136,6 +136,10 @@ export async function getCategoryArchive(slug: string, activeRegion: string = "e
     ),
   ]);
 
+  if (categoryData === null) {
+    throw new Error(`دریافت اطلاعات دسته‌بندی «${slug}» با خطا مواجه شد`);
+  }
+
   if (!categoryData?.productCategory) return null;
 
   return {
@@ -241,6 +245,9 @@ export async function getPostDetail(slug: string) {
               parent { node { databaseId name slug } }
             }
           }
+          tags {
+            nodes { databaseId name slug }
+          }
           author { node { name } }
         }
       }
@@ -249,7 +256,11 @@ export async function getPostDetail(slug: string) {
     [`post-${slug}`]
   );
 
-  if (!data?.post) return null;
+  if (data === null) {
+    throw new Error(`دریافت اطلاعات مقاله «${slug}» با خطا مواجه شد`);
+  }
+
+  if (!data.post) return null;
 
   const sanitized = sanitizeHtml(data.post.content) ?? "";
   const { html, toc } = extractTocAndInjectIds(sanitized);
@@ -355,7 +366,12 @@ export async function getProductDetail(slug: string, activeRegion: string = "eu"
     [`product-${slug}`]
   );
 
-  if (!data?.product) return null;
+  if (data === null) {
+    throw new Error(`دریافت اطلاعات محصول «${slug}» با خطا مواجه شد`);
+  }
+
+  if (!data.product) return null;
+
   const formatted = formatProducts([data.product], false, activeRegion);
   const product = formatted[0] ?? null;
   if (!product) return null;
@@ -424,28 +440,61 @@ export async function getBlogCategoryArchive(slug: string) {
     [`blog-category-${slug}`]
   );
 
+  if (data === null) {
+    throw new Error(`دریافت اطلاعات دسته‌بندی بلاگ «${slug}» با خطا مواجه شد`);
+  }
+
   return data?.category ?? null;
+}
+
+export async function getBlogTagArchive(slug: string) {
+  if (!slug) return null;
+
+  const data = await fetchGraphQL(
+    `
+      query GetBlogTag($id: ID!) {
+        tag(id: $id, idType: SLUG) {
+          databaseId
+          name
+          slug
+        }
+      }
+    `,
+    { id: slug },
+    [`blog-tag-${slug}`]
+  );
+
+  if (data === null) {
+    throw new Error(`دریافت اطلاعات تگ «${slug}» با خطا مواجه شد`);
+  }
+
+  return data?.tag ?? null;
 }
 
 export async function getAllBlogPosts(options: {
   search?: string;
   after?: string;
-  categoryIn?: number[];
+  categoryIds?: number[];
+  categorySlugsForTags?: string[];
   tagSlugs?: string[];
 } = {}) {
-  const { search, after, categoryIn, tagSlugs } = options;
+  const { search, after, categoryIds, categorySlugsForTags, tagSlugs } = options;
   const isSearch = Boolean(search);
 
   const tags = isSearch
     ? []
-    : tagSlugs && tagSlugs.length
-      ? tagSlugs.map((slug) => `blog-category-${slug}`)
-      : ["all-blog-posts"];
+    : [
+        ...(categorySlugsForTags && categorySlugsForTags.length
+          ? categorySlugsForTags.map((slug) => `blog-category-${slug}`)
+          : []),
+        ...(tagSlugs && tagSlugs.length ? tagSlugs.map((slug) => `blog-tag-${slug}`) : []),
+        ...(!categorySlugsForTags?.length && !tagSlugs?.length ? ["all-blog-posts"] : []),
+      ];
 
   const data = await fetchGraphQL(
     `
-      query GetAllBlogPosts($after: String, $search: String, $categoryIn: [ID]) {
-        posts(first: 12, after: $after, where: { search: $search, categoryIn: $categoryIn }) {
+      query GetAllBlogPosts($after: String, $search: String, $categoryIn: [ID], $tagSlugIn: [String]) {
+        posts(first: 12, after: $after, where: { search: $search, categoryIn: $categoryIn, tagSlugIn: $tagSlugIn }) {
           pageInfo { hasNextPage endCursor }
           nodes {
             id title slug date excerpt
@@ -457,7 +506,7 @@ export async function getAllBlogPosts(options: {
         }
       }
     `,
-    { after, search, categoryIn },
+    { after, search, categoryIn: categoryIds, tagSlugIn: tagSlugs },
     tags,
     isSearch ? "no-store" : "force-cache"
   );

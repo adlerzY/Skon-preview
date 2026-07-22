@@ -8,17 +8,18 @@ import { useBlogPosts } from "./hooks/seBlogPosts";
 
 interface PageInfo { hasNextPage: boolean; endCursor: string | null; }
 interface SubCategory { databaseId: number; name: string; slug: string; }
+interface MainCategory { databaseId: number; slug: string; }
 
 export default function BlogCategoryArchiveClient({
   region,
-  mainCategorySlug,
+  mainCategory,
   subCategories,
   initialSelectedSlug,
   initialPosts,
   initialPageInfo,
 }: {
   region: string;
-  mainCategorySlug: string;
+  mainCategory: MainCategory;
   subCategories: SubCategory[];
   initialSelectedSlug: string;
   initialPosts: any[];
@@ -33,13 +34,21 @@ export default function BlogCategoryArchiveClient({
 
   const buildParams = useCallback(
     (after?: string) => {
-      const catSlugs = selected === "all" ? [mainCategorySlug, ...subCategories.map((s) => s.slug)] : [selected];
+      const selectedSub = subCategories.find((s) => s.slug === selected);
+      const catIds = selected === "all"
+        ? [mainCategory.databaseId, ...subCategories.map((s) => s.databaseId)]
+        : [selectedSub?.databaseId ?? mainCategory.databaseId];
+      const catSlugs = selected === "all"
+        ? [mainCategory.slug, ...subCategories.map((s) => s.slug)]
+        : [selected];
+
       const params = new URLSearchParams();
+      params.set("catIds", catIds.join(","));
       params.set("catSlugs", catSlugs.join(","));
       if (after) params.set("after", after);
       return params;
     },
-    [selected, mainCategorySlug, subCategories]
+    [selected, mainCategory, subCategories]
   );
 
   const { posts, pageInfo, isLoading, refetch, loadMore } = useBlogPosts({

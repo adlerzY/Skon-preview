@@ -20,8 +20,14 @@ export default async function BlogCategoryPage({ params }: BlogCategoryPageProps
     : (category.children?.nodes ?? []);
   const initialSelectedSlug = isSubCategory ? category.slug : "all";
 
-  const catSlugs = initialSelectedSlug === "all" ? [mainCategory.slug, ...subCategories.map((s: any) => s.slug)] : [category.slug];
-  const { posts, pageInfo } = await getAllBlogPosts({ tagSlugs: catSlugs });
+  const catIds = initialSelectedSlug === "all"
+    ? [mainCategory.databaseId, ...subCategories.map((s: any) => s.databaseId)]
+    : [category.databaseId];
+  const catSlugsForTags = initialSelectedSlug === "all"
+    ? [mainCategory.slug, ...subCategories.map((s: any) => s.slug)]
+    : [category.slug];
+
+  const { posts, pageInfo } = await getAllBlogPosts({ categoryIds: catIds, categorySlugsForTags: catSlugsForTags });
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
@@ -35,7 +41,7 @@ export default async function BlogCategoryPage({ params }: BlogCategoryPageProps
 
       <BlogCategoryArchiveClient
         region={region}
-        mainCategorySlug={mainCategory.slug}
+        mainCategory={{ databaseId: mainCategory.databaseId, slug: mainCategory.slug }}
         subCategories={subCategories}
         initialSelectedSlug={initialSelectedSlug}
         initialPosts={posts}
