@@ -212,7 +212,7 @@ export async function getHeaderBlogCategories() {
     .map((cat) => ({
       title: cat.name,
       img: cat.categoryImage!.sourceUrl,
-      link: `/blog/${cat.slug}/`,
+      link: `/blog/${cat.slug}`,
     }));
 }
 
@@ -274,7 +274,7 @@ export async function getRelatedPosts(params: {
 
   const primary = await fetchGraphQL(
     `
-      query GetRelatedPosts($categoryIn: [Int], $notIn: [Int], $first: Int) {
+      query GetRelatedPosts($categoryIn: [ID], $notIn: [ID], $first: Int) {
         posts(first: $first, where: { categoryIn: $categoryIn, notIn: $notIn, orderby: { field: DATE, order: DESC } }) {
           nodes {
             id databaseId title slug date
@@ -294,7 +294,7 @@ export async function getRelatedPosts(params: {
     const already = [excludeId, ...posts.map((p: any) => p.databaseId)];
     const secondary = await fetchGraphQL(
       `
-        query GetMoreRelatedPosts($categoryIn: [Int], $notIn: [Int], $first: Int) {
+        query GetMoreRelatedPosts($categoryIn: [ID], $notIn: [ID], $first: Int) {
           posts(first: $first, where: { categoryIn: $categoryIn, notIn: $notIn, orderby: { field: DATE, order: DESC } }) {
             nodes {
               id databaseId title slug date
@@ -444,7 +444,7 @@ export async function getAllBlogPosts(options: {
 
   const data = await fetchGraphQL(
     `
-      query GetAllBlogPosts($after: String, $search: String, $categoryIn: [Int]) {
+      query GetAllBlogPosts($after: String, $search: String, $categoryIn: [ID]) {
         posts(first: 12, after: $after, where: { search: $search, categoryIn: $categoryIn }) {
           pageInfo { hasNextPage endCursor }
           nodes {

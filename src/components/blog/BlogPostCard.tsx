@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { memo } from "react";
 import { MessageCircle } from "lucide-react";
 
 interface BlogPostCardProps {
@@ -22,7 +23,7 @@ function stripHtml(html?: string) {
   return html ? html.replace(/<[^>]*>/g, "").trim() : "";
 }
 
-export default function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
+function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
   const category = post.categories?.nodes?.[0];
   const resolvedCategorySlug = categorySlug || category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
@@ -73,3 +74,5 @@ export default function BlogPostCard({ post, region, categorySlug }: BlogPostCar
     </Link>
   );
 }
+
+export default memo(BlogPostCard);

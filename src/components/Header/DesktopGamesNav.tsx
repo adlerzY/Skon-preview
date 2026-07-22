@@ -21,6 +21,11 @@ interface DesktopGamesNavProps {
 const ITEM_WIDTH = 60;
 const OVERFLOW_BUTTON_WIDTH = 50;
 
+function normalizePath(path?: string | null): string {
+  if (!path) return "";
+  return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+}
+
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,11 +95,9 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   }
 
   function isActive(gameLink: string): boolean {
-    const clean = gameLink.startsWith("/") ? gameLink : `/${gameLink}`;
-    return (
-      pathnameWithoutRegion === clean ||
-      pathnameWithoutRegion?.startsWith(`${clean}/`)
-    );
+    const clean = normalizePath(gameLink.startsWith("/") ? gameLink : `/${gameLink}`);
+    const current = normalizePath(pathnameWithoutRegion);
+    return current === clean || current.startsWith(`${clean}/`);
   }
 
   function GameIcon({
