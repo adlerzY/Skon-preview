@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ثبت نظر با خطا مواجه شد" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, approved: Boolean(data.writeBlogComment.approved) });
   } catch (error) {
     console.error("Write blog comment error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });

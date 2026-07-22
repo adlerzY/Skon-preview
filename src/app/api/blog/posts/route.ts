@@ -6,12 +6,14 @@ export async function GET(request: NextRequest) {
   const after = request.nextUrl.searchParams.get("after") || undefined;
   const catIdsParam = request.nextUrl.searchParams.get("catIds");
   const catSlugsParam = request.nextUrl.searchParams.get("catSlugs");
+  const tagSlugsParam = request.nextUrl.searchParams.get("tagSlugs");
 
-  const categoryIn = catIdsParam
+  const categoryIds = catIdsParam
     ? catIdsParam.split(",").map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0)
     : undefined;
-  const tagSlugs = catSlugsParam ? catSlugsParam.split(",").filter(Boolean) : undefined;
+  const categorySlugsForTags = catSlugsParam ? catSlugsParam.split(",").filter(Boolean) : undefined;
+  const tagSlugs = tagSlugsParam ? tagSlugsParam.split(",").filter(Boolean) : undefined;
 
-  const result = await getAllBlogPosts({ search, after, categoryIn, tagSlugs });
+  const result = await getAllBlogPosts({ search, after, categoryIds, categorySlugsForTags, tagSlugs });
   return NextResponse.json(result);
 }
