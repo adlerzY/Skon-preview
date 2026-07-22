@@ -97,3 +97,29 @@ export const CATEGORY_BASIC_FIELDS = `
     }
   }
 `;
+
+export const CATEGORY_WITH_CHILDREN_FIELDS = `
+  fragment CategoryWithChildrenFields on Category {
+    id
+    databaseId
+    name
+    slug
+    count
+    followerCount
+    categoryImage { sourceUrl(size: "thumbnail") }
+    parent {
+      node {
+        id
+        databaseId
+        name
+        slug
+        children(where: { hideEmpty: false }, first: 20) {
+          nodes { id databaseId name slug count categoryImage { sourceUrl(size: "thumbnail") } }
+        }
+      }
+    }
+    children(where: { hideEmpty: false }, first: 20) {
+      nodes { id databaseId name slug count categoryImage { sourceUrl(size: "thumbnail") } }
+    }
+  }
+`;

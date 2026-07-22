@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { getBlogCategoryArchive } from "@/lib/graphql";
-import BlogPostCard from "@/components/blog/BlogPostCard";
+import { getBlogCategoryArchive, getAllBlogPosts } from "@/lib/graphql";
+import BlogCategoryArchiveClient from "@/components/blog/BlogCategoryArchiveClient";
+import FollowCategoryButton from "@/components/blog/FollowCategoryButton";
 
 interface BlogCategoryPageProps {
   params: Promise<{ region: string; categorySlug: string }>;
@@ -8,30 +9,38 @@ interface BlogCategoryPageProps {
 
 export default async function BlogCategoryPage({ params }: BlogCategoryPageProps) {
   const { region, categorySlug } = await params;
-  const categoryData = await getBlogCategoryArchive(categorySlug);
+  const category = await getBlogCategoryArchive(categorySlug);
 
-  if (!categoryData) notFound();
+  if (!category) notFound();
 
-  const posts = categoryData.posts?.nodes || [];
+  const isSubCategory = Boolean(category.parent?.node);
+  const mainCategory = isSubCategory ? category.parent!.node! : category;
+  const subCategories = isSubCategory
+    ? (category.parent!.node!.children?.nodes ?? [])
+    : (category.children?.nodes ?? []);
+  const initialSelectedSlug = isSubCategory ? category.slug : "all";
+
+  const catSlugs = initialSelectedSlug === "all" ? [mainCategory.slug, ...subCategories.map((s: any) => s.slug)] : [category.slug];
+  const { posts, pageInfo } = await getAllBlogPosts({ tagSlugs: catSlugs });
 
   return (
-    <main className="container mx-auto px-6 py-12 text-white max-w-site">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-brand-blue mb-2">
-          مقالات دسته‌بندی: {categoryData.name}
-        </h1>
-        <p className="text-brand-m_khonsa text-sm">منطقه: {region}</p>
+    <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-brand-blue mb-2">{mainCategory.name}</h1>
+          <p className="text-brand-m_khonsa text-sm">آخرین اخبار و مقالات این بخش</p>
+        </div>
+        <FollowCategoryButton categoryId={mainCategory.databaseId} initialFollowerCount={mainCategory.followerCount ?? 0} />
       </div>
 
-      {posts.length === 0 ? (
-        <p className="text-brand-m_khonsa py-8 text-center">هنوز مقاله‌ای در این دسته‌بندی منتشر نشده است.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post: any) => (
-            <BlogPostCard key={post.id} post={post} region={region} categorySlug={categorySlug} />
-          ))}
-        </div>
-      )}
+      <BlogCategoryArchiveClient
+        region={region}
+        mainCategorySlug={mainCategory.slug}
+        subCategories={subCategories}
+        initialSelectedSlug={initialSelectedSlug}
+        initialPosts={posts}
+        initialPageInfo={pageInfo}
+      />
     </main>
   );
 }

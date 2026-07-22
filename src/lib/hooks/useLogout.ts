@@ -14,6 +14,7 @@ export function useLogout() {
     } finally {
       router.push("/");
       router.refresh();
+      setIsLoggingOut(false);
     }
   }, [router]);
 
