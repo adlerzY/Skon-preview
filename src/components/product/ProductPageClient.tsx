@@ -12,13 +12,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductNode, VariationCard } from "@/lib/graphql";
 import DeliveryAndPrice from "@/components/product/DeliveryAndPrice";
 import VariationSelector from "@/components/product/VariationSelector";
-import ProductReviews from "@/components/ProductReviews";
 import WishlistButton from "@/components/product/WishlistButton";
 
 interface Props {
   product: ProductNode;
   initialEdition?: string;
   activeRegion?: string;
+  children?: React.ReactNode;
 }
 
 function isCodeViable(v: VariationCard): boolean {
@@ -94,6 +94,7 @@ export default function ProductPageClient({
   product,
   initialEdition,
   activeRegion,
+  children,
 }: Props) {
   const variations = product.variationCards ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
@@ -507,48 +508,7 @@ export default function ProductPageClient({
         </div>
       </div>
 
-      {(product.secondaryGallery?.length ?? 0) > 0 && (
-        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
-          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">آیتم‌های محصول</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {product.secondaryGallery!.map((item, index) => (
-              <div key={index} className="bg-brand-menu border border-brand-surface_hover flex flex-col overflow-hidden shadow-md">
-                {item.imageUrl && (
-                  <div className="relative w-full aspect-[16/9] bg-brand-surface">
-                    <Image
-                      src={item.imageUrl}
-                      alt=""
-                      fill
-                      quality={85}
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 33vw"
-                    />
-                  </div>
-                )}
-                {item.description && <p className="text-brand-surface_m text-xs leading-7 p-4">{item.description}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {product.description && (
-        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
-          <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">توضیحات تکمیلی محصول</h2>
-          <div
-            className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none bg-brand-menu p-6 border border-brand-surface_hover"
-            dangerouslySetInnerHTML={{ __html: product.description }}
-          />
-        </div>
-      )}
-
-      <ProductReviews
-        productId={product.databaseId}
-        reviews={product.reviews?.nodes}
-        pageInfo={product.reviews?.pageInfo}
-        averageRating={product.averageRating ?? 0}
-        reviewCount={product.reviewCount}
-      />
+      {children}
     </div>
   );
 }

@@ -23,13 +23,15 @@ export default function CartPage() {
 
   const itemsNeedingCredentials = useMemo(() => cart.filter(itemNeedsCredentials), [cart]);
 
-  const totalOriginalPrice = cart?.reduce((sum: number, item) => {
-    const regular = Number(item.regularPrice) || Number(item.price) || 0;
-    return sum + regular * item.quantity;
-  }, 0) || 0;
-
-  const totalPrice = cart?.reduce((sum: number, item) => sum + Number(item.price) * item.quantity, 0) || 0;
-  const totalDiscount = totalOriginalPrice - totalPrice;
+  const { totalOriginalPrice, totalPrice, totalDiscount } = useMemo(() => {
+    const original =
+      cart?.reduce((sum: number, item) => {
+        const regular = Number(item.regularPrice) || Number(item.price) || 0;
+        return sum + regular * item.quantity;
+      }, 0) || 0;
+    const current = cart?.reduce((sum: number, item) => sum + Number(item.price) * item.quantity, 0) || 0;
+    return { totalOriginalPrice: original, totalPrice: current, totalDiscount: original - current };
+  }, [cart]);
 
   const getDeliveryLabel = (method: string) => {
     switch (method) {

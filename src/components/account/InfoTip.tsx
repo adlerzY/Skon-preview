@@ -1,5 +1,3 @@
-"use client";
-
 import { Info } from "lucide-react";
 
 export default function InfoTip({ text }: { text: string }) {

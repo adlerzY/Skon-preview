@@ -1,11 +1,7 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { memo, useState } from "react";
-import { Heart, Loader2 } from "lucide-react";
 import { ProductNode } from "@/lib/graphql";
-import { useToast } from "@/context/ToastContext";
+import WishlistRemoveButton from "@/components/product/WishlistRemoveButton";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
 
@@ -16,11 +12,7 @@ interface ProductCardProps {
   onRemovedFromWishlist?: (productId: number) => void;
 }
 
-function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWishlist }: ProductCardProps) {
-  const { showToast } = useToast();
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [removed, setRemoved] = useState(false);
-
+export default function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWishlist }: ProductCardProps) {
   const categoryNodes = product.productCategories?.nodes ?? [];
   const category = categoryNodes[0];
   const categorySlug = category?.slug || "uncategorized";
@@ -44,29 +36,6 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
 
   const targetRegion = product.activeRegion || activeRegion || "eu";
   const href = `/${targetRegion}/${categorySlug}/${product.slug}`;
-
-  const handleRemoveFromWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsRemoving(true);
-    try {
-      const res = await fetch("/api/account/wishlist/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.databaseId }),
-      });
-      const data = await res.json();
-      if (res.ok && data.inWishlist === false) {
-        setRemoved(true);
-        onRemovedFromWishlist?.(product.databaseId);
-        showToast("از علاقه‌مندی‌ها حذف شد");
-      }
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  if (removed) return null;
 
   return (
     <Link
@@ -158,20 +127,10 @@ function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWi
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleRemoveFromWishlist}
-              disabled={isRemoving}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-brand-blue/10 border border-brand-blue text-brand-blue"
-            >
-              {isRemoving ? <Loader2 size={14} className="animate-spin" /> : <Heart size={14} fill="currentColor" />}
-              در علاقه‌مندی‌ها
-            </button>
+            <WishlistRemoveButton productId={product.databaseId} onRemoved={onRemovedFromWishlist} />
           )}
         </div>
       </div>
     </Link>
   );
 }
-
-export default memo(ProductCard);

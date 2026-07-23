@@ -8,6 +8,16 @@
     --foreground: #f8f5f9;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
   body {
     background-color: #15171e;
     color: #c2c2c4;
