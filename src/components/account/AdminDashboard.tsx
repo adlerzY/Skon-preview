@@ -30,11 +30,14 @@ export default function AdminDashboard({
   initialOpenTickets,
   wpAdminUrl,
 }: AdminDashboardProps) {
+  const ticketsHref = wpAdminUrl ? `${wpAdminUrl}/edit.php?post_type=support_ticket` : "/my-account";
+  const reviewsHref = wpAdminUrl ? `${wpAdminUrl}/edit-comments.php?comment_status=moderated` : "/my-account";
+
   const quickActions = wpAdminUrl
     ? [
         { label: "مدیریت محصولات", href: `${wpAdminUrl}/edit.php?post_type=product`, icon: ShoppingBag },
-        { label: "مدیریت تیکت‌ها", href: `${wpAdminUrl}/edit.php?post_type=support_ticket`, icon: Ticket },
-        { label: "دیدگاه‌های در انتظار", href: `${wpAdminUrl}/edit-comments.php?comment_status=moderated`, icon: ClipboardList },
+        { label: "مدیریت تیکت‌ها", href: ticketsHref, icon: Ticket },
+        { label: "دیدگاه‌های در انتظار", href: reviewsHref, icon: ClipboardList },
         { label: "پنل مدیریت وردپرس", href: wpAdminUrl, icon: Settings },
       ]
     : [];
@@ -56,9 +59,9 @@ export default function AdminDashboard({
               <Link href="/my-account/settings" className="text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-1.5 transition-colors">
                 ویرایش پروفایل
               </Link>
-              <Link href="/my-account/tickets" className="text-xs font-bold text-brand-m_khonsa hover:text-white border border-brand-surface_hover hover:bg-brand-surface_hover px-3 py-1.5 transition-colors">
+              <a href={ticketsHref} target={wpAdminUrl ? "_blank" : undefined} rel="noopener noreferrer" className="text-xs font-bold text-brand-m_khonsa hover:text-white border border-brand-surface_hover hover:bg-brand-surface_hover px-3 py-1.5 transition-colors">
                 تیکت‌های پشتیبانی
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -67,8 +70,8 @@ export default function AdminDashboard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 shrink-0">
-        <StatCard href="/my-account/tickets" icon={<LifeBuoy size={18} />} label="تیکت‌های باز" value={openTicketsCount} tone="zard" />
-        <StatCard href="/my-account/reviews" icon={<MessageSquare size={18} />} label="دیدگاه‌های در انتظار تأیید" value={pendingReviewsCount} tone="blue" />
+        <StatCard href={ticketsHref} external={Boolean(wpAdminUrl)} icon={<LifeBuoy size={18} />} label="تیکت‌های باز" value={openTicketsCount} tone="zard" />
+        <StatCard href={reviewsHref} external={Boolean(wpAdminUrl)} icon={<MessageSquare size={18} />} label="دیدگاه‌های در انتظار تأیید" value={pendingReviewsCount} tone="blue" />
       </div>
 
       {quickActions.length > 0 && (
@@ -81,7 +84,8 @@ export default function AdminDashboard({
                 href={action.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-3.5 flex flex-col items-center gap-2 text-center transition-colors">
+                className="bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-3.5 flex flex-col items-center gap-2 text-center transition-colors"
+              >
                 <span className="w-9 h-9 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center">
                   <Icon size={16} />
                 </span>
@@ -98,14 +102,15 @@ export default function AdminDashboard({
     </div>
   );
 }
-function StatCard({ href, icon, label, value, tone }: { href: string; icon: React.ReactNode; label: string; value: number; tone: "blue" | "zard" }) {
+function StatCard({ href, external, icon, label, value, tone }: { href: string; external: boolean; icon: React.ReactNode; label: string; value: number; tone: "blue" | "zard" }) {
   const toneClasses: Record<string, string> = {
     blue: "text-brand-blue bg-brand-blue/10",
     zard: "text-brand-zard bg-brand-zard/10",
   };
 
-  return (
-    <Link href={href} className="bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-3.5 flex flex-col gap-2.5 transition-colors group">
+  const className = "bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover p-3.5 flex flex-col gap-2.5 transition-colors group";
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${toneClasses[tone]}`}>{icon}</span>
       </div>
@@ -113,6 +118,20 @@ function StatCard({ href, icon, label, value, tone }: { href: string; icon: Reac
         <span className="text-xl font-black text-white leading-none mb-1">{value.toLocaleString("fa-IR")}</span>
         <span className="text-[11px] text-brand-m_khonsa font-medium">{label}</span>
       </div>
+    </>
+  );
+
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {content}
     </Link>
   );
 }

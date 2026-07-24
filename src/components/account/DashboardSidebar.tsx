@@ -18,6 +18,13 @@ const NAV_ITEMS = [
   { href: "/my-account/settings", label: "تنظیمات حساب", icon: UserCog },
 ];
 
+const STAFF_HIDDEN_HREFS = [
+  "/my-account/wishlist",
+  "/my-account/orders",
+  "/my-account/reviews",
+  "/my-account/tickets",
+];
+
 interface DashboardSidebarProps {
   avatarUrl?: string | null;
   name?: string | null;
@@ -51,7 +58,7 @@ export default function DashboardSidebar({ avatarUrl, name, isStaff = false, isO
   }
 
   const navItems = isStaff
-    ? NAV_ITEMS.filter((item) => item.href !== "/my-account/wishlist" && item.href !== "/my-account/orders")
+    ? NAV_ITEMS.filter((item) => !STAFF_HIDDEN_HREFS.includes(item.href))
     : NAV_ITEMS;
 
   const containerClasses = isDesktop
