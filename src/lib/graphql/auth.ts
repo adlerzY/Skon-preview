@@ -143,6 +143,21 @@ export const CREATE_ORDER_MUTATION = `
   }
 `;
 
+export const SUBMIT_CUSTOMER_ORDER_MUTATION = `
+  mutation SubmitCustomerOrder($lineItems: [BtlOrderLineItemInput]!, $customerNote: String) {
+    submitCustomerOrder(input: { lineItems: $lineItems, customerNote: $customerNote }) {
+      order {
+        databaseId
+        orderKey
+        orderNumber
+        total
+        status
+        paymentUrl
+      }
+    }
+  }
+`;
+
 export const UPDATE_AVATAR_MUTATION = `
   mutation UpdateUserAvatar($avatarUrl: String!) {
     updateUserAvatar(input: { avatarUrl: $avatarUrl }) {

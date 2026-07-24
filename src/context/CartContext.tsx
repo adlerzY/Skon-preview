@@ -32,17 +32,25 @@ export interface CartItem {
 
 export type NewCartItem = Omit<CartItem, "id" | "quantity">;
 
-function buildIdentityKey(item: NewCartItem): string {
-  const cf = item.customFields || {};
-  return [
-    item.productId,
-    item.variationId || "base",
-    item.deliveryMethod,
-    item.region || "none",
-    cf.email || "",
-    cf.password || "",
-    cf.battleTag || "",
-  ].join("::");
+function generateItemId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function itemsMatch(a: NewCartItem, b: CartItem): boolean {
+  const ac = a.customFields || {};
+  const bc = b.customFields || {};
+  return (
+    a.productId === b.productId &&
+    (a.variationId || 0) === (b.variationId || 0) &&
+    a.deliveryMethod === b.deliveryMethod &&
+    (a.region || "") === (b.region || "") &&
+    (ac.email || "") === (bc.email || "") &&
+    (ac.password || "") === (bc.password || "") &&
+    (ac.battleTag || "") === (bc.battleTag || "")
+  );
 }
 
 function stripSensitiveFields(item: CartItem): CartItem {
@@ -64,7 +72,6 @@ function parseStoredCart(raw: string | null): CartItem[] {
   }
 }
 
-// اصلاح هماهنگ با MissingCredentialsForm
 export function itemNeedsCredentials(item: CartItem): boolean {
   if (item.deliveryMethod === "direct") {
     return !item.customFields?.email || !item.customFields?.password;
@@ -129,19 +136,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      const key = buildIdentityKey(item);
+      const existing = cartRef.current.find((p) => itemsMatch(item, p));
+      const id = existing ? existing.id : generateItemId();
+
       if (item.customFields) {
-        saveCredentials(key, item.customFields);
+        saveCredentials(id, item.customFields);
       }
 
       setCart((prev) => {
-        const existingIndex = prev.findIndex((p) => p.id === key);
+        const existingIndex = prev.findIndex((p) => p.id === id);
         if (existingIndex !== -1) {
           return prev.map((p, idx) =>
             idx === existingIndex ? { ...p, quantity: p.quantity + 1 } : p
           );
         }
-        return [...prev, { ...item, id: key, quantity: 1 }];
+        return [...prev, { ...item, id, quantity: 1 }];
       });
 
       return true;

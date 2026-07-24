@@ -82,7 +82,7 @@ function GalleryNavButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`absolute ${position} top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:opacity-20 disabled:pointer-events-none`}
+      className={`absolute ${position} top-1/2 -translate-y-1/2 z-40 bg-brand-bg text-brand-m_khonsa p-2 border border-brand-surface transition-all opacity-0 group-hover:opacity-100 hover:text-brand-white hover:border-brand-surface_m disabled:!opacity-20 disabled:pointer-events-none`}
       aria-label={direction === "prev" ? "تصویر قبلی" : "تصویر بعدی"}
     >
       <Icon width={20} height={60} strokeWidth={2.5} />
