@@ -253,7 +253,6 @@ export default function DeliveryAndPrice({
     setBattleTag("");
   }, [selectedVariation]);
 
-  // اسکلتون بارگذاری اولیه برای جلوگیری از Layout Shift
   if (!isMounted) {
     return <div className="h-48 bg-brand-surface animate-pulse" />;
   }
@@ -298,7 +297,6 @@ export default function DeliveryAndPrice({
       selectedVariation.databaseId !== productId ? selectedVariation.databaseId : undefined;
 
     const added = addToCart({
-      databaseId: selectedVariation.databaseId,
       productId,
       variationId: variationIdValue,
       name: productName,

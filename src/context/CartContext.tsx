@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getClientCookie, setClientCookie, removeClientCookie } from "@/lib/cookies";
 import { saveCredentials, getCredentials, removeCredentials } from "@/lib/secureCartStorage";
 import { useToast } from "@/context/ToastContext";
@@ -8,25 +8,26 @@ import { useToast } from "@/context/ToastContext";
 const CART_COOKIE = "a2b_cart";
 const CART_COOKIE_DAYS = 30;
 export const MAX_CART_QUANTITY = 10;
+
 const CAP_MESSAGE = `کاربر گرامی، سقف خرید ${MAX_CART_QUANTITY.toLocaleString("fa-IR")} عدد می‌باشد`;
 
 export interface CartItem {
   id: string;
-  databaseId: number;
-  productId?: number;
+  productId: number;
   variationId?: number;
   name: string;
   price: number;
   regularPrice?: number;
-  deliveryMethod: "gift" | "code" | "direct";
+  quantity: number;
+  deliveryMethod: "direct" | "gift" | "code" | string;
   region?: string;
   variationName?: string;
   customFields?: {
-    battleTag?: string;
     email?: string;
     password?: string;
+    battleTag?: string;
+    [key: string]: any;
   };
-  quantity: number;
 }
 
 export type NewCartItem = Omit<CartItem, "id" | "quantity">;
@@ -34,49 +35,36 @@ export type NewCartItem = Omit<CartItem, "id" | "quantity">;
 function buildIdentityKey(item: NewCartItem): string {
   const cf = item.customFields || {};
   return [
-    item.databaseId,
+    item.productId,
+    item.variationId || "base",
     item.deliveryMethod,
-    item.region ?? "",
-    item.variationName ?? "",
-    cf.email ?? "",
-    cf.password ?? "",
-    cf.battleTag ?? "",
+    item.region || "none",
+    cf.email || "",
+    cf.password || "",
+    cf.battleTag || "",
   ].join("::");
 }
 
 function stripSensitiveFields(item: CartItem): CartItem {
   const { customFields, ...rest } = item;
-  return rest;
+  return rest as CartItem;
 }
 
 function isValidCartItem(item: unknown): item is CartItem {
-  if (!item || typeof item !== "object") return false;
-  const i = item as Record<string, unknown>;
-  return (
-    typeof i.id === "string" &&
-    typeof i.databaseId === "number" &&
-    typeof i.name === "string" &&
-    typeof i.price === "number" &&
-    typeof i.quantity === "number" &&
-    i.quantity > 0 &&
-    ["gift", "code", "direct"].includes(i.deliveryMethod as string)
-  );
+  return typeof item === "object" && item !== null && "productId" in item && "quantity" in item;
 }
 
 function parseStoredCart(raw: string | null): CartItem[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidCartItem).map((item: CartItem) => {
-      const credentials = getCredentials(item.id);
-      return credentials ? { ...item, customFields: credentials } : item;
-    });
+    return Array.isArray(parsed) ? parsed.filter(isValidCartItem) : [];
   } catch {
     return [];
   }
 }
 
+// اصلاح هماهنگ با MissingCredentialsForm
 export function itemNeedsCredentials(item: CartItem): boolean {
   if (item.deliveryMethod === "direct") {
     return !item.customFields?.email || !item.customFields?.password;
@@ -105,14 +93,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { showToast } = useToast();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const cartRef = useRef(cart);
+  const cartRef = useRef<CartItem[]>([]);
 
   useEffect(() => {
     cartRef.current = cart;
   }, [cart]);
 
   useEffect(() => {
-    setCart(parseStoredCart(getClientCookie(CART_COOKIE)));
+    const stored = parseStoredCart(getClientCookie(CART_COOKIE));
+    const hydrated = stored.map((item) => ({
+      ...item,
+      customFields: getCredentials(item.id) || item.customFields,
+    }));
+    setCart(hydrated);
     setIsMounted(true);
   }, []);
 
@@ -130,29 +123,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = useCallback(
     (item: NewCartItem): boolean => {
       const currentTotal = cartRef.current.reduce((sum, i) => sum + i.quantity, 0);
-      if (currentTotal + 1 > MAX_CART_QUANTITY) {
+
+      if (currentTotal >= MAX_CART_QUANTITY) {
         showToast(CAP_MESSAGE, "error");
         return false;
       }
 
       const key = buildIdentityKey(item);
-
       if (item.customFields) {
         saveCredentials(key, item.customFields);
       }
 
       setCart((prev) => {
-        const existingIndex = prev.findIndex((p) => buildIdentityKey(p) === key);
-
+        const existingIndex = prev.findIndex((p) => p.id === key);
         if (existingIndex !== -1) {
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            quantity: updated[existingIndex].quantity + 1,
-          };
-          return updated;
+          return prev.map((p, idx) =>
+            idx === existingIndex ? { ...p, quantity: p.quantity + 1 } : p
+          );
         }
-
         return [...prev, { ...item, id: key, quantity: 1 }];
       });
 
@@ -168,34 +156,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateQuantity = useCallback(
     (id: string, quantity: number) => {
-      setCart((prev) => {
-        if (quantity <= 0) {
-          removeCredentials(id);
-          return prev.filter((item) => item.id !== id);
-        }
+      if (quantity <= 0) {
+        removeFromCart(id);
+        return;
+      }
 
-        const exists = prev.some((item) => item.id === id);
-        if (!exists) return prev;
+      const currentCart = cartRef.current;
+      const target = currentCart.find((i) => i.id === id);
+      if (!target) return;
 
-        const otherTotal = prev.reduce((sum, i) => (i.id === id ? sum : sum + i.quantity), 0);
-        const capped = Math.min(quantity, Math.max(0, MAX_CART_QUANTITY - otherTotal));
+      const otherTotal = currentCart.reduce((sum, i) => (i.id === id ? sum : sum + i.quantity), 0);
+      const capped = Math.min(quantity, Math.max(0, MAX_CART_QUANTITY - otherTotal));
 
-        if (capped < quantity) {
-          showToast(CAP_MESSAGE, "error");
-        }
+      if (capped < quantity) {
+        showToast(CAP_MESSAGE, "error");
+      }
 
-        if (capped <= 0) return prev;
+      if (capped <= 0) {
+        removeFromCart(id);
+        return;
+      }
 
-        return prev.map((item) => (item.id === id ? { ...item, quantity: capped } : item));
-      });
+      setCart((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, quantity: capped } : item))
+      );
     },
-    [showToast]
+    [removeFromCart, showToast]
   );
 
-  const updateCredentials = useCallback((id: string, credentials: NonNullable<CartItem["customFields"]>) => {
-    saveCredentials(id, credentials);
-    setCart((prev) => prev.map((item) => (item.id === id ? { ...item, customFields: credentials } : item)));
-  }, []);
+  const updateCredentials = useCallback(
+    (id: string, credentials: NonNullable<CartItem["customFields"]>) => {
+      saveCredentials(id, credentials);
+      setCart((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, customFields: credentials } : item))
+      );
+    },
+    []
+  );
 
   const clearCart = useCallback(() => {
     cartRef.current.forEach((item) => removeCredentials(item.id));
@@ -203,8 +200,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removeClientCookie(CART_COOKIE);
   }, []);
 
-  const totalPrice = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const totalQuantity = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+  const totalPrice = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cart]
+  );
+
+  const totalQuantity = useMemo(
+    () => cart.reduce((sum, item) => sum + item.quantity, 0),
+    [cart]
+  );
 
   return (
     <CartContext.Provider

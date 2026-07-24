@@ -12,12 +12,12 @@ export interface VariationCard {
   codePriceToman: string;
   codeRegularPriceToman?: string;
   codeStockCount?: number;
-  parsedPrice?: number | null;
-  parsedRegularPrice?: number | null;
-  parsedGiftPrice?: number | "disabled";
-  parsedGiftRegularPrice?: number | "disabled";
-  parsedCodePrice?: number | "disabled";
-  parsedCodeRegularPrice?: number | "disabled";
+  parsedPrice: number | null;
+  parsedRegularPrice: number | null;
+  parsedGiftPrice: number | "disabled";
+  parsedGiftRegularPrice: number | "disabled";
+  parsedCodePrice: number | "disabled";
+  parsedCodeRegularPrice: number | "disabled";
   regionSlug?: string;
 }
 
@@ -37,8 +37,8 @@ export interface ProductNode {
   price?: string;
   regularPrice?: string;
   salePrice?: string;
-  parsedPrice?: number | null;
-  parsedRegularPrice?: number | null;
+  parsedPrice: number | null;
+  parsedRegularPrice: number | null;
   isAvailableInRegion?: boolean;
   variationCards?: VariationCard[];
   isVariation?: boolean;
