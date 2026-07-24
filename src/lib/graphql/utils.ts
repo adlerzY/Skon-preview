@@ -76,8 +76,8 @@ export const formatProducts = (
 
       return {
         ...v,
-        parsedPrice: parsePrice(v.price),
-        parsedRegularPrice: parsePrice(v.regularPrice),
+        parsedPrice: parsePrice(v.price) ?? null,
+        parsedRegularPrice: parsePrice(v.regularPrice) ?? null,
         parsedGiftPrice: pGift,
         parsedGiftRegularPrice: pGiftReg,
         parsedCodePrice: pCode,
@@ -111,8 +111,8 @@ export const formatProducts = (
         ? regionVars.length > 0 && (hasDirectPrice || hasGiftOrCode)
         : hasDirectPrice || hasGiftOrCode || finalPrice != null;
     } else {
-      finalPrice = parsePrice(product.price);
-      finalRegularPrice = parsePrice(product.regularPrice);
+      finalPrice = parsePrice(product.price) ?? null;
+      finalRegularPrice = parsePrice(product.regularPrice) ?? null;
       isAvailableInRegion = finalPrice != null && finalPrice > 0;
     }
 

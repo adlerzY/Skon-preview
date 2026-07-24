@@ -216,7 +216,8 @@ export default function ProductPageClient({
 
   useEffect(() => {
     setSelectedAttrs(findFirstValidAttributes(initialEdition));
-  }, [findFirstValidAttributes, initialEdition]);
+    setSelectedGalleryImage(null);
+  }, [findFirstValidAttributes, initialEdition, product.databaseId]);
 
   const combinedAggregateVar = useMemo((): VariationCard | null => {
     if (variations.length === 0) {
@@ -473,14 +474,14 @@ export default function ProductPageClient({
           </div>
 
           {allGalleryImages.length > 1 && (
-            <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="rtl">
+            <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="ltr">
               <div
                 className="flex transition-transform duration-300 ease-in-out will-change-transform"
-                style={{ gap: "8px", transform: `translateX(${trackOffset}px)` }}
+                style={{ gap: "8px", transform: `translateX(-${trackOffset}px)` }}
               >
                 {allGalleryImages.map((imgUrl, idx) => (
                   <button
-                    key={imgUrl}
+                    key={`${imgUrl}-${idx}`}
                     type="button"
                     onClick={() => setSelectedGalleryImage(imgUrl)}
                     className={`relative w-[100px] aspect-video flex-shrink-0 overflow-hidden border transition-all duration-300 ${
