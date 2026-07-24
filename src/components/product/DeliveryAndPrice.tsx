@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { VariationCard } from "@/lib/graphql";
 import { useCart } from "@/context/CartContext";
 import { User, Gift, FileCheck, Eye, EyeOff, ClipboardPaste } from "lucide-react";
 import { PriceDisplay } from "./PriceDisplay";
 import { useToast } from "@/context/ToastContext";
+import ConfettiBurst from "@/components/ui/ConfettiBurst";
 
 const BATTLETAG_REGEX = /^[A-Za-z\u0600-\u06FF0-9]{2,12}#\d{4,7}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function DirectForm({
   email,
@@ -21,12 +23,14 @@ function DirectForm({
   onPasswordChange: (v: string) => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
+  const { showToast } = useToast();
 
   const pasteInto = async (setter: (v: string) => void) => {
     try {
       const text = await navigator.clipboard.readText();
       if (text) setter(text.trim());
     } catch {
+      showToast("دسترسی به کلیپ‌بورد امکان‌پذیر نیست.");
     }
   };
 
@@ -44,6 +48,8 @@ function DirectForm({
           className="w-full bg-brand-bg border border-brand-surface_hover p-3 pl-10 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors text-left"
           dir="ltr"
           autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
         />
         <button
           type="button"
@@ -100,11 +106,14 @@ function GiftForm({
   battleTag: string;
   onBattleTagChange: (v: string) => void;
 }) {
+  const { showToast } = useToast();
+
   const pasteBattleTag = async () => {
     try {
       const text = await navigator.clipboard.readText();
       if (text) onBattleTagChange(text.trim());
     } catch {
+      showToast("دسترسی به کلیپ‌بورد امکان‌پذیر نیست.");
     }
   };
 
@@ -162,9 +171,16 @@ function CodeInfo() {
 type DeliveryType = "direct" | "gift" | "code";
 
 function getDefaultDelivery(v: VariationCard): DeliveryType | null {
-  if (v.parsedPrice != null) return "direct";
-  if (v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled") return "gift";
-  if (v.parsedCodePrice != null && v.parsedCodePrice !== "disabled") return "code";
+  const isDirectAvailable = v.parsedPrice != null;
+  const isGiftAvailable = v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled";
+  const isCodeAvailable =
+    v.parsedCodePrice != null &&
+    v.parsedCodePrice !== "disabled" &&
+    (typeof v.codeStockCount !== "number" || v.codeStockCount > 0);
+
+  if (isDirectAvailable) return "direct";
+  if (isGiftAvailable) return "gift";
+  if (isCodeAvailable) return "code";
   return null;
 }
 
@@ -211,7 +227,7 @@ export default function DeliveryAndPrice({
   groupedAttributes,
   regionInfo,
 }: DeliveryAndPriceProps) {
-  const { addToCart } = useCart();
+  const { addToCart, isCartFull } = useCart();
   const { showToast } = useToast();
 
   const [isMounted, setIsMounted] = useState(false);
@@ -220,6 +236,7 @@ export default function DeliveryAndPrice({
   const [password, setPassword] = useState("");
   const [battleTag, setBattleTag] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -236,7 +253,10 @@ export default function DeliveryAndPrice({
     setBattleTag("");
   }, [selectedVariation]);
 
-  if (!isMounted) return null;
+  // اسکلتون بارگذاری اولیه برای جلوگیری از Layout Shift
+  if (!isMounted) {
+    return <div className="h-48 bg-brand-surface animate-pulse" />;
+  }
 
   if (!selectedVariation) {
     return (
@@ -260,7 +280,7 @@ export default function DeliveryAndPrice({
 
   const isFormValid = (): boolean => {
     if (!deliveryType) return false;
-    if (deliveryType === "direct") return email.trim().length > 3 && password.trim().length > 0;
+    if (deliveryType === "direct") return EMAIL_REGEX.test(email.trim()) && password.trim().length > 0;
     if (deliveryType === "gift") return BATTLETAG_REGEX.test(battleTag.trim());
     if (deliveryType === "code") return true;
     return false;
@@ -277,7 +297,7 @@ export default function DeliveryAndPrice({
     const variationIdValue =
       selectedVariation.databaseId !== productId ? selectedVariation.databaseId : undefined;
 
-    addToCart({
+    const added = addToCart({
       databaseId: selectedVariation.databaseId,
       productId,
       variationId: variationIdValue,
@@ -295,7 +315,10 @@ export default function DeliveryAndPrice({
           : undefined,
     });
 
-    showToast("به سبد خرید اضافه شد 🛒");
+    if (added) {
+      showToast("به سبد خرید اضافه شد 🛒");
+      setBurstKey((k) => k + 1);
+    }
     setTimeout(() => setIsAddingToCart(false), 1000);
   };
 
@@ -412,18 +435,25 @@ export default function DeliveryAndPrice({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={!isFormValid() || isAddingToCart}
-          className={`w-full py-5 font-bold text-center text-sm transition-all duration-200 ${
-            isFormValid()
-              ? "bg-brand-blue text-brand-active hover:bg-[#0062d1]"
-              : "bg-brand-surface_hover text-brand-m_khonsa cursor-not-allowed"
-          }`}
-        >
-          {isAddingToCart ? "در حال پردازش..." : "افزودن به سبد خرید"}
-        </button>
+        <div className="relative">
+          <ConfettiBurst trigger={burstKey} />
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={!isFormValid() || isAddingToCart || isCartFull}
+            className={`w-full py-5 font-bold text-center text-sm transition-all duration-200 ${
+              isFormValid() && !isCartFull
+                ? "bg-brand-blue text-brand-active hover:bg-[#0062d1]"
+                : "bg-brand-surface_hover text-brand-m_khonsa cursor-not-allowed"
+            }`}
+          >
+            {isAddingToCart
+              ? "در حال پردازش..."
+              : isCartFull
+              ? "سبد خرید پر است (حداکثر ۱۰ عدد)"
+              : "افزودن به سبد خرید"}
+          </button>
+        </div>
       </div>
     </div>
   );
