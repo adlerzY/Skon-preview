@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: errorMessage || "کد وارد شده صحیح نیست" }, { status: 400 });
     }
 
+    if (result.requiresProfile) {
+      return NextResponse.json({ requiresProfile: true });
+    }
+
     if (result.requiresAdminTotp || result.requiresAdminTotpSetup) {
       return NextResponse.json({
         requiresAdminTotp: Boolean(result.requiresAdminTotp),

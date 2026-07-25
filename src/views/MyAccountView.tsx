@@ -1,7 +1,7 @@
 import { getCurrentUser, getAuthToken } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { DASHBOARD_SUMMARY_QUERY, ADMIN_DASHBOARD_SUMMARY_QUERY, ADMIN_OPEN_TICKETS_QUERY } from "@/lib/graphql/auth";
-import LoginForm from "@/components/account/LoginForm";
+import PhoneLoginFlow from "@/components/account/PhoneLoginFlow";
 import AccountDashboard from "@/components/account/AccountDashboard";
 import AdminDashboard from "@/components/account/AdminDashboard";
 
@@ -13,7 +13,7 @@ export default async function MyAccountView() {
   if (!user) {
     return (
       <div className="max-w-2xl mx-auto">
-        <LoginForm />
+        <PhoneLoginFlow />
       </div>
     );
   }

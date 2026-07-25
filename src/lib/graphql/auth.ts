@@ -1,21 +1,5 @@
 import "server-only";
 
-export const LOGIN_MUTATION = `
-  mutation LoginUser($username: String!, $password: String!) {
-    login(input: { username: $username, password: $password }) {
-      authToken
-      refreshToken
-      user {
-        id
-        databaseId
-        name
-        email
-        isStaff
-      }
-    }
-  }
-`;
-
 export const REPLY_TO_REVIEW_MUTATION = `
   mutation ReplyToProductReview($reviewId: Int!, $content: String!) {
     replyToProductReview(input: { reviewId: $reviewId, content: $content }) {
@@ -299,6 +283,7 @@ export const VERIFY_PHONE_OTP_MUTATION = `
       authToken
       refreshToken
       isNewUser
+      requiresProfile
       requiresAdminTotp
       requiresAdminTotpSetup
       pendingTicket

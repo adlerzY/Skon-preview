@@ -9,7 +9,7 @@ interface OtpStepProps {
   phone: string;
   initialCooldown: number;
   onBack: () => void;
-  onNeedsProfile: () => void;
+  onNeedsProfile: (code: string) => void;
   onAdminTotp: (pendingTicket: string, requiresSetup: boolean) => void;
 }
 
@@ -46,8 +46,8 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
       });
       const data = await res.json();
 
-      if (res.status === 400 && data?.error?.includes("نام نمایشی")) {
-        onNeedsProfile();
+      if (data?.requiresProfile) {
+        onNeedsProfile(submittedCode);
         return;
       }
 
