@@ -333,3 +333,14 @@ export const VERIFY_ADMIN_TOTP_MUTATION = `
     }
   }
 `;
+export const LOGIN_WITH_PHONE_PASSWORD_MUTATION = `
+  mutation LoginWithPhonePassword($phone: String!, $password: String!) {
+    loginWithPhonePassword(input: { phone: $phone, password: $password }) {
+      authToken
+      refreshToken
+      requiresAdminTotp
+      requiresAdminTotpSetup
+      pendingTicket
+    }
+  }
+`;

@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Phone, Lock } from "lucide-react";
 
-export default function PasswordStep({ onBack }: { onBack: () => void }) {
+export default function PasswordStep({
+  onBack,
+  onAdminTotp,
+}: {
+  onBack: () => void;
+  onAdminTotp: (pendingTicket: string, requiresSetup: boolean) => void;
+}) {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -33,8 +39,13 @@ export default function PasswordStep({ onBack }: { onBack: () => void }) {
       });
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok && !data?.requiresAdminTotp && !data?.requiresAdminTotpSetup) {
         setError(data?.error || "ورود ناموفق بود");
+        return;
+      }
+
+      if (data.requiresAdminTotp || data.requiresAdminTotpSetup) {
+        onAdminTotp(data.pendingTicket, Boolean(data.requiresAdminTotpSetup));
         return;
       }
 

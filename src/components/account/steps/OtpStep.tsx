@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowRight } from "lucide-react";
+import TurnstileWidget from "../TurnstileWidget";
 
 interface OtpStepProps {
   phone: string;
@@ -12,6 +13,8 @@ interface OtpStepProps {
   onAdminTotp: (pendingTicket: string, requiresSetup: boolean) => void;
 }
 
+const OTP_LENGTH = 5;
+
 export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile, onAdminTotp }: OtpStepProps) {
   const router = useRouter();
   const [code, setCode] = useState("");
@@ -19,6 +22,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(initialCooldown);
   const [error, setError] = useState("");
+  const [resendToken, setResendToken] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,16 +35,21 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  const verify = async (submittedCode: string, extra?: { displayName?: string; email?: string }) => {
+  const submitCode = async (submittedCode: string) => {
     setError("");
     setIsVerifying(true);
     try {
       const res = await fetch("/api/auth/phone/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code: submittedCode, ...extra }),
+        body: JSON.stringify({ phone, code: submittedCode }),
       });
       const data = await res.json();
+
+      if (res.status === 400 && data?.error?.includes("نام نمایشی")) {
+        onNeedsProfile();
+        return;
+      }
 
       if (!res.ok && !data?.requiresAdminTotp && !data?.requiresAdminTotpSetup) {
         setError(data?.error || "کد وارد شده صحیح نیست");
@@ -64,46 +73,26 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length < 4) {
+    const trimmed = code.trim();
+    if (trimmed.length < OTP_LENGTH) {
       setError("کد تأیید را کامل وارد کنید");
       return;
     }
-
-    const res = await fetch("/api/auth/phone/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code: code.trim() }),
-    });
-    const data = await res.json();
-
-    if (res.status === 400 && data?.error?.includes("نام نمایشی")) {
-      onNeedsProfile();
-      return;
-    }
-
-    if (!res.ok && !data?.requiresAdminTotp && !data?.requiresAdminTotpSetup) {
-      setError(data?.error || "کد وارد شده صحیح نیست");
-      return;
-    }
-
-    if (data.requiresAdminTotp || data.requiresAdminTotpSetup) {
-      onAdminTotp(data.pendingTicket, Boolean(data.requiresAdminTotpSetup));
-      return;
-    }
-
-    if (data.success) {
-      router.refresh();
-    }
+    await submitCode(trimmed);
   };
 
   const handleResend = async () => {
+    if (!resendToken) {
+      setError("لطفاً چند لحظه صبر کنید تا تأیید امنیتی آماده شود");
+      return;
+    }
     setIsResending(true);
     setError("");
     try {
       const res = await fetch("/api/auth/phone/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, turnstileToken: "" }),
+        body: JSON.stringify({ phone, turnstileToken: resendToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -111,6 +100,9 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
         return;
       }
       setCooldown(data.cooldownSeconds ?? 60);
+      setResendToken("");
+    } catch {
+      setError("خطا در ارتباط با سرور");
     } finally {
       setIsResending(false);
     }
@@ -143,7 +135,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
           inputMode="numeric"
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
-          maxLength={5}
+          maxLength={OTP_LENGTH}
           dir="ltr"
           placeholder="⋅ ⋅ ⋅ ⋅ ⋅"
           className="w-full max-w-[200px] bg-brand-bg border border-brand-surface_hover text-center tracking-[0.5em] py-3 text-xl text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
@@ -159,14 +151,18 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
         {isVerifying ? "در حال بررسی..." : "تأیید و ورود"}
       </button>
 
-      <button
-        type="button"
-        onClick={handleResend}
-        disabled={cooldown > 0 || isResending}
-        className="text-xs font-bold text-brand-blue hover:text-white disabled:text-brand-surface_m disabled:cursor-not-allowed transition-colors"
-      >
-        {cooldown > 0 ? `ارسال مجدد کد تا ${cooldown} ثانیه دیگر` : isResending ? "در حال ارسال..." : "ارسال مجدد کد"}
-      </button>
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={cooldown > 0 || isResending}
+          className="text-xs font-bold text-brand-blue hover:text-white disabled:text-brand-surface_m disabled:cursor-not-allowed transition-colors"
+        >
+          {cooldown > 0 ? `ارسال مجدد کد تا ${cooldown} ثانیه دیگر` : isResending ? "در حال ارسال..." : "ارسال مجدد کد"}
+        </button>
+
+        {cooldown === 0 && <TurnstileWidget onVerify={setResendToken} />}
+      </div>
     </form>
   );
 }
