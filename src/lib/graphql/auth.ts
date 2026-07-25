@@ -284,3 +284,52 @@ export const EDIT_MY_REVIEW_MUTATION = `
     }
   }
 `;
+export const REQUEST_PHONE_OTP_MUTATION = `
+  mutation RequestPhoneOtp($phone: String!, $turnstileToken: String!) {
+    requestPhoneOtp(input: { phone: $phone, turnstileToken: $turnstileToken }) {
+      success
+      cooldownSeconds
+    }
+  }
+`;
+
+export const VERIFY_PHONE_OTP_MUTATION = `
+  mutation VerifyPhoneOtp($phone: String!, $code: String!, $displayName: String, $email: String) {
+    verifyPhoneOtp(input: { phone: $phone, code: $code, displayName: $displayName, email: $email }) {
+      authToken
+      refreshToken
+      isNewUser
+      requiresAdminTotp
+      requiresAdminTotpSetup
+      pendingTicket
+    }
+  }
+`;
+
+export const REQUEST_ADMIN_TOTP_SETUP_MUTATION = `
+  mutation RequestAdminTotpSetup($pendingTicket: String!) {
+    requestAdminTotpSetup(input: { pendingTicket: $pendingTicket }) {
+      secret
+      otpauthUrl
+    }
+  }
+`;
+
+export const CONFIRM_ADMIN_TOTP_SETUP_MUTATION = `
+  mutation ConfirmAdminTotpSetup($pendingTicket: String!, $code: String!) {
+    confirmAdminTotpSetup(input: { pendingTicket: $pendingTicket, code: $code }) {
+      authToken
+      refreshToken
+      recoveryCodes
+    }
+  }
+`;
+
+export const VERIFY_ADMIN_TOTP_MUTATION = `
+  mutation VerifyAdminTotp($pendingTicket: String!, $code: String!) {
+    verifyAdminTotp(input: { pendingTicket: $pendingTicket, code: $code }) {
+      authToken
+      refreshToken
+    }
+  }
+`;
