@@ -11,11 +11,7 @@ export default async function MyAccountView() {
   const user = await getCurrentUser();
 
   if (!user) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <PhoneLoginFlow />
-      </div>
-    );
+  return <PhoneLoginFlow />;
   }
 
   const token = await getAuthToken();

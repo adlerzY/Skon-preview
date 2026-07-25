@@ -1,5 +1,3 @@
-"use client";
-
 interface FilterOption {
   value: string;
   label: string;

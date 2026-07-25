@@ -7,6 +7,11 @@ const START_DELAY_MS = 100;
 const TRICKLE_INTERVAL_MS = 120;
 const FINISH_HOLD_MS = 120;
 
+function getCurrentKey() {
+  if (typeof window === "undefined") return "";
+  return window.location.pathname + window.location.search;
+}
+
 export default function TopLoader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -15,6 +20,7 @@ export default function TopLoader() {
 
   const isNavigatingRef = useRef(false);
   const visibleRef = useRef(false);
+  const lastKeyRef = useRef(getCurrentKey());
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,6 +69,7 @@ export default function TopLoader() {
   };
 
   useEffect(() => {
+    lastKeyRef.current = getCurrentKey();
     finishLoading();
   }, [pathname, searchParams]);
 
@@ -70,16 +77,32 @@ export default function TopLoader() {
     const originalPushState = window.history.pushState.bind(window.history);
     const originalReplaceState = window.history.replaceState.bind(window.history);
 
-    window.history.pushState = function (...args) {
-      startLoading();
-      return originalPushState(...args);
-    };
-    window.history.replaceState = function (...args) {
-      startLoading();
-      return originalReplaceState(...args);
+    const resolveKey = (url?: string | URL | null): string | null => {
+      if (!url) return null;
+      try {
+        const target = new URL(url, window.location.href);
+        return target.pathname + target.search;
+      } catch {
+        return null;
+      }
     };
 
-    const handlePopState = () => startLoading();
+    window.history.pushState = function (state, title, url) {
+      const nextKey = resolveKey(url ?? undefined);
+      if (nextKey === null || nextKey !== lastKeyRef.current) startLoading();
+      return originalPushState(state, title, url as any);
+    };
+
+    window.history.replaceState = function (state, title, url) {
+      const nextKey = resolveKey(url ?? undefined);
+      if (nextKey === null || nextKey !== lastKeyRef.current) startLoading();
+      return originalReplaceState(state, title, url as any);
+    };
+
+    const handlePopState = () => {
+      if (getCurrentKey() === lastKeyRef.current) return;
+      startLoading();
+    };
     window.addEventListener("popstate", handlePopState);
 
     return () => {

@@ -1,6 +1,10 @@
+// src/components/account/PhoneLoginFlow.tsx
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 import PhoneStep from "./steps/PhoneStep";
 import OtpStep from "./steps/OtpStep";
 import PasswordStep from "./steps/PasswordStep";
@@ -14,53 +18,61 @@ type Step =
   | { name: "complete-profile"; phone: string; code: string }
   | { name: "admin-totp"; pendingTicket: string; requiresSetup: boolean };
 
-const METHOD_TABS = [
-  { value: "otp", label: "کد تأیید پیامکی" },
-  { value: "password", label: "رمز عبور" },
-] as const;
-
 export default function PhoneLoginFlow() {
   const [step, setStep] = useState<Step>({ name: "phone" });
-  const method = step.name === "password" ? "password" : "otp";
-  const showMethodTabs = step.name === "phone" || step.name === "password";
-  const showHeader = step.name === "phone" || step.name === "otp" || step.name === "password";
 
   const handleAdminTotp = (pendingTicket: string, requiresSetup: boolean) => {
     setStep({ name: "admin-totp", pendingTicket, requiresSetup });
   };
 
+  const showHeader = step.name === "phone" || step.name === "password";
+  const title = step.name === "password" ? "ورود با رمز عبور" : "ورود یا عضویت";
+  const subtitle =
+    step.name === "phone"
+      ? "با شماره موبایل خود وارد شوید؛ اگر حساب کاربری نداشته باشید، به‌طور خودکار برایتان ساخته می‌شود"
+      : "شماره موبایل و رمز عبور حساب خود را وارد کنید";
+
   return (
-    <div className="w-full bg-brand-surface border border-brand-surface_hover p-6 md:p-8 flex flex-col gap-6">
+    <div className="w-full max-w-md mx-auto bg-brand-surface border border-brand-surface_hover p-6 md:p-8 flex flex-col gap-6">
+      <div className="flex flex-col items-center gap-3 pb-5 border-b border-brand-surface_hover">
+        <Link href="/" aria-label="صفحه اصلی">
+          <Image
+            src="/images/arena2battleLogo.webp"
+            alt="Arena2Battle"
+            width={130}
+            height={44}
+            style={{ width: "auto" }}
+            className="h-9 w-auto object-contain"
+            priority
+          />
+        </Link>
+        <Link
+          href="/"
+          className="flex items-center gap-1 text-xs text-brand-m_khonsa hover:text-white transition-colors"
+        >
+          <ChevronRight size={14} />
+          بازگشت به فروشگاه
+        </Link>
+      </div>
+
       {showHeader && (
         <div className="text-center flex flex-col gap-1">
-          <h1 className="text-xl font-black text-white">ورود یا ثبت‌نام</h1>
-          <p className="text-xs text-brand-m_khonsa leading-relaxed">
-            با شماره موبایل خود وارد شوید؛ اگر حساب کاربری نداشته باشید، به‌طور خودکار برایتان ساخته می‌شود
-          </p>
-        </div>
-      )}
-
-      {showMethodTabs && (
-        <div className="grid grid-cols-2 gap-2 p-1 bg-brand-bg border border-brand-surface_hover">
-          {METHOD_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setStep(tab.value === "password" ? { name: "password" } : { name: "phone" })}
-              className={`py-2.5 text-xs font-bold transition-colors ${
-                method === tab.value ? "bg-brand-blue text-white" : "text-brand-m_khonsa hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <h1 className="text-xl font-black text-white">{title}</h1>
+          <p className="text-xs text-brand-m_khonsa leading-relaxed">{subtitle}</p>
         </div>
       )}
 
       {step.name === "phone" && (
-        <PhoneStep
-          onOtpSent={(phone, cooldownSeconds) => setStep({ name: "otp", phone, cooldown: cooldownSeconds })}
-        />
+        <>
+          <PhoneStep onOtpSent={(phone, cooldownSeconds) => setStep({ name: "otp", phone, cooldown: cooldownSeconds })} />
+          <button
+            type="button"
+            onClick={() => setStep({ name: "password" })}
+            className="self-center text-xs font-bold text-brand-blue hover:text-white transition-colors"
+          >
+            ورود با رمز عبور
+          </button>
+        </>
       )}
 
       {step.name === "otp" && (
@@ -73,7 +85,19 @@ export default function PhoneLoginFlow() {
         />
       )}
 
-      {step.name === "password" && <PasswordStep onAdminTotp={handleAdminTotp} />}
+      {step.name === "password" && (
+        <>
+          <PasswordStep onAdminTotp={handleAdminTotp} />
+          <button
+            type="button"
+            onClick={() => setStep({ name: "phone" })}
+            className="self-center flex items-center gap-1 text-xs font-bold text-brand-m_khonsa hover:text-white transition-colors"
+          >
+            <ChevronRight size={13} />
+            بازگشت به ورود با کد تأیید
+          </button>
+        </>
+      )}
 
       {step.name === "complete-profile" && (
         <CompleteProfileStep phone={step.phone} code={step.code} onAdminTotp={handleAdminTotp} />
