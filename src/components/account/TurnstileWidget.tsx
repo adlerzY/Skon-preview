@@ -14,6 +14,7 @@ declare global {
 }
 
 const SCRIPT_ID = "cf-turnstile-script";
+export const TURNSTILE_BYPASS_TOKEN = "no-turnstile-configured";
 
 export default function TurnstileWidget({ onVerify }: { onVerify: (token: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,7 +23,10 @@ export default function TurnstileWidget({ onVerify }: { onVerify: (token: string
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
-    if (!siteKey) return;
+    if (!siteKey) {
+      onVerify(TURNSTILE_BYPASS_TOKEN);
+      return;
+    }
 
     const renderWidget = () => {
       if (!containerRef.current || !window.turnstile || widgetIdRef.current) return;

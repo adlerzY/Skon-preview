@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { Loader2, Phone, Lock } from "lucide-react";
 
 export default function PasswordStep({
-  onBack,
   onAdminTotp,
 }: {
-  onBack: () => void;
   onAdminTotp: (pendingTicket: string, requiresSetup: boolean) => void;
 }) {
   const router = useRouter();
@@ -59,14 +57,6 @@ export default function PasswordStep({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="self-start text-xs text-brand-m_khonsa hover:text-white transition-colors"
-      >
-        ورود با کد تأیید
-      </button>
-
       {error && (
         <p className="text-xs text-red-500 font-medium bg-red-500/10 border border-red-500/20 p-3 text-center">
           {error}
@@ -106,7 +96,7 @@ export default function PasswordStep({
       <button
         type="submit"
         disabled={isLoading}
-        className="mt-1 bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
+        className="mt-2 bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
       >
         {isLoading && <Loader2 size={16} className="animate-spin" />}
         {isLoading ? "در حال ورود..." : "ورود"}
