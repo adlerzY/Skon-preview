@@ -7,19 +7,12 @@ const withBundleAnalyzer = bundleAnalyzer({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  output: 'standalone',
-
-  cacheComponents: true,
-
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
-  },
+  
+  output: 'export',
 
   images: {
-    unoptimized: process.env.NODE_ENV !== 'production',
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 31536000,
-    qualities: [70, 75, 80, 85, 90],
     remotePatterns: [
       {
         protocol: 'https',
@@ -27,28 +20,15 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'http',
-        hostname: 'tazavesh.local',
+        protocol: 'https',
+        hostname: 'backend.arena2battle.com',
         pathname: '/**',
       },
     ],
   },
 
-  async headers() {
-    return [
-      {
-        source: '/avatars/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      {
-        source: '/images/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-    ];
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
   },
 };
 
