@@ -7,7 +7,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 const REVEAL_MUTATION = `
   mutation RevealOrderSecret($orderId: Int!, $itemId: Int!, $fieldType: String!) {
     revealOrderSecret(input: { orderId: $orderId, itemId: $itemId, fieldType: $fieldType }) {
-      value
+      values
     }
   }
 `;
@@ -29,10 +29,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType: "cdkey" }, [], "no-store", token);
-    const value = data?.revealOrderSecret?.value;
-    if (!value) return NextResponse.json({ error: "کد یافت نشد یا سفارش تکمیل نشده" }, { status: 404 });
+    const values = data?.revealOrderSecret?.values;
+    if (!Array.isArray(values) || values.length === 0) {
+      return NextResponse.json({ error: "کد یافت نشد یا سفارش تکمیل نشده" }, { status: 404 });
+    }
 
-    return NextResponse.json({ value });
+    return NextResponse.json({ values });
   } catch (error) {
     console.error("Reveal secret error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });

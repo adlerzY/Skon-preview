@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { fetchGraphQL } from "@/lib/graphql";
-import { CREATE_ORDER_MUTATION } from "@/lib/graphql/auth";
+import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
+import { SUBMIT_CUSTOMER_ORDER_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+
+const MAX_CART_QUANTITY = 10;
 
 interface CheckoutCartItem {
   productId: number;
@@ -42,6 +44,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "سبد خرید شما خالی است" }, { status: 400 });
     }
 
+    let totalQuantity = 0;
+
     for (const item of items) {
       if (!Number.isInteger(item.productId) || item.productId <= 0) {
         return NextResponse.json({ error: "شناسه محصول نامعتبر است" }, { status: 400 });
@@ -52,6 +56,14 @@ export async function POST(request: NextRequest) {
       if (item.quantity != null && (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99)) {
         return NextResponse.json({ error: "تعداد نامعتبر است" }, { status: 400 });
       }
+      totalQuantity += item.quantity || 1;
+    }
+
+    if (totalQuantity > MAX_CART_QUANTITY) {
+      return NextResponse.json(
+        { error: `سقف خرید ${MAX_CART_QUANTITY} عدد می‌باشد` },
+        { status: 400 }
+      );
     }
 
     const lineItems = items.map((item) => ({
@@ -68,19 +80,17 @@ export async function POST(request: NextRequest) {
       ],
     }));
 
-    const data = await fetchGraphQL(
-      CREATE_ORDER_MUTATION,
+    const { data, errorMessage } = await fetchGraphQLWithErrors(
+      SUBMIT_CUSTOMER_ORDER_MUTATION,
       { lineItems, customerNote: "ثبت‌شده از فروشگاه Arena2Battle" },
-      [],
-      "no-store",
       token
     );
 
-    const order = data?.createOrder?.order;
+    const order = data?.submitCustomerOrder?.order;
 
     if (!order?.databaseId || !order?.orderKey) {
       return NextResponse.json(
-        { error: "ایجاد سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید" },
+        { error: errorMessage || "ایجاد سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید" },
         { status: 500 }
       );
     }

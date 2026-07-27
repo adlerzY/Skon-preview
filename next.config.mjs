@@ -8,8 +8,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig = {
   poweredByHeader: false,
   
-  output: 'export',
-
   images: {
     unoptimized: true,
     formats: ['image/avif', 'image/webp'],
