@@ -18,6 +18,8 @@ interface Props {
   product: ProductNode;
   initialEdition?: string;
   activeRegion?: string;
+  isLoggedIn?: boolean;
+  initialInWishlist?: boolean;
   children?: React.ReactNode;
 }
 
@@ -94,6 +96,8 @@ export default function ProductPageClient({
   product,
   initialEdition,
   activeRegion,
+  isLoggedIn = false,
+  initialInWishlist = false,
   children,
 }: Props) {
   const variations = product.variationCards ?? [];
@@ -420,7 +424,12 @@ export default function ProductPageClient({
             )}
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
-              <WishlistButton productId={product.databaseId} size={22} />
+              <WishlistButton
+                productId={product.databaseId}
+                size={22}
+                isLoggedIn={isLoggedIn}
+                initialInWishlist={initialInWishlist}
+              />
             </div>
             {product.shortNotify && (
               <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">

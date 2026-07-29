@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getProductDetail } from "@/lib/graphql";
+import { getProductDetail, getWishlistProductIds } from "@/lib/graphql";
+import { getCurrentUser, getAuthToken } from "@/lib/auth/session";
 import ProductPageClient from "@/components/product/ProductPageClient";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviews from "@/components/ProductReviews";
@@ -13,8 +14,20 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   const { region, productSlug } = await params;
   const { edition } = await searchParams;
 
-  const product = await getProductDetail(productSlug, region);
+  // دریافت موازی اطلاعات محصول، کاربر و توکن احراز هویت برای حداکثر سرعت
+  const [product, user, token] = await Promise.all([
+    getProductDetail(productSlug, region),
+    getCurrentUser().catch(() => null),
+    getAuthToken().catch(() => null),
+  ]);
+
   if (!product) notFound();
+
+  // دریافت لیست علاقه مندی ها در صورت لاگین بودن کاربر
+  const wishlistIds = token ? await getWishlistProductIds(token).catch(() => []) : [];
+  const isLoggedIn = Boolean(user);
+  const isStaff = Boolean(user?.isStaff);
+  const initialInWishlist = wishlistIds.includes(product.databaseId);
 
   const { secondaryGallery, description, reviews, reviewCount, averageRating } = product;
 
@@ -31,6 +44,8 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         }}
         initialEdition={edition}
         activeRegion={region}
+        isLoggedIn={isLoggedIn}
+        initialInWishlist={initialInWishlist}
       >
         <ProductDescriptionSections secondaryGallery={secondaryGallery} description={description} />
         <ProductReviews
@@ -39,6 +54,8 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           pageInfo={reviews?.pageInfo}
           averageRating={averageRating ?? 0}
           reviewCount={reviewCount}
+          isLoggedIn={isLoggedIn}
+          isStaff={isStaff}
         />
       </ProductPageClient>
     </main>
