@@ -1,42 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, Loader2 } from "lucide-react";
-import { getClientCookie } from "@/lib/cookies";
-import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 import { useToast } from "@/context/ToastContext";
 
 interface WishlistButtonProps {
   productId: number;
   size?: number;
+  isLoggedIn?: boolean;
+  initialInWishlist?: boolean;
 }
 
-export default function WishlistButton({ productId, size = 22 }: WishlistButtonProps) {
+export default function WishlistButton({ productId, size = 22, isLoggedIn = false, initialInWishlist = false }: WishlistButtonProps) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [active, setActive] = useState(false);
+  const [active, setActive] = useState(initialInWishlist);
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const loggedIn = getClientCookie(LOGGED_IN_COOKIE) === "1";
-    setIsLoggedIn(loggedIn);
-
-    if (!loggedIn) return;
-
-    let cancelled = false;
-    fetch(`/api/account/wishlist/status?productId=${productId}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setActive(Boolean(data?.inWishlist));
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [productId]);
 
   const handleClick = async () => {
     if (!isLoggedIn) {

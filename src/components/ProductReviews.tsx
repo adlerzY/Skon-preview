@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AdminBadge from "@/components/ui/AdminBadge";
-import { getClientCookie } from "@/lib/cookies";
-import { LOGGED_IN_COOKIE, IS_STAFF_COOKIE } from "@/lib/auth/constants";
 
 interface ReviewNode {
   id: string;
@@ -29,6 +27,8 @@ interface ProductReviewsProps {
   pageInfo?: PageInfo;
   averageRating?: number;
   reviewCount?: number;
+  isLoggedIn: boolean;
+  isStaff?: boolean;
 }
 
 const MAX_CONTENT_LENGTH = 500;
@@ -212,10 +212,9 @@ export default function ProductReviews({
   pageInfo: initialPageInfo,
   averageRating = 0,
   reviewCount,
+  isLoggedIn,
+  isStaff = false,
 }: ProductReviewsProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isStaff, setIsStaff] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,12 +223,6 @@ export default function ProductReviews({
   const [reviews, setReviews] = useState<ReviewNode[]>(initialReviews);
   const [pageInfo, setPageInfo] = useState<PageInfo>(initialPageInfo ?? { hasNextPage: false, endCursor: null });
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  useEffect(() => {
-    setIsLoggedIn(getClientCookie(LOGGED_IN_COOKIE) === "1");
-    setIsStaff(getClientCookie(IS_STAFF_COOKIE) === "1");
-    setIsChecking(false);
-  }, []);
 
   const { topLevel, repliesByParent } = useMemo(() => {
     const top: ReviewNode[] = [];
@@ -310,9 +303,7 @@ export default function ProductReviews({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
         <div className="lg:col-span-8 flex flex-col gap-6 w-full">
-          {isChecking ? (
-            <div className="bg-brand-menu p-6 border border-brand-surface_hover h-[220px] animate-pulse" />
-          ) : isLoggedIn ? (
+          {isLoggedIn ? (
             <form onSubmit={handleSubmit} className="bg-brand-menu p-6 border border-brand-surface_hover flex flex-col gap-4">
               <span className="text-sm font-bold text-brand-active">امتیاز و نظر خود را بنویسید</span>
 

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
-import Skeleton from "@/components/ui/Skeleton";
 import { KNOWN_REGIONS } from "@/lib/hooks/useActiveRegion";
 
 interface Region {
@@ -22,12 +21,7 @@ export default function MobileRegionSwitcher({ regions, initialRegion }: MobileR
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,10 +40,6 @@ export default function MobileRegionSwitcher({ regions, initialRegion }: MobileR
   const firstSegmentIsRegion = KNOWN_REGIONS.includes(segments[0]?.toLowerCase());
   const currentRegionSlug = firstSegmentIsRegion ? segments[0] : initialRegion || activeRegions[0]?.slug;
   const currentRegion = activeRegions.find((r) => r.slug === currentRegionSlug) || activeRegions[0];
-
-  if (!isMounted) {
-    return <Skeleton className="w-6 h-4 rounded-[2px]" />;
-  }
 
   if (!currentRegion) return null;
 

@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import DesktopGamesNav, { HeaderGameItem } from "./DesktopGamesNav";
-import Skeleton from "@/components/ui/Skeleton";
 
 interface HeaderMenuSwitcherProps {
   shopItems: HeaderGameItem[];
@@ -12,25 +10,9 @@ interface HeaderMenuSwitcherProps {
 
 export default function HeaderMenuSwitcher({ shopItems, blogItems }: HeaderMenuSwitcherProps) {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="flex-1 h-full flex items-center gap-2 px-2 w-[240px]">
-        <Skeleton className="w-9 h-9" />
-        <Skeleton className="w-9 h-9" />
-        <Skeleton className="w-9 h-9" />
-        <Skeleton className="w-9 h-9" />
-      </div>
-    );
-  }
   const segments = pathname ? pathname.split("/").filter(Boolean) : [];
   const isBlogSection = segments[0] === "blog" || segments[1] === "blog";
-  
+
   const activeData = isBlogSection ? blogItems : shopItems;
 
   return (

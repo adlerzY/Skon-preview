@@ -7,19 +7,19 @@ const withBundleAnalyzer = bundleAnalyzer({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  
+
   images: {
-    unoptimized: true,
+    unoptimized: process.env.NODE_ENV !== 'production',
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'arena2battle.com',
+        protocol: 'http',
+        hostname: 'arena2battle.ir',
         pathname: '/**',
       },
       {
-        protocol: 'https',
-        hostname: 'backend.arena2battle.com',
+        protocol: 'http',
+        hostname: 'arena2battle.ir',
         pathname: '/**',
       },
     ],

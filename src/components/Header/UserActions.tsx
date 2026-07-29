@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Skeleton from "@/components/ui/Skeleton";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { useLogout } from "@/lib/hooks/useLogout";
 import AdminBadge from "@/components/ui/AdminBadge";
@@ -15,21 +13,7 @@ interface UserActionsProps {
 
 export default function UserActions({ user, wishlistCount = 0 }: UserActionsProps) {
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
   const { logout, isLoggingOut } = useLogout();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="flex items-center gap-2.5 px-3 py-4 h-[60px]">
-        <Skeleton className="w-8 h-8 rounded-full shrink-0" />
-        <Skeleton className="w-16 h-4 rounded" />
-      </div>
-    );
-  }
 
   const isLoggedIn = Boolean(user);
   const prefetchAccount = () => router.prefetch("/my-account");
