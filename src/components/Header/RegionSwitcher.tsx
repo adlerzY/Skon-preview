@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -20,19 +19,6 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const activeRegions = regions.length > 0 ? regions : [
     { slug: "eu", name: "اروپا (EU)" },
@@ -65,10 +51,7 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
   const currentRegion = activeRegions.find((r) => r.slug === currentRegionSlug) || activeRegions[0];
 
   const handleRegionChange = (slug: string) => {
-    if (slug === currentRegionSlug) {
-      setIsOpen(false);
-      return;
-    }
+    if (slug === currentRegionSlug) return;
 
     document.cookie = `store_region=${slug}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
     
@@ -86,18 +69,12 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
     const targetUrl = currentQueries ? `${newPathname}?${currentQueries}` : newPathname;
 
     router.push(targetUrl);
-    setIsOpen(false);
   };
 
   if (!currentRegion) return null;
 
   return (
-    <div 
-      className="relative h-full flex items-center" 
-      ref={dropdownRef}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
+    <div className="relative h-full flex items-center group">
       <button
         type="button"
         className="flex items-center justify-between gap-2 px-3 h-[60px] w-[140px] bg-brand-surface hover:bg-brand-surface_hover text-white text-[13px] font-semibold transition-colors duration-150 cursor-pointer"
@@ -122,17 +99,13 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"
-          className={`transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""}`}
+          className="transition-transform duration-200 shrink-0 group-hover:rotate-180"
         >
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
 
-      <div 
-        className={`absolute left-0 top-[60px] min-w-[140px] bg-brand-surface border border-white/10 rounded-b-[4px] shadow-2xl overflow-hidden z-[1000] transition-all duration-200 ease-in-out ${
-          isOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-1"
-        }`}
-      >
+      <div className="absolute left-0 top-[60px] min-w-[140px] bg-brand-surface border border-white/10 rounded-b-[4px] shadow-2xl overflow-hidden z-[1000] transition-all duration-200 ease-in-out opacity-0 invisible -translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
         {activeRegions.map((region) => (
           <button
             key={region.slug}

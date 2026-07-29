@@ -3,21 +3,27 @@
 import { useState } from "react";
 import { Camera, Check, Loader2, ShieldCheck } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Modal from "@/components/ui/Modal";
 
 interface AvatarPickerProps {
   currentAvatar?: string | null;
   name?: string | null;
+  avatars: string[];
+  adminAvatars?: string[];
+  onSuccess?: (newAvatar: string) => void;
 }
 
-export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps) {
+export default function AvatarPicker({
+  currentAvatar,
+  name,
+  avatars = [],
+  adminAvatars = [],
+  onSuccess,
+}: AvatarPickerProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [avatars, setAvatars] = useState<string[]>([]);
-  const [adminAvatars, setAdminAvatars] = useState<string[]>([]);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [loadError, setLoadError] = useState("");
   const [selected, setSelected] = useState(currentAvatar ?? "");
   const [pendingSelection, setPendingSelection] = useState(currentAvatar ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -28,25 +34,10 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
     setIsOpen(false);
   };
 
-  const openPicker = async () => {
+  const openPicker = () => {
     setIsOpen(true);
     setMessage("");
-    setLoadError("");
     setPendingSelection(selected);
-    if (hasLoaded) return;
-    setIsFetching(true);
-    try {
-      const res = await fetch("/api/avatars");
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setAvatars(data?.avatars ?? []);
-      setAdminAvatars(data?.adminAvatars ?? []);
-      setHasLoaded(true);
-    } catch {
-      setLoadError("خطا در دریافت لیست عکس‌ها");
-    } finally {
-      setIsFetching(false);
-    }
   };
 
   const handleSave = async () => {
@@ -63,9 +54,14 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
         body: JSON.stringify({ avatarPath: pendingSelection }),
       });
       if (!res.ok) throw new Error();
+
       setSelected(pendingSelection);
       setMessage("عکس پروفایل بروزرسانی شد");
       setIsOpen(false);
+      
+      // به‌روزرسانی دیتا در کلاینت و سرور
+      if (onSuccess) onSuccess(pendingSelection);
+      router.refresh(); 
     } catch {
       setMessage("خطا در ذخیره‌سازی");
     } finally {
@@ -84,7 +80,9 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
             onClick={() => setPendingSelection(avatar)}
             disabled={isSaving}
             className={`relative w-16 h-16 md:w-20 md:h-20 mx-auto rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105 disabled:opacity-50 disabled:pointer-events-none ${
-              isSelected ? "border-brand-blue shadow-[0_0_0_4px_rgba(0,116,224,0.2)]" : "border-transparent hover:border-brand-surface_hover"
+              isSelected
+                ? "border-brand-blue shadow-[0_0_0_4px_rgba(0,116,224,0.2)]"
+                : "border-transparent hover:border-brand-surface_hover"
             }`}
           >
             <Image src={avatar} alt="avatar" fill className="object-cover" sizes="80px" />
@@ -101,7 +99,12 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
 
   return (
     <div className="flex items-center gap-5">
-      <button type="button" onClick={openPicker} className="relative group shrink-0" aria-label="تغییر عکس پروفایل">
+      <button
+        type="button"
+        onClick={openPicker}
+        className="relative group shrink-0"
+        aria-label="تغییر عکس پروفایل"
+      >
         <UserAvatar src={selected} name={name} size="xl" ring />
         <span className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Camera size={22} className="text-white" />
@@ -124,13 +127,7 @@ export default function AvatarPicker({ currentAvatar, name }: AvatarPickerProps)
       </div>
 
       <Modal isOpen={isOpen} onClose={closePicker} title="انتخاب عکس پروفایل" size="xl">
-        {isFetching ? (
-          <div className="flex items-center justify-center py-14 gap-2 text-brand-m_khonsa text-sm">
-            <Loader2 size={16} className="animate-spin" /> در حال بارگذاری...
-          </div>
-        ) : loadError ? (
-          <div className="text-center py-14 text-sm text-red-500">{loadError}</div>
-        ) : avatars.length === 0 && adminAvatars.length === 0 ? (
+        {avatars.length === 0 && adminAvatars.length === 0 ? (
           <div className="text-center py-14 text-sm text-brand-m_khonsa">
             هنوز هیچ آواتاری تعریف نشده است.
           </div>

@@ -70,3 +70,19 @@ export const POST_COMMENTS_QUERY = `
     }
   }
 `;
+
+export const GET_FOLLOW_STATUS_QUERY = `
+  query GetFollowStatus($id: ID!) {
+    category(id: $id, idType: DATABASE_ID) {
+      isFollowedByViewer
+    }
+  }
+`;
+
+export const GET_MY_RATING_QUERY = `
+  query GetMyRating($id: ID!) {
+    post(id: $id, idType: DATABASE_ID) {
+      myRating
+    }
+  }
+`;

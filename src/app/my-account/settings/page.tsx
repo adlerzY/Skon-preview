@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthToken, getCurrentUser, getSessionId } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { GET_SESSIONS_QUERY } from "@/lib/graphql/auth";
+import { listAvatars } from "@/lib/avatars";
 import AvatarPicker from "@/components/account/AvatarPicker";
 import ProfileEditForm from "@/components/account/ProfileEditForm";
 import SessionsList from "@/components/account/SessionsList";
@@ -12,7 +13,11 @@ export default async function SettingsPage() {
 
   const token = await getAuthToken();
   const currentSessionId = await getSessionId();
-  const data = await fetchGraphQL(GET_SESSIONS_QUERY, {}, [], "no-store", token || undefined);
+  const [data, avatars, adminAvatars] = await Promise.all([
+    fetchGraphQL(GET_SESSIONS_QUERY, {}, [], "no-store", token || undefined),
+    listAvatars("users"),
+    user.isStaff ? listAvatars("admin") : Promise.resolve([]),
+  ]);
   const sessions = data?.viewer?.sessions ?? [];
 
   return (
@@ -23,7 +28,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="bg-brand-surface border border-brand-surface_hover p-6 flex flex-col gap-6">
-        <AvatarPicker currentAvatar={user.avatarUrl} name={user.name} />
+        <AvatarPicker currentAvatar={user.avatarUrl} name={user.name} avatars={avatars} adminAvatars={adminAvatars} />
         <div className="border-t border-brand-surface_hover pt-6">
           <ProfileEditForm name={user.name} email={user.email} />
         </div>

@@ -7,9 +7,9 @@ import {
   getProducts,
   fetchGraphQL,
 } from "@/lib/graphql";
-import { POST_COMMENTS_QUERY } from "@/lib/graphql/blog";
+import { POST_COMMENTS_QUERY, GET_MY_RATING_QUERY } from "@/lib/graphql/blog";
 import { resolveAvatarUrl } from "@/lib/avatars";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, getAuthToken } from "@/lib/auth/session";
 import SocialShare from "@/components/blog/SocialShare";
 import BlogSidebarInfo from "@/components/blog/BlogSidebarInfo";
 import RelatedNewsPanel from "@/components/blog/RelatedNewsPanel";
@@ -28,8 +28,9 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const mainCategory = category?.parent?.node ?? category;
   const canonicalSlug = mainCategory?.slug ?? "uncategorized";
 
-  const [user, relatedPosts, relatedProducts, commentsData] = await Promise.all([
+  const [user, token, relatedPosts, relatedProducts, commentsData] = await Promise.all([
     getCurrentUser().catch(() => null),
+    getAuthToken(),
     category
       ? getRelatedPosts({
           categoryId: category.databaseId,
@@ -42,6 +43,12 @@ export default async function BlogPostPage({ params }: PostPageProps) {
     mainCategory ? getProducts(mainCategory.slug, region).then((p) => p.slice(0, 5)) : Promise.resolve([]),
     fetchGraphQL(POST_COMMENTS_QUERY, { id: String(post.databaseId) }, [], "no-store"),
   ]);
+
+  let initialMyRating: number | null = null;
+  if (token) {
+    const ratingData = await fetchGraphQL(GET_MY_RATING_QUERY, { id: String(post.databaseId) }, [], "no-store", token);
+    initialMyRating = ratingData?.post?.myRating ?? null;
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const canonicalUrl = `${siteUrl}/${region}/blog/${canonicalSlug}/${post.slug}`;
@@ -99,6 +106,8 @@ export default async function BlogPostPage({ params }: PostPageProps) {
             averageRating={post.averageRating ?? 0}
             ratingCount={post.ratingCount ?? 0}
             toc={post.toc ?? []}
+            isLoggedIn={Boolean(user)}
+            initialMyRating={initialMyRating}
           />
         </aside>
 

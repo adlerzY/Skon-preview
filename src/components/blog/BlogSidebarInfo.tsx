@@ -2,25 +2,40 @@ import { List } from "lucide-react";
 import BlogRating from "./BlogRating";
 import type { TocItem } from "@/lib/blogToc";
 
+interface BlogSidebarInfoProps {
+  postId: number;
+  averageRating: number;
+  ratingCount: number;
+  toc: TocItem[];
+  isLoggedIn: boolean;
+  initialMyRating?: number | null;
+}
+
 export default function BlogSidebarInfo({
   postId,
   averageRating,
   ratingCount,
   toc,
-}: {
-  postId: number;
-  averageRating: number;
-  ratingCount: number;
-  toc: TocItem[];
-}) {
+  isLoggedIn,
+  initialMyRating,
+}: BlogSidebarInfoProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-brand-surface border border-brand-surface_hover p-5">
-        <BlogRating postId={postId} initialAverage={averageRating} initialCount={ratingCount} />
+      <div className="bg-brand-surface border border-brand-surface_hover p-5 rounded-lg">
+        <BlogRating
+          postId={postId}
+          initialAverage={averageRating}
+          initialCount={ratingCount}
+          isLoggedIn={isLoggedIn}
+          initialMyRating={initialMyRating}
+        />
       </div>
 
       {toc.length > 0 && (
-        <details className="bg-brand-surface border border-brand-surface_hover open:pb-2 lg:open" open>
+        <details
+          className="bg-brand-surface border border-brand-surface_hover rounded-lg open:pb-2 lg:open"
+          open
+        >
           <summary className="flex items-center gap-2 p-4 text-sm font-bold text-white cursor-pointer select-none lg:cursor-default">
             <List size={16} className="text-brand-blue" />
             فهرست مطالب
