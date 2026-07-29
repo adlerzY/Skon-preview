@@ -1,4 +1,4 @@
-export const KNOWN_REGIONS = ["eu", "us", "tr"];
+export const KNOWN_REGIONS = ["eu", "us", "tr", "ua"];
 export const DEFAULT_REGION = "eu";
 
 export function isKnownRegion(value?: string | null): value is string {

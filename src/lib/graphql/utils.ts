@@ -12,6 +12,7 @@ const REGION_ALIASES: Record<string, string[]> = {
   eu: ["eu", "eu-global", "اروپا", "europe"],
   us: ["us", "امریکا", "آمریکا", "america", "usa"],
   tr: ["tr", "ترکیه", "turkey"],
+  ua: ["ua", "اوکراین", "ukraine"],
 };
 
 function normalizeRegionToken(token?: string | null): string {

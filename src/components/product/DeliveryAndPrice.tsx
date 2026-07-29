@@ -285,7 +285,7 @@ export default function DeliveryAndPrice({
     return false;
   };
 
-  const handleAddToCart = () => {
+const handleAddToCart = () => {
     if (!isFormValid() || !deliveryType || !selectedVariation) return;
     setIsAddingToCart(true);
     const regionValue = regionInfo ? selectedAttrs[regionInfo.name] : undefined;
@@ -305,6 +305,10 @@ export default function DeliveryAndPrice({
       deliveryMethod: deliveryType,
       region: regionValue,
       variationName: variationNameValue,
+      maxQuantity:
+        deliveryType === "code" && typeof selectedVariation.codeStockCount === "number"
+          ? selectedVariation.codeStockCount
+          : undefined,
       customFields:
         deliveryType === "gift"
           ? { battleTag }

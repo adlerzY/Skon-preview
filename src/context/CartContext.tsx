@@ -19,6 +19,7 @@ export interface CartItem {
   price: number;
   regularPrice?: number;
   quantity: number;
+  maxQuantity?: number;
   deliveryMethod: "direct" | "gift" | "code" | string;
   region?: string;
   variationName?: string;
@@ -137,6 +138,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const existing = cartRef.current.find((p) => itemsMatch(item, p));
+
+      if (existing && typeof item.maxQuantity === "number" && existing.quantity >= item.maxQuantity) {
+        showToast(`موجودی این محصول محدود به ${item.maxQuantity.toLocaleString("fa-IR")} عدد است`, "error");
+        return false;
+      }
+
       const id = existing ? existing.id : generateItemId();
 
       if (item.customFields) {
@@ -175,10 +182,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!target) return;
 
       const otherTotal = currentCart.reduce((sum, i) => (i.id === id ? sum : sum + i.quantity), 0);
-      const capped = Math.min(quantity, Math.max(0, MAX_CART_QUANTITY - otherTotal));
+      let capped = Math.min(quantity, Math.max(0, MAX_CART_QUANTITY - otherTotal));
+      let cappedByStock = false;
+
+      if (typeof target.maxQuantity === "number" && capped > target.maxQuantity) {
+        capped = target.maxQuantity;
+        cappedByStock = true;
+      }
 
       if (capped < quantity) {
-        showToast(CAP_MESSAGE, "error");
+        if (cappedByStock) {
+          showToast(`موجودی این محصول محدود به ${target.maxQuantity!.toLocaleString("fa-IR")} عدد است`, "error");
+        } else {
+          showToast(CAP_MESSAGE, "error");
+        }
       }
 
       if (capped <= 0) {

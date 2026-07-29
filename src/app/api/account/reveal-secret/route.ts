@@ -12,6 +12,8 @@ const REVEAL_MUTATION = `
   }
 `;
 
+const ALLOWED_FIELDS = ["cdkey", "email", "password", "battletag"];
+
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
   if (!checkRateLimit(`reveal:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 })) {
@@ -23,18 +25,41 @@ export async function POST(request: NextRequest) {
   if (!token) return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
 
   try {
-    const { orderId, itemId } = await request.json();
+    const body = await request.json();
+    const orderId = Number(body?.orderId);
+    const itemId = Number(body?.itemId);
+    const fieldTypes: string[] = Array.isArray(body?.fieldTypes) ? body.fieldTypes : ["cdkey"];
+
     if (!Number.isInteger(orderId) || !Number.isInteger(itemId)) {
       return NextResponse.json({ error: "پارامتر نامعتبر" }, { status: 400 });
     }
-
-    const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType: "cdkey" }, [], "no-store", token);
-    const values = data?.revealOrderSecret?.values;
-    if (!Array.isArray(values) || values.length === 0) {
-      return NextResponse.json({ error: "کد یافت نشد یا سفارش تکمیل نشده" }, { status: 404 });
+    if (fieldTypes.some((f) => !ALLOWED_FIELDS.includes(f))) {
+      return NextResponse.json({ error: "پارامتر نامعتبر" }, { status: 400 });
     }
 
-    return NextResponse.json({ values });
+    if (fieldTypes.includes("cdkey")) {
+      const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType: "cdkey" }, [], "no-store", token);
+      const values = data?.revealOrderSecret?.values;
+      if (!Array.isArray(values) || values.length === 0) {
+        return NextResponse.json({ error: "کد یافت نشد یا سفارش تکمیل نشده" }, { status: 404 });
+      }
+      return NextResponse.json({ values });
+    }
+
+    const fields: Record<string, string> = {};
+    for (const fieldType of fieldTypes) {
+      const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType }, [], "no-store", token);
+      const value = data?.revealOrderSecret?.values?.[0];
+      if (typeof value === "string") {
+        fields[fieldType] = value;
+      }
+    }
+
+    if (Object.keys(fields).length === 0) {
+      return NextResponse.json({ error: "اطلاعاتی یافت نشد (شاید سفارش تکمیل/لغو شده و اطلاعات پاک شده باشد)" }, { status: 404 });
+    }
+
+    return NextResponse.json({ fields });
   } catch (error) {
     console.error("Reveal secret error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });

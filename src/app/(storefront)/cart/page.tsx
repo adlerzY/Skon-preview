@@ -171,24 +171,32 @@ export default function CartPage() {
 
                   {needsCreds && <MissingCredentialsForm item={item} />}
 
-                  <div className="flex items-center gap-2 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-7 h-7 flex items-center justify-center bg-brand-bg border border-brand-surface_hover text-brand-m_khonsa hover:text-white hover:border-brand-surface_m transition-colors"
-                      aria-label="کاهش تعداد"
-                    >
-                      <Minus size={13} />
-                    </button>
-                    <span className="w-6 text-center text-sm font-bold">{item.quantity.toLocaleString("fa-IR")}</span>
-                    <button
-                      type="button"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-7 h-7 flex items-center justify-center bg-brand-bg border border-brand-surface_hover text-brand-m_khonsa hover:text-white hover:border-brand-surface_m transition-colors"
-                      aria-label="افزایش تعداد"
-                    >
-                      <Plus size={13} />
-                    </button>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="w-7 h-7 flex items-center justify-center bg-brand-bg border border-brand-surface_hover text-brand-m_khonsa hover:text-white hover:border-brand-surface_m transition-colors"
+                        aria-label="کاهش تعداد"
+                      >
+                        <Minus size={13} />
+                      </button>
+                      <span className="w-6 text-center text-sm font-bold">{item.quantity.toLocaleString("fa-IR")}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={typeof item.maxQuantity === "number" && item.quantity >= item.maxQuantity}
+                        className="w-7 h-7 flex items-center justify-center bg-brand-bg border border-brand-surface_hover text-brand-m_khonsa hover:text-white hover:border-brand-surface_m transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                        aria-label="افزایش تعداد"
+                      >
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                    {typeof item.maxQuantity === "number" && item.quantity >= item.maxQuantity && (
+                      <span className="text-[10px] text-brand-zard">
+                        حداکثر موجودی: {item.maxQuantity.toLocaleString("fa-IR")} عدد
+                      </span>
+                    )}
                   </div>
                 </div>
 

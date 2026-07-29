@@ -2,8 +2,7 @@
 
 import { cookies } from "next/headers";
 import { fetchGraphQL, formatProducts, PRODUCT_CARD_FIELDS } from "@/lib/graphql";
-
-const KNOWN_REGIONS = ["eu", "us", "tr"];
+import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
 
 export async function searchProductsByKeyword(keyword: string) {
   const safeKeyword = keyword?.trim();
@@ -12,7 +11,7 @@ export async function searchProductsByKeyword(keyword: string) {
   try {
     const cookieStore = await cookies();
     const rawRegion = cookieStore.get("store_region")?.value?.toLowerCase();
-    const activeRegion = KNOWN_REGIONS.includes(rawRegion ?? "") ? (rawRegion as string) : "eu";
+    const activeRegion = KNOWN_REGIONS.includes(rawRegion ?? "") ? (rawRegion as string) : DEFAULT_REGION;
 
     const data = await fetchGraphQL(
       `
