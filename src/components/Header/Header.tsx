@@ -55,14 +55,14 @@ export default async function Header() {
           </div>
 
           <div className="flex items-center">
-            <Link href={`/${activeRegion}/download`} className={ACTION_BUTTON_CLASSES}>
+            <Link href={`/${activeRegion}/download`} prefetch={false} className={ACTION_BUTTON_CLASSES}>
               <span className={ICON_WRAPPER_CLASSES}>
                 <Download size={18} strokeWidth={2.5} />
               </span>
               <span>دانلود بازی</span>
             </Link>
 
-            <Link href={`/${activeRegion}/support`} className={ACTION_BUTTON_CLASSES}>
+            <Link href={`/${activeRegion}/support`} prefetch={false} className={ACTION_BUTTON_CLASSES}>
               <span className={ICON_WRAPPER_CLASSES}>
                 <HelpCircle size={18} strokeWidth={2.5} />
               </span>

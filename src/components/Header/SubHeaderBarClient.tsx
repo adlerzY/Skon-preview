@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { KNOWN_REGIONS } from "@/lib/regions";
 
 const HIDDEN_ROUTES = ["support", "cart"];
 
@@ -12,12 +13,11 @@ export default function SubHeaderBarClient() {
 
   const pathSegments = pathname.split("/").filter(Boolean);
 
-  const knownRegions = ["eu", "us", "tr"];
-  const isOnlyRegion = pathSegments.length === 1 && knownRegions.includes(pathSegments[0].toLowerCase());
+  const isOnlyRegion = pathSegments.length === 1 && KNOWN_REGIONS.includes(pathSegments[0].toLowerCase());
 
   if (pathname === "/" || pathSegments.length === 0 || isOnlyRegion) return null;
 
-  const filteredSegments = knownRegions.includes(pathSegments[0].toLowerCase())
+  const filteredSegments = KNOWN_REGIONS.includes(pathSegments[0].toLowerCase())
     ? pathSegments.slice(1)
     : pathSegments;
 

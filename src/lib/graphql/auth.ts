@@ -329,3 +329,12 @@ export const LOGIN_WITH_PHONE_PASSWORD_MUTATION = `
     }
   }
 `;
+export const LOGIN_WITH_USERNAME_PASSWORD_MUTATION = `
+  mutation LoginWithUsernamePassword($username: String!, $password: String!) {
+    loginWithUsernamePassword(input: { username: $username, password: $password }) {
+      requiresAdminTotp
+      requiresAdminTotpSetup
+      pendingTicket
+    }
+  }
+`;

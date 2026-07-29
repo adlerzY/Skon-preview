@@ -10,6 +10,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/my-account") ||
     pathname.startsWith("/cart") ||
+    pathname.startsWith("/admin-login") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico" ||
     /\.[a-zA-Z0-9]+$/.test(pathname)

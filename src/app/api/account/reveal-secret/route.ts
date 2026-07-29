@@ -1,3 +1,4 @@
+// src/app/api/account/reveal-secret/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
@@ -16,7 +17,7 @@ const ALLOWED_FIELDS = ["cdkey", "email", "password", "battletag"];
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`reveal:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`reveal:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 
@@ -46,13 +47,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ values });
     }
 
+    const results = await Promise.all(
+      fieldTypes.map(async (fieldType) => {
+        const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType }, [], "no-store", token);
+        return { fieldType, value: data?.revealOrderSecret?.values?.[0] };
+      })
+    );
+
     const fields: Record<string, string> = {};
-    for (const fieldType of fieldTypes) {
-      const data = await fetchGraphQL(REVEAL_MUTATION, { orderId, itemId, fieldType }, [], "no-store", token);
-      const value = data?.revealOrderSecret?.values?.[0];
-      if (typeof value === "string") {
-        fields[fieldType] = value;
-      }
+    for (const { fieldType, value } of results) {
+      if (typeof value === "string") fields[fieldType] = value;
     }
 
     if (Object.keys(fields).length === 0) {
