@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ProductNode } from "@/lib/graphql";
+import { DEFAULT_REGION } from "@/lib/regions";
 
-export default function MiniSearchCard({ product }: { product: ProductNode }) {
+export default function MiniSearchCard({ product, activeRegion }: { product: ProductNode; activeRegion?: string }) {
   const category = product.productCategories?.nodes?.[0];
   const categoryName = category?.name || "دسته‌بندی نامشخص";
   const categorySlug = category?.slug || "uncategorized";
+  const region = activeRegion || DEFAULT_REGION;
 
   const isOnSale = Boolean(
     product.parsedRegularPrice &&
@@ -15,7 +17,7 @@ export default function MiniSearchCard({ product }: { product: ProductNode }) {
 
   return (
     <Link
-      href={`/${categorySlug}/${product.slug}`}
+      href={`/${region}/${categorySlug}/${product.slug}`}
       prefetch={false}
       className="flex items-center gap-3 p-1 bg-brand-surface hover:bg-brand-surface_hover transition-colors group"
       aria-label={product.name}

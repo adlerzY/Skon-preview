@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MiniSearchCard from "./MiniSearchCard";
 import { useProductSearch } from "./hooks/useProductSearch";
+import { useActiveRegion } from "@/lib/hooks/useActiveRegion";
 
 export default function HeaderSearch() {
   const router = useRouter();
+  const { region: activeRegion } = useActiveRegion();
   const [showResults, setShowResults] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +56,14 @@ export default function HeaderSearch() {
   const handleResultClick = useCallback(() => {
     setShowResults(false);
   }, []);
+
+  const handleResultHover = useCallback(
+    (prod: (typeof searchResults)[number]) => {
+      const categorySlug = prod.productCategories?.nodes?.[0]?.slug || "uncategorized";
+      router.prefetch(`/${activeRegion}/${categorySlug}/${prod.slug}`);
+    },
+    [activeRegion, router]
+  );
 
   const showDropdown = showResults && searchQuery.trim() !== "";
 
@@ -115,11 +125,9 @@ export default function HeaderSearch() {
                     role="option"
                     aria-selected="false"
                     onClick={handleResultClick}
-                    onMouseEnter={() =>
-                      router.prefetch(`/product/${prod.slug}`)
-                    }
+                    onMouseEnter={() => handleResultHover(prod)}
                   >
-                    <MiniSearchCard product={prod} />
+                    <MiniSearchCard product={prod} activeRegion={activeRegion} />
                   </div>
                 ))
               ) : (

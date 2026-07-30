@@ -6,7 +6,7 @@ import { completeLogin } from "@/lib/auth/completeLogin";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`phone-password-login:${ip}`, { max: 10, windowMs: 5 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`phone-password-login:${ip}`, { max: 10, windowMs: 5 * 60 * 1000 }))) {
     return NextResponse.json(
       { error: "تعداد تلاش‌های ورود بیش از حد مجاز است. چند دقیقه دیگر تلاش کنید." },
       { status: 429, headers: { "Retry-After": "300" } }

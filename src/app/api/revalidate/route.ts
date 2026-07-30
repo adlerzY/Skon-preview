@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request);
-    if (!checkRateLimit(`revalidate:${ip}`, { max: 20, windowMs: 60 * 1000 })) {
+    if (!(await checkRateLimit(`revalidate:${ip}`, { max: 20, windowMs: 60 * 1000 }))) {
       return NextResponse.json(
         { message: "Too many requests" },
         { status: 429, headers: { "Retry-After": "60" } }

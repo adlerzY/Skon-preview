@@ -12,7 +12,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`auth-refresh:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`auth-refresh:${ip}`, { max: 20, windowMs: 5 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

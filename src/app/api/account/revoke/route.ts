@@ -7,7 +7,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`revoke-session:${ip}`, { max: 20, windowMs: 10 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`revoke-session:${ip}`, { max: 20, windowMs: 10 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

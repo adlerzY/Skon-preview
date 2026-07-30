@@ -15,7 +15,7 @@ const REPLY_MUTATION = `
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ ticketId: string }> }) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`ticket-reply:${ip}`, { max: 20, windowMs: 10 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`ticket-reply:${ip}`, { max: 20, windowMs: 10 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

@@ -6,7 +6,7 @@ import { completeLogin } from "@/lib/auth/completeLogin";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`phone-otp-verify:${ip}`, { max: 15, windowMs: 10 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`phone-otp-verify:${ip}`, { max: 15, windowMs: 10 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

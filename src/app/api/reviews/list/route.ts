@@ -29,7 +29,7 @@ const GET_PRODUCT_REVIEWS_QUERY = `
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`reviews-list:${ip}`, { max: 60, windowMs: 60 * 1000 })) {
+  if (!(await checkRateLimit(`reviews-list:${ip}`, { max: 60, windowMs: 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

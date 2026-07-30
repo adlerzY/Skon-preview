@@ -8,7 +8,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`blog-comments-list:${ip}`, { max: 60, windowMs: 60 * 1000 })) {
+  if (!(await checkRateLimit(`blog-comments-list:${ip}`, { max: 60, windowMs: 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`blog-comment-write:${ip}`, { max: 15, windowMs: 10 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`blog-comment-write:${ip}`, { max: 15, windowMs: 10 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 

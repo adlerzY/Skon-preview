@@ -7,7 +7,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`review:${ip}`, { max: 5, windowMs: 15 * 60 * 1000 })) {
+  if (!(await checkRateLimit(`review:${ip}`, { max: 5, windowMs: 15 * 60 * 1000 }))) {
     return NextResponse.json(
       { error: "تعداد نظرات ثبت‌شده بیش از حد مجاز است. کمی بعد دوباره تلاش کنید" },
       { status: 429, headers: { "Retry-After": "900" } }

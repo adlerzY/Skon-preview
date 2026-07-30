@@ -192,7 +192,7 @@ export default function MobileMenu({ shopItems, blogItems, user, regions, active
               <>
                 {searchResults.map((prod) => (
                   <div key={prod.id} onClick={closeSearch}>
-                    <MiniSearchCard product={prod} />
+                    <MiniSearchCard product={prod} activeRegion={currentRegion} />
                   </div>
                 ))}
                 <Link
