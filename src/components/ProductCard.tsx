@@ -86,11 +86,10 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
 
           {variant === "price" && (
             <>
-              {product.shortDescription && (
-                <div
-                  className="text-[#ffb400] text-[13px] mb-1 line-clamp-3 overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: product.shortDescription }}
-                />
+              {product.shortNotify && (
+                <div className="text-[#ffb400] text-[13px] mb-1 line-clamp-3 overflow-hidden">
+                  {product.shortNotify}
+                </div>
               )}
               {subCategories.length > 0 && (
                 <div className="text-[#8e98b0] text-[10px] font-medium leading-relaxed mb-2 line-clamp-1">

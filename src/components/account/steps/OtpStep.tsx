@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowRight } from "lucide-react";
-import TurnstileWidget from "../TurnstileWidget";
 
 interface OtpStepProps {
   phone: string;
@@ -22,7 +21,6 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(initialCooldown);
   const [error, setError] = useState("");
-  const [resendToken, setResendToken] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,17 +80,13 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   };
 
   const handleResend = async () => {
-    if (!resendToken) {
-      setError("لطفاً چند لحظه صبر کنید تا تأیید امنیتی آماده شود");
-      return;
-    }
     setIsResending(true);
     setError("");
     try {
       const res = await fetch("/api/auth/phone/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, turnstileToken: resendToken }),
+        body: JSON.stringify({ phone }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -100,7 +94,6 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
         return;
       }
       setCooldown(data.cooldownSeconds ?? 60);
-      setResendToken("");
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {
@@ -151,18 +144,15 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
         {isVerifying ? "در حال بررسی..." : "تأیید و ورود"}
       </button>
 
-      <div className="flex flex-col items-center gap-2">
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={cooldown > 0 || isResending}
-          className="text-xs font-bold text-brand-blue hover:text-white disabled:text-brand-surface_m disabled:cursor-not-allowed transition-colors"
-        >
-          {cooldown > 0 ? `ارسال مجدد کد تا ${cooldown} ثانیه دیگر` : isResending ? "در حال ارسال..." : "ارسال مجدد کد"}
-        </button>
-
-        {cooldown === 0 && <TurnstileWidget onVerify={setResendToken} />}
-      </div>
+      <button
+        type="button"
+        onClick={handleResend}
+        disabled={cooldown > 0 || isResending}
+        className="self-center flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:text-white disabled:text-brand-surface_m disabled:cursor-not-allowed transition-colors"
+      >
+        {isResending && <Loader2 size={12} className="animate-spin" />}
+        {cooldown > 0 ? `ارسال مجدد کد تا ${cooldown} ثانیه دیگر` : isResending ? "در حال ارسال..." : "ارسال مجدد کد"}
+      </button>
     </form>
   );
 }

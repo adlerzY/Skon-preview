@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Loader2, Phone } from "lucide-react";
-import TurnstileWidget from "../TurnstileWidget";
 
 export default function PhoneStep({
   onOtpSent,
@@ -10,11 +9,9 @@ export default function PhoneStep({
   onOtpSent: (phone: string, cooldownSeconds: number) => void;
 }) {
   const [phone, setPhone] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
+  const [website, setWebsite] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,17 +22,13 @@ export default function PhoneStep({
       setError("شماره موبایل را به‌درستی وارد کنید (مثلاً ۰۹۱۲۳۴۵۶۷۸۹)");
       return;
     }
-    if (!turnstileToken) {
-      setError("لطفاً چند لحظه صبر کنید تا تأیید امنیتی کامل شود");
-      return;
-    }
 
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/phone/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: trimmed, turnstileToken }),
+        body: JSON.stringify({ phone: trimmed, website }),
       });
       const data = await res.json();
 
@@ -78,7 +71,16 @@ export default function PhoneStep({
         </div>
       </div>
 
-      <TurnstileWidget onVerify={handleTurnstileVerify} />
+      <input
+        type="text"
+        name="website"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] w-px h-px opacity-0"
+      />
 
       <button
         type="submit"

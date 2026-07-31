@@ -269,8 +269,8 @@ export const EDIT_MY_REVIEW_MUTATION = `
   }
 `;
 export const REQUEST_PHONE_OTP_MUTATION = `
-  mutation RequestPhoneOtp($phone: String!, $turnstileToken: String!) {
-    requestPhoneOtp(input: { phone: $phone, turnstileToken: $turnstileToken }) {
+  mutation RequestPhoneOtp($phone: String!) {
+    requestPhoneOtp(input: { phone: $phone }) {
       success
       cooldownSeconds
     }

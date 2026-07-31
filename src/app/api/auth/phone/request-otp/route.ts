@@ -12,16 +12,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
-    const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
+    const website = typeof body?.website === "string" ? body.website.trim() : "";
+
+    if (website !== "") {
+      return NextResponse.json({ success: true, cooldownSeconds: 60 });
+    }
 
     if (!phone) {
       return NextResponse.json({ error: "شماره موبایل را وارد کنید" }, { status: 400 });
     }
-    if (!turnstileToken) {
-      return NextResponse.json({ error: "تأیید امنیتی انجام نشد، صفحه را رفرش کنید" }, { status: 400 });
-    }
 
-    const { data, errorMessage } = await fetchGraphQLWithErrors(REQUEST_PHONE_OTP_MUTATION, { phone, turnstileToken });
+    const { data, errorMessage } = await fetchGraphQLWithErrors(REQUEST_PHONE_OTP_MUTATION, { phone });
 
     if (!data?.requestPhoneOtp?.success) {
       return NextResponse.json({ error: errorMessage || "ارسال کد با خطا مواجه شد" }, { status: 400 });
