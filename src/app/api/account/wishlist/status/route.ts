@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!checkRateLimit(`wishlist-status:${ip}`, { max: 60, windowMs: 60 * 1000 })) {
+  if (!(await checkRateLimit(`wishlist-status:${ip}`, { max: 60, windowMs: 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 
