@@ -103,18 +103,20 @@ export async function getProductsByIds(ids: number[], activeRegion: string = "eu
   const data = await fetchGraphQL(
     `
       ${PRODUCT_CARD_FIELDS}
-      query GetProductsByIds($include: [Int]) {
-        products(first: 100, where: { include: $include, status: "PUBLISH" }) {
+      query GetProductsByIds($include: [Int], $regionSlug: String) {
+        products(first: 100, where: { include: $include, status: "PUBLISH", regionSlug: $regionSlug }) {
           nodes { ...ProductCardFields }
         }
       }
     `,
-    { include: ids },
+    { include: ids, regionSlug: activeRegion },
     [],
     "no-store"
   );
 
-  return formatProducts(data?.products?.nodes ?? [], true, activeRegion);
+  return formatProducts(data?.products?.nodes ?? [], true, activeRegion).filter(
+    (p) => p.isAvailableInRegion !== false
+  );
 }
 
 export async function getCategoryArchive(slug: string, activeRegion: string = "eu") {
