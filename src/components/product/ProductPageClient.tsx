@@ -404,6 +404,7 @@ export default function ProductPageClient({
   );
 
   const category = product.productCategories?.nodes?.[0];
+  const categoryImageUrl = category?.image?.sourceUrl || category?.categoryImage?.sourceUrl;
 
   return (
     <div className="flex flex-col gap-12 w-full min-h-screen" dir="rtl">
@@ -411,9 +412,9 @@ export default function ProductPageClient({
         <div className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start flex flex-col gap-6 w-full">
           <div>
             <div className="flex items-center gap-2.5">
-              {category?.image?.sourceUrl && (
-                <div className="relative w-8 h-8 shrink-0 overflow-hidden rounded">
-                  <Image src={category.image.sourceUrl} alt={category.name} fill className="object-cover" />
+              {categoryImageUrl && (
+                <div className="relative w-8 h-8 overflow-hidden mb-3">
+                  <Image src={categoryImageUrl} alt={category?.name ?? ""} fill className="object-cover" />
                 </div>
               )}
               <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>

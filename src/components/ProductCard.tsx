@@ -17,7 +17,7 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
   const category = categoryNodes[0];
   const categorySlug = category?.slug || "uncategorized";
   const categoryName = category?.name || "بدون دسته";
-  const categoryLogo = category?.image?.sourceUrl;
+  const categoryLogo = category?.image?.sourceUrl || category?.categoryImage?.sourceUrl;
   const subCategories = categoryNodes.slice(1, 4);
 
   const currentMinPrice = product.parsedPrice;

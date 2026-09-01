@@ -36,9 +36,6 @@ function DirectForm({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-brand-blue font-bold">
-        🔑 اطلاعات ورود اکانت جهت خرید مستقیم:
-      </p>
       <div className="relative">
         <input
           type="email"
@@ -92,9 +89,6 @@ function DirectForm({
           </button>
         </div>
       </div>
-      <p className="text-[11px] text-brand-m_khonsa">
-        🔒 اطلاعات شما فقط تا زمانی که این تب باز است در مرورگر نگه‌داری می‌شود و بلافاصله پس از ثبت سفارش، در سرور رمزنگاری و ذخیره می‌شود.
-      </p>
     </div>
   );
 }

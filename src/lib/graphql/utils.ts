@@ -121,6 +121,12 @@ export const formatProducts = (
       ...product,
       shortDescription: sanitizeHtml(product.shortDescription),
       description: sanitizeHtml(product.description),
+      secondaryGallery: product.secondaryGallery
+        ? product.secondaryGallery.map((item) => ({
+            ...item,
+            description: sanitizeHtml(item.description) ?? item.description,
+          }))
+        : product.secondaryGallery,
       parsedPrice: finalPrice,
       parsedRegularPrice: finalRegularPrice,
       variationCards: parsedVariationCards,

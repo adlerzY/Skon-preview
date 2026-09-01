@@ -20,6 +20,9 @@ export const PRODUCT_CARD_FIELDS = `
         image {
           sourceUrl(size: THUMBNAIL)
         }
+        categoryImage {
+          sourceUrl(size: "thumbnail")
+        }
       }
     }
 

@@ -32,7 +32,12 @@ export default function ProductDescriptionSections({
                     />
                   </div>
                 )}
-                {item.description && <p className="text-brand-surface_m text-xs leading-7 p-4">{item.description}</p>}
+                {item.description && (
+                  <div
+                    className="text-brand-surface_m text-xs leading-7 p-4 prose prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: item.description }}
+                  />
+                )}
               </div>
             ))}
           </div>

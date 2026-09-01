@@ -64,6 +64,7 @@ export interface ProductNode {
       name: string;
       slug: string;
       image?: { sourceUrl: string } | null;
+      categoryImage?: { sourceUrl: string } | null;
     }>;
   };
   attributes?: {
