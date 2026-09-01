@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
 import { REQUEST_PHONE_OTP_MUTATION } from "@/lib/graphql/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -13,9 +14,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
     const website = typeof body?.website === "string" ? body.website.trim() : "";
+    const turnstileToken = typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
 
     if (website !== "") {
       return NextResponse.json({ success: true, cooldownSeconds: 60 });
+    }
+
+    if (!(await verifyTurnstileToken(turnstileToken, ip))) {
+      return NextResponse.json({ error: "تأیید امنیتی ناموفق بود، صفحه را رفرش کنید و دوباره تلاش کنید" }, { status: 400 });
     }
 
     if (!phone) {

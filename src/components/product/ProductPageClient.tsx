@@ -101,8 +101,7 @@ export default function ProductPageClient({
   children,
 }: Props) {
   const variations = product.variationCards ?? [];
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [trackOffset, setTrackOffset] = useState(0);
+  const activeThumbRef = useRef<HTMLButtonElement>(null);
   const effectiveRegion =
     !activeRegion || activeRegion === "$undefined" || activeRegion === "undefined"
       ? "eu-global"
@@ -357,14 +356,8 @@ export default function ProductPageClient({
   }, [allGalleryImages, displayImage]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.offsetWidth;
-    const itemWidth = 108;
-    const totalWidth = allGalleryImages.length * 100 + (allGalleryImages.length - 1) * 8;
-    const maxScroll = Math.max(0, totalWidth - containerWidth);
-    const target = currentIndex * itemWidth - containerWidth / 2 + 50;
-    setTrackOffset(Math.min(maxScroll, Math.max(0, target)));
-  }, [currentIndex, allGalleryImages]);
+    activeThumbRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentIndex]);
 
   const handleAttrSelect = useCallback(
     (name: string, val: string) => {
@@ -414,15 +407,15 @@ export default function ProductPageClient({
 
   return (
     <div className="flex flex-col gap-12 w-full min-h-screen" dir="rtl">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start w-full">
-        <div className="lg:col-span-4 flex flex-col gap-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 w-full">
+        <div className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start flex flex-col gap-6 w-full">
           <div>
-            {category?.image?.sourceUrl && (
-              <div className="relative w-8 h-8 overflow-hidden mb-3">
-                <Image src={category.image.sourceUrl} alt={category.name} fill className="object-cover" />
-              </div>
-            )}
             <div className="flex items-center gap-2.5">
+              {category?.image?.sourceUrl && (
+                <div className="relative w-8 h-8 shrink-0 overflow-hidden rounded">
+                  <Image src={category.image.sourceUrl} alt={category.name} fill className="object-cover" />
+                </div>
+              )}
               <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
               <WishlistButton
                 productId={product.databaseId}
@@ -455,7 +448,7 @@ export default function ProductPageClient({
             regionInfo={regionInfo}
           />
         </div>
-        <div className="lg:col-span-8 lg:sticky lg:top-6 h-fit flex flex-col gap-6 w-full">
+        <div className="lg:col-span-8 flex flex-col gap-6 w-full">
           <div className="relative w-full aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover shadow-lg group">
             <Image
               src={displayImage}
@@ -483,14 +476,12 @@ export default function ProductPageClient({
           </div>
 
           {allGalleryImages.length > 1 && (
-            <div ref={containerRef} className="relative w-full overflow-hidden py-1" dir="ltr">
-              <div
-                className="flex transition-transform duration-300 ease-in-out will-change-transform"
-                style={{ gap: "8px", transform: `translateX(-${trackOffset}px)` }}
-              >
+            <div className="w-full overflow-x-auto scrollbar-hide py-1">
+              <div className="flex gap-2 w-max">
                 {allGalleryImages.map((imgUrl, idx) => (
                   <button
                     key={`${imgUrl}-${idx}`}
+                    ref={idx === currentIndex ? activeThumbRef : undefined}
                     type="button"
                     onClick={() => setSelectedGalleryImage(imgUrl)}
                     className={`relative w-[100px] aspect-video flex-shrink-0 overflow-hidden border transition-all duration-300 ${

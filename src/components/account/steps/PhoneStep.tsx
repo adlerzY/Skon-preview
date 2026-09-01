@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Loader2, Phone } from "lucide-react";
+import TurnstileWidget from "@/components/ui/Turnstilewidget";
 
 export default function PhoneStep({
   onOtpSent,
@@ -10,8 +11,11 @@ export default function PhoneStep({
 }) {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(""), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +32,7 @@ export default function PhoneStep({
       const res = await fetch("/api/auth/phone/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: trimmed, website }),
+        body: JSON.stringify({ phone: trimmed, website, turnstileToken }),
       });
       const data = await res.json();
 
