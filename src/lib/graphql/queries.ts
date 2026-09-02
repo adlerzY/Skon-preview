@@ -181,49 +181,96 @@ export async function getCategoryArchive(slug: string, activeRegion: string = "e
   return cached();
 }
 
-export async function getHomePageData(activeRegion: string = "eu") {
+export async function getHomeHeroData() {
+  const cached = unstable_cache(
+    async () => {
+      const data = await fetchGraphQL(
+        `
+          ${BANNER_FIELDS}
+          ${HERO_TAB_FIELDS}
+          query GetHomeHero {
+            homeBanners: productCategory(id: "home", idType: SLUG) {
+              banners { ...BannerFields }
+              heroTabs { ...HeroTabFields }
+            }
+          }
+        `,
+        {},
+        ["banners", "home"],
+        "force-cache"
+      );
+
+      if (!data) {
+        return { banners: [], heroTabs: [] as HeroTabItem[] };
+      }
+
+      return {
+        banners: safeBannerUrls(data.homeBanners?.banners ?? []),
+        heroTabs: safeHeroTabUrls(data.homeBanners?.heroTabs ?? []),
+      };
+    },
+    ["home-hero-data"],
+    { tags: ["banners", "home"], revalidate: false }
+  );
+
+  return cached();
+}
+
+export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
   const cached = unstable_cache(
     async () => {
       const data = await fetchGraphQL(
         `
           ${PRODUCT_CARD_FIELDS}
-          ${BANNER_FIELDS}
-          ${HERO_TAB_FIELDS}
-          query GetHomePage($regionSlug: String) {
-            homeBanners: productCategory(id: "home", idType: SLUG) {
-              banners { ...BannerFields }
-              heroTabs { ...HeroTabFields }
-            }
+          query GetHomeFeatured($regionSlug: String) {
             featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH", regionSlug: $regionSlug }) {
               nodes { ...ProductCardFields }
             }
+          }
+        `,
+        { regionSlug: activeRegion },
+        ["products", "home"],
+        "force-cache"
+      );
+
+      if (!data) return [] as ProductNode[];
+
+      return formatProducts(data.featuredProducts?.nodes ?? [], true, activeRegion).filter(
+        (p) => p.isAvailableInRegion !== false
+      );
+    },
+    ["home-featured-products", activeRegion],
+    { tags: ["products", "home"], revalidate: false }
+  );
+
+  return cached();
+}
+
+export async function getHomeLatestProducts(activeRegion: string = "eu") {
+  const cached = unstable_cache(
+    async () => {
+      const data = await fetchGraphQL(
+        `
+          ${PRODUCT_CARD_FIELDS}
+          query GetHomeLatest($regionSlug: String) {
             latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC }, regionSlug: $regionSlug }) {
               nodes { ...ProductCardFields }
             }
           }
         `,
         { regionSlug: activeRegion },
-        ["products", "banners", "home"],
+        ["products", "home"],
         "force-cache"
       );
 
-      if (!data) {
-        return { banners: [], heroTabs: [] as HeroTabItem[], featured: [] as ProductNode[], latest: [] as ProductNode[] };
-      }
+      if (!data) return [] as ProductNode[];
 
-      return {
-        banners: safeBannerUrls(data.homeBanners?.banners ?? []),
-        heroTabs: safeHeroTabUrls(data.homeBanners?.heroTabs ?? []),
-        featured: formatProducts(data.featuredProducts?.nodes ?? [], true, activeRegion).filter(
-          (p) => p.isAvailableInRegion !== false
-        ),
-        latest: formatProducts(data.latestProducts?.nodes ?? [], true, activeRegion).filter(
-          (p) => p.isAvailableInRegion !== false
-        ),
-      };
+      return formatProducts(data.latestProducts?.nodes ?? [], true, activeRegion).filter(
+        (p) => p.isAvailableInRegion !== false
+      );
     },
-    ["home-page-data", activeRegion],
-    { tags: ["products", "banners", "home"], revalidate: false }
+    ["home-latest-products", activeRegion],
+    { tags: ["products", "home"], revalidate: false }
   );
 
   return cached();
