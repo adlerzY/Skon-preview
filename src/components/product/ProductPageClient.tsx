@@ -492,7 +492,14 @@ export default function ProductPageClient({
                     }`}
                     aria-label={`تصویر ${idx + 1}`}
                   >
-                    <Image src={imgUrl} alt={`گالری ${idx + 1}`} fill quality={75} className="object-cover" />
+                    <Image
+                      src={imgUrl}
+                      alt={`گالری ${idx + 1}`}
+                      fill
+                      sizes="100px"
+                      quality={75}
+                      className="object-cover"
+                    />
                   </button>
                 ))}
               </div>

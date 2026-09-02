@@ -86,6 +86,7 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
                 src={currentRegion.flagUrl}
                 alt={currentRegion.name}
                 fill
+                sizes="20px"
                 className="object-cover"
               />
             </div>
@@ -120,6 +121,7 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
                   src={region.flagUrl}
                   alt={region.name}
                   fill
+                  sizes="20px"
                   className="object-cover"
                 />
               </div>

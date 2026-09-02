@@ -10,6 +10,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -21,6 +22,7 @@
   body {
     background-color: #15171e;
     color: #c2c2c4;
+    overflow-x: hidden;
   }
 
   * {

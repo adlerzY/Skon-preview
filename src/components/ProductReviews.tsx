@@ -301,8 +301,7 @@ export default function ProductReviews({
         نظرات کاربران
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
-        <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full">        <div className="lg:col-span-8 flex flex-col gap-6 w-full">
           {isLoggedIn ? (
             <form onSubmit={handleSubmit} className="bg-brand-menu p-6 border border-brand-surface_hover flex flex-col gap-4">
               <span className="text-sm font-bold text-brand-active">امتیاز و نظر خود را بنویسید</span>

@@ -83,7 +83,7 @@ export default function PhoneStep({
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        className="absolute -left-[9999px] w-px h-px opacity-0"
+        className="sr-only"
       />
 
       <button

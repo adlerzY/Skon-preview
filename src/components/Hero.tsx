@@ -70,7 +70,14 @@ export default function CategoryHero({ banners }: Props) {
         <div key={activeIndex} className="relative h-full flex flex-col justify-center px-[5.5rem] md:px-[5.5rem] w-full max-w-2xl z-30 animate-in fade-in duration-700">
           {currentBanner.secondimage && (
             <div className="relative w-48 h-16 md:w-64 md:h-24 mb-2">
-              <Image src={currentBanner.secondimage} alt="Banner Logo" fill className="object-contain object-right" priority />
+              <Image
+                src={currentBanner.secondimage}
+                alt="Banner Logo"
+                fill
+                sizes="(max-width: 768px) 192px, 256px"
+                className="object-contain object-right"
+                priority
+              />
             </div>
           )}
           <p className="text-sm text-brand-white mb-4 max-w-lg leading-relaxed line-clamp-2">{currentBanner.subtitle}</p>

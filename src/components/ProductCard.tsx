@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { ProductNode } from "@/lib/graphql";
 import WishlistRemoveButton from "@/components/product/WishlistRemoveButton";
+import ProductCardImage from "@/components/ProductCardImage";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
 
@@ -54,13 +55,7 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
 
       <div className="relative w-full aspect-[16/10] rounded-none overflow-hidden bg-[#0b0c10] flex-shrink-0">
         {product.image?.sourceUrl ? (
-          <Image
-            src={product.image.sourceUrl}
-            alt={product.name || "تصویر محصول"}
-            fill
-            className="object-cover transition-all rounded-none duration-200 ease-in-out brightness-[0.99] group-hover:brightness-110"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <ProductCardImage src={product.image.sourceUrl} alt={product.name || "تصویر محصول"} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">بدون تصویر</div>
         )}
