@@ -318,9 +318,19 @@ export const VERIFY_ADMIN_TOTP_MUTATION = `
     }
   }
 `;
-export const LOGIN_WITH_PHONE_PASSWORD_MUTATION = `
-  mutation LoginWithPhonePassword($phone: String!, $password: String!) {
-    loginWithPhonePassword(input: { phone: $phone, password: $password }) {
+export const LOGIN_WITH_USERNAME_PASSWORD_MUTATION = `
+  mutation LoginWithUsernamePassword($username: String!, $password: String!) {
+    loginWithUsernamePassword(input: { username: $username, password: $password }) {
+      requiresAdminTotp
+      requiresAdminTotpSetup
+      pendingTicket
+    }
+  }
+`;
+
+export const LOGIN_WITH_PASSWORD_MUTATION = `
+  mutation LoginWithPassword($identifier: String!, $password: String!) {
+    loginWithPassword(input: { identifier: $identifier, password: $password }) {
       authToken
       refreshToken
       requiresAdminTotp
@@ -329,12 +339,32 @@ export const LOGIN_WITH_PHONE_PASSWORD_MUTATION = `
     }
   }
 `;
-export const LOGIN_WITH_USERNAME_PASSWORD_MUTATION = `
-  mutation LoginWithUsernamePassword($username: String!, $password: String!) {
-    loginWithUsernamePassword(input: { username: $username, password: $password }) {
-      requiresAdminTotp
-      requiresAdminTotpSetup
-      pendingTicket
+
+export const REQUEST_PASSWORD_RESET_MUTATION = `
+  mutation RequestPasswordReset($identifier: String!) {
+    requestPasswordReset(input: { identifier: $identifier }) {
+      success
+      channel
+      cooldownSeconds
+    }
+  }
+`;
+
+export const RESET_PASSWORD_MUTATION = `
+  mutation ResetPassword($identifier: String!, $code: String!, $newPassword: String!) {
+    resetPassword(input: { identifier: $identifier, code: $code, newPassword: $newPassword }) {
+      success
+      authToken
+      refreshToken
+      requiresLogin
+    }
+  }
+`;
+
+export const SET_PASSWORD_MUTATION = `
+  mutation SetPassword($currentPassword: String, $newPassword: String!, $sessionId: String) {
+    setPassword(input: { currentPassword: $currentPassword, newPassword: $newPassword, sessionId: $sessionId }) {
+      success
     }
   }
 `;

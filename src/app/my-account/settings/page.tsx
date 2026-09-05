@@ -5,6 +5,7 @@ import { GET_SESSIONS_QUERY } from "@/lib/graphql/auth";
 import { listAvatars } from "@/lib/avatars";
 import AvatarPicker from "@/components/account/AvatarPicker";
 import ProfileEditForm from "@/components/account/ProfileEditForm";
+import SetPasswordForm from "@/components/account/SetPasswordForm";
 import SessionsList from "@/components/account/SessionsList";
 
 export default async function SettingsPage() {
@@ -32,6 +33,10 @@ export default async function SettingsPage() {
         <div className="border-t border-brand-surface_hover pt-6">
           <ProfileEditForm name={user.name} email={user.email} />
         </div>
+      </div>
+
+      <div className="bg-brand-surface border border-brand-surface_hover p-6">
+        <SetPasswordForm hasManualPassword={user.hasManualPassword} />
       </div>
 
       <div className="flex flex-col gap-3">

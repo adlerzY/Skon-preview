@@ -1,7 +1,7 @@
 import { getCurrentUser, getAuthToken } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
 import { DASHBOARD_SUMMARY_QUERY, ADMIN_DASHBOARD_SUMMARY_QUERY, ADMIN_OPEN_TICKETS_QUERY } from "@/lib/graphql/auth";
-import PhoneLoginFlow from "@/components/account/PhoneLoginFlow";
+import UnifiedLoginFlow from "@/components/account/UnifiedLoginFlow";
 import AccountDashboard from "@/components/account/AccountDashboard";
 import AdminDashboard from "@/components/account/AdminDashboard";
 
@@ -11,7 +11,7 @@ export default async function MyAccountView() {
   const user = await getCurrentUser();
 
   if (!user) {
-  return <PhoneLoginFlow />;
+    return <UnifiedLoginFlow />;
   }
 
   const token = await getAuthToken();

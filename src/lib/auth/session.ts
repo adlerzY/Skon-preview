@@ -12,6 +12,7 @@ export interface SessionUser {
   email: string;
   avatarUrl: string | null;
   isStaff: boolean;
+  hasManualPassword: boolean;
 }
 
 const VIEWER_QUERY = `
@@ -23,6 +24,7 @@ const VIEWER_QUERY = `
       email
       avatarUrl
       isStaff
+      hasManualPassword
       activeSessionValid(sessionId: $sessionId)
     }
   }
@@ -51,7 +53,12 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     const viewer = data.viewer;
     const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl);
 
-    return { ...viewer, avatarUrl, isStaff: Boolean(viewer.isStaff) } as SessionUser;
+    return {
+      ...viewer,
+      avatarUrl,
+      isStaff: Boolean(viewer.isStaff),
+      hasManualPassword: Boolean(viewer.hasManualPassword),
+    } as SessionUser;
   } catch {
     return null;
   }
