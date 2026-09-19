@@ -18,8 +18,17 @@ function toClientVariations(cards: VariationCard[] | undefined): VariationCard[]
 
   return cards.map((v) => ({
     databaseId: v.databaseId,
+    name: v.name,
+    slug: v.slug,
+    price: v.price,
+    regularPrice: v.regularPrice,
+    salePrice: v.salePrice,
     imageUrl: v.imageUrl,
     attributes: v.attributes,
+    giftPriceToman: v.giftPriceToman,
+    giftRegularPriceToman: v.giftRegularPriceToman,
+    codePriceToman: v.codePriceToman,
+    codeRegularPriceToman: v.codeRegularPriceToman,
     codeStockCount: v.codeStockCount,
     parsedPrice: v.parsedPrice,
     parsedRegularPrice: v.parsedRegularPrice,
@@ -27,7 +36,9 @@ function toClientVariations(cards: VariationCard[] | undefined): VariationCard[]
     parsedGiftRegularPrice: v.parsedGiftRegularPrice,
     parsedCodePrice: v.parsedCodePrice,
     parsedCodeRegularPrice: v.parsedCodeRegularPrice,
-  })) as unknown as VariationCard[];
+    regionSlug: v.regionSlug,
+    variationIdsByDelivery: v.variationIdsByDelivery,
+  }));
 }
 
 export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {

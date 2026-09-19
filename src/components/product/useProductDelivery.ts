@@ -116,8 +116,13 @@ export function useProductDelivery({
       .map((g) => selectedAttrs[g.name])
       .filter(Boolean);
     const variationNameValue = traitValues.length > 0 ? traitValues.join(" - ") : undefined;
+    const deliveryVariationId = selectedVariation.variationIdsByDelivery?.[deliveryType];
     const variationIdValue =
-      selectedVariation.databaseId !== productId ? selectedVariation.databaseId : undefined;
+      deliveryVariationId && deliveryVariationId !== productId
+        ? deliveryVariationId
+        : selectedVariation.databaseId !== productId
+          ? selectedVariation.databaseId
+          : undefined;
 
     const added = addToCart({
       productId,

@@ -19,6 +19,7 @@ export interface VariationCard {
   parsedCodePrice: number | "disabled";
   parsedCodeRegularPrice: number | "disabled";
   regionSlug?: string;
+  variationIdsByDelivery?: { direct?: number; gift?: number; code?: number };
 }
 
 export interface ContentMatrixColumn {

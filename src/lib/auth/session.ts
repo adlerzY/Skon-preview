@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "./constants";
 import { resolveAvatarUrl } from "@/lib/avatars";
+import { getAdminGraphQLHeaders } from "@/lib/admin/headers";
 
 export interface SessionUser {
   id: string;
@@ -121,7 +122,7 @@ export const getCurrentAdminUser = cache(async (): Promise<SessionUser | null> =
       sessionId ?? undefined,
       undefined,
       undefined,
-      { "X-BTL-Admin-Request": "1" },
+      getAdminGraphQLHeaders(),
     );
     if (!data?.viewer?.id || !data.viewer.isStaff) return null;
 

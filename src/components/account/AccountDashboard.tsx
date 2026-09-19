@@ -58,7 +58,8 @@ export default function AccountDashboard({
   openTicketsCount,
   reviewsCount,
 }: AccountDashboardProps) {
-  const completionChecks = [Boolean(user.avatarUrl), Boolean(user.email), successfulOrdersCount > 0];
+  const hasRealEmail = Boolean(user.email && !user.email.toLowerCase().endsWith('@phone.arena2battle.local'));
+  const completionChecks = [Boolean(user.avatarId), hasRealEmail, successfulOrdersCount > 0];
   const completionPercentage = (completionChecks.filter(Boolean).length / completionChecks.length) * 100;
 
   return (

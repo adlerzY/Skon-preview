@@ -34,6 +34,7 @@ import {
 } from "@/lib/graphql/admin";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import type { AdminPermission } from "./permissions";
+import { getAdminGraphQLHeaders } from "./headers";
 
 export async function requireAdmin(permission?: AdminPermission): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentAdminUser>>>; permissions: string[] }> {
   const user = await getCurrentAdminUser();
@@ -45,7 +46,7 @@ export async function requireAdmin(permission?: AdminPermission): Promise<{ user
 
 async function adminFetch<T = any>(query: string, variables: Record<string, unknown> = {}) {
   const token = (await getAuthToken()) || undefined;
-  return fetchGraphQL(query, variables, [], "no-store", token, undefined, undefined, undefined, { "X-BTL-Admin-Request": "1" }) as T;
+  return fetchGraphQL(query, variables, [], "no-store", token, undefined, undefined, undefined, getAdminGraphQLHeaders()) as T;
 }
 
 export interface AdminBootstrap {

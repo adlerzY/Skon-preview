@@ -142,31 +142,37 @@ export default function ProductPageClient({
     let accCode: number | "disabled" = "disabled";
     let accCodeRegular: number | "disabled" = "disabled";
     let accCodeStock: number | undefined = undefined;
+    const variationIdsByDelivery: { direct?: number; gift?: number; code?: number } = {};
 
     for (const mv of candidates) {
       if (mv.parsedPrice != null && (accPrice === null || mv.parsedPrice < accPrice)) {
         accPrice = mv.parsedPrice;
         accRegularPrice = mv.parsedRegularPrice ?? mv.parsedPrice;
+        variationIdsByDelivery.direct = mv.databaseId;
       }
       if (typeof mv.parsedGiftPrice === "number" && (accGift === "disabled" || mv.parsedGiftPrice < (accGift as number))) {
         accGift = mv.parsedGiftPrice;
         accGiftRegular = typeof mv.parsedGiftRegularPrice === "number" ? mv.parsedGiftRegularPrice : mv.parsedGiftPrice;
+        variationIdsByDelivery.gift = mv.databaseId;
       }
       if (typeof mv.parsedCodePrice === "number" && (accCode === "disabled" || mv.parsedCodePrice < (accCode as number))) {
         accCode = mv.parsedCodePrice;
         accCodeRegular = typeof mv.parsedCodeRegularPrice === "number" ? mv.parsedCodeRegularPrice : mv.parsedCodePrice;
         accCodeStock = mv.codeStockCount;
+        variationIdsByDelivery.code = mv.databaseId;
       }
 
       const comboText = mv.attributes?.map((a) => a.value.toLowerCase()).join(" ") ?? "";
       if ((comboText.includes("گیفت") || comboText.includes("gift")) && mv.parsedPrice != null && accGift === "disabled") {
         accGift = mv.parsedPrice;
         accGiftRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
+        variationIdsByDelivery.gift = mv.databaseId;
       }
       if ((comboText.includes("کد") || comboText.includes("code")) && mv.parsedPrice != null && accCode === "disabled") {
         accCode = mv.parsedPrice;
         accCodeRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
         accCodeStock = mv.codeStockCount;
+        variationIdsByDelivery.code = mv.databaseId;
       }
     }
 
@@ -179,6 +185,7 @@ export default function ProductPageClient({
       parsedCodePrice: accCode,
       parsedCodeRegularPrice: accCodeRegular,
       codeStockCount: accCodeStock,
+      variationIdsByDelivery,
     };
   }, [variations, selectedAttrs, groupedAttributes, regionInfo, product]);
 

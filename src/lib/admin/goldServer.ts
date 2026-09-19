@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getAuthToken, getCurrentAdminUser } from "@/lib/auth/session";
 import type { AdminBootstrap } from "@/lib/admin/server";
 import { fetchGraphQL } from "@/lib/graphql";
+import { getAdminGraphQLHeaders } from "./headers";
 import { ADMIN_ADD_GOLD_STRIKE, ADMIN_CLAIM_GOLD_PROPOSAL, ADMIN_CONFIRM_GOLD_RECEIVED, ADMIN_CREATE_GOLD_BUY_ORDER, ADMIN_GOLD_BOARD_QUERY, ADMIN_RECORD_GOLD_PAYOUT, ADMIN_START_GOLD_DEAL, ADMIN_UPDATE_GOLD_DEAL_STATUS } from "@/lib/graphql/adminGold";
 
 async function requireGold(permission: "gold.read" | "gold.write" | "gold.claim" | "gold.payout") {
@@ -15,7 +16,7 @@ async function requireGold(permission: "gold.read" | "gold.write" | "gold.claim"
 
 async function fetchAdmin(query: string, variables: Record<string, unknown> = {}) {
   const token = (await getAuthToken()) || undefined;
-  return fetchGraphQL(query, variables, [], "no-store", token, undefined, undefined, undefined, { "X-BTL-Admin-Request": "1" });
+  return fetchGraphQL(query, variables, [], "no-store", token, undefined, undefined, undefined, getAdminGraphQLHeaders());
 }
 
 function assertGoldBootstrapAccess(bootstrap: AdminBootstrap, permission: "gold.read" | "gold.write" | "gold.claim" | "gold.payout"): void {

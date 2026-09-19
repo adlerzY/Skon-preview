@@ -2,6 +2,7 @@ import "server-only";
 import { getAuthToken, getCurrentAdminUser } from "@/lib/auth/session";
 import type { AdminBootstrap } from "@/lib/admin/server";
 import { fetchGraphQL } from "@/lib/graphql";
+import { getAdminGraphQLHeaders } from "./headers";
 import {
   ADMIN_AUDIT_LOGS_QUERY,
   ADMIN_ENGINE_HEALTH_QUERY,
@@ -39,7 +40,7 @@ async function engineFetch<T = any>(query: string, variables: Record<string, unk
     undefined,
     undefined,
     undefined,
-    { "X-BTL-Admin-Request": "1" }
+    getAdminGraphQLHeaders()
   ) as T;
 }
 
