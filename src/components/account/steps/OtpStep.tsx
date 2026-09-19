@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { notifyAuthStateChanged } from "@/components/Header/HeaderViewerProvider";
 import { Loader2, ArrowRight } from "lucide-react";
 
 interface OtpStepProps {
@@ -62,6 +63,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
       }
 
       if (data.success) {
+        notifyAuthStateChanged();
         router.refresh();
       }
     } catch {

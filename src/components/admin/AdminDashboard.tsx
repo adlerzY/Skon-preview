@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, ClipboardCheck, LifeBuoy, ShoppingCart, Bell, ArrowLeft } from "lucide-react";
+import { AlertCircle, ClipboardCheck, LifeBuoy, ShoppingCart, ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { AdminBadge, AdminCard, AdminEmpty, AdminPage, AdminPageIntro, AdminRefreshButton, AdminStatCard } from "./AdminUi";
+import { AdminCard, AdminEmpty, AdminPage, AdminPageIntro, AdminRefreshButton, AdminStatCard } from "./AdminUi";
 import { useAdminContext } from "./AdminContext";
 
 export default function AdminDashboard() {
@@ -27,43 +27,41 @@ export default function AdminDashboard() {
       <AdminPageIntro
         eyebrow="مرکز عملیات"
         title={`سلام ${user?.name || "مدیر"}`}
-        description="کارهای مهم را از همین‌جا ببین و مستقیم وارد عملیات شو."
+        description="فقط مواردی که نیاز به اقدام دارند در اینجا نمایش داده می‌شوند."
         action={<AdminRefreshButton onClick={handleRefresh} loading={refreshing} />}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <AdminStatCard label="سفارش‌های در حال پردازش" value={loading ? "—" : summary.processingOrdersCount} helper="نیازمند پیگیری" tone="info" />
         <AdminStatCard label="تیکت‌های باز" value={loading ? "—" : summary.openTicketsCount} helper="صف پشتیبانی" tone={summary.openTicketsCount ? "warning" : "default"} />
         <AdminStatCard label="دیدگاه‌های منتظر بررسی" value={loading ? "—" : summary.pendingReviewsCount} helper="صف بررسی" tone={summary.pendingReviewsCount ? "warning" : "default"} />
-        <AdminStatCard label="اعلان‌های جدید" value={loading ? "—" : summary.unreadNotificationsCount} helper="خوانده‌نشده" tone={summary.unreadNotificationsCount ? "info" : "default"} />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[1.45fr_0.75fr]">
+      <div className="mt-3 grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
         <AdminCard className="overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-white/[.06] px-4 py-4">
+          <div className="flex items-center justify-between gap-3 border-b border-white/[.06] px-3 py-3">
             <div>
-              <div className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={15} className="text-brand-zard" /> نیازمند توجه</div>
-              <div className="mt-1 text-[10px] text-brand-m_khonsa">مواردی که بهتر است از همین حالا بررسی شوند.</div>
+              <div className="flex items-center gap-2 text-sm font-black text-white"><AlertCircle size={15} className="text-brand-zard" /> نیازمند اقدام</div>
+              <div className="mt-1 text-[10px] text-brand-m_khonsa">موارد مهم مستقیم به صف مربوط هدایت می‌کنند.</div>
             </div>
           </div>
           <div className="grid gap-px bg-white/[.045] sm:grid-cols-2">
-            {hasTickets ? <ActionTile href="/admin/tickets" icon={<LifeBuoy size={17} />} value={summary.openTicketsCount} title="تیکت باز" detail="ورود به صف پشتیبانی" /> : null}
-            {hasReviews ? <ActionTile href="/admin/reviews" icon={<ClipboardCheck size={17} />} value={summary.pendingReviewsCount} title="دیدگاه منتظر بررسی" detail="ورود به صف بررسی" /> : null}
+            {hasTickets ? <ActionTile href="/admin/tickets" icon={<LifeBuoy size={17} />} value={summary.openTicketsCount} title="تیکت باز" detail="صف پشتیبانی" /> : null}
+            {hasReviews ? <ActionTile href="/admin/reviews" icon={<ClipboardCheck size={17} />} value={summary.pendingReviewsCount} title="دیدگاه منتظر بررسی" detail="صف moderation" /> : null}
             <ActionTile href="/admin/orders" icon={<ShoppingCart size={17} />} value={summary.processingOrdersCount} title="سفارش در حال پردازش" detail="بررسی fulfillment" />
-            <ActionTile href="/admin" icon={<Bell size={17} />} value={summary.unreadNotificationsCount} title="اعلان جدید" detail="باز کردن اعلان‌ها از نوار بالا" />
           </div>
         </AdminCard>
 
         <AdminCard className="overflow-hidden">
-          <div className="border-b border-white/[.06] px-4 py-4">
-            <div className="text-sm font-black text-white">آخرین تیکت‌های باز</div>
-            <div className="mt-1 text-[10px] text-brand-m_khonsa">خلاصه‌ی آماده‌ی عملیات.</div>
+          <div className="border-b border-white/[.06] px-3 py-3">
+            <div className="text-sm font-black text-white">تیکت‌های باز اخیر</div>
+            <div className="mt-1 text-[10px] text-brand-m_khonsa">فقط چند مورد اخیر برای تصمیم سریع.</div>
           </div>
           {tickets.length === 0 ? (
             <AdminEmpty title={loading ? "در حال دریافت اطلاعات…" : "تیکت بازی وجود ندارد."} />
           ) : (
             <div>
-              {tickets.slice(0, 6).map((ticket) => (
+              {tickets.slice(0, 5).map((ticket) => (
                 <Link prefetch={false} key={ticket.id} href={`/admin/tickets/${ticket.databaseId}`} className="block border-b border-white/[.055] px-4 py-3 last:border-0 hover:bg-white/[.02]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -84,25 +82,18 @@ export default function AdminDashboard() {
           )}
         </AdminCard>
       </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] text-brand-m_khonsa">
-        <AdminBadge tone="success">احراز هویت</AdminBadge>
-        <AdminBadge tone="success">نشست امن</AdminBadge>
-        <AdminBadge tone="success">مجوزها فعال هستند</AdminBadge>
-        <span>داده‌های سنگین فقط هنگام ورود به ماژول مربوطه بارگذاری می‌شوند.</span>
-      </div>
     </AdminPage>
   );
 }
 
 function ActionTile({ href, icon, value, title, detail }: { href: string; icon: React.ReactNode; value: number; title: string; detail: string }) {
   return (
-    <Link prefetch={false} href={href} className="group bg-brand-surface p-4 transition hover:bg-white/[.025]">
+    <Link prefetch={false} href={href} className="group bg-brand-surface p-3 transition hover:bg-white/[.025]">
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-brand-blue/10 text-brand-blue">{icon}</span>
+        <span className="text-brand-blue">{icon}</span>
         <span className="text-2xl font-black text-white">{value.toLocaleString("fa-IR")}</span>
       </div>
-      <div className="mt-3 text-xs font-black text-white">{title}</div>
+      <div className="mt-2 text-xs font-bold text-white">{title}</div>
       <div className="mt-1 text-[10px] text-brand-m_khonsa group-hover:text-white">{detail}</div>
     </Link>
   );

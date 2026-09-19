@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { notifyAuthStateChanged } from "@/components/Header/HeaderViewerProvider";
 import { Loader2, User, Mail } from "lucide-react";
 
 export default function CompleteProfileStep({
@@ -57,6 +58,7 @@ export default function CompleteProfileStep({
       }
 
       if (data.success) {
+        notifyAuthStateChanged();
         router.refresh();
       }
     } catch {

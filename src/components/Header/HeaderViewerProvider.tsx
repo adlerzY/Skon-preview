@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export interface HeaderViewerUser {
   name: string;
@@ -20,49 +20,69 @@ const HeaderViewerContext = createContext<HeaderViewerState>({
   loading: false,
 });
 
+const AUTH_STATE_EVENT = "a2b-auth-state-changed";
+
 function hasLoginCookie() {
   return typeof document !== "undefined" && document.cookie.split(";").some((part) => part.trim().startsWith("a2b_logged_in=1"));
 }
 
-export function HeaderViewerProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<HeaderViewerState>({
-    user: null,
-    wishlistCount: 0,
-    loading: true,
-  });
+export function notifyAuthStateChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_STATE_EVENT));
+  }
+}
 
-  useEffect(() => {
+export function HeaderViewerProvider({
+  children,
+  initialState,
+}: {
+  children: ReactNode;
+  initialState?: HeaderViewerState;
+}) {
+  const [state, setState] = useState<HeaderViewerState>(
+    initialState ?? { user: null, wishlistCount: 0, loading: true },
+  );
+
+  const refresh = useCallback(async () => {
     if (!hasLoginCookie()) {
       setState({ user: null, wishlistCount: 0, loading: false });
       return;
     }
 
-    let cancelled = false;
+    setState((current) => ({ ...current, loading: true }));
 
-    fetch("/api/account/header-context", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { user?: HeaderViewerUser | null; wishlistCount?: number } | null) => {
-        if (cancelled) return;
-        setState({
-          user: data?.user ?? null,
-          wishlistCount: Number(data?.wishlistCount) || 0,
-          loading: false,
-        });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setState({ user: null, wishlistCount: 0, loading: false });
-        }
+    try {
+      const response = await fetch("/api/account/header-context", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
       });
-
-    return () => {
-      cancelled = true;
-    };
+      const data = response.ok
+        ? ((await response.json()) as { user?: HeaderViewerUser | null; wishlistCount?: number })
+        : null;
+      setState({
+        user: data?.user ?? null,
+        wishlistCount: Number(data?.wishlistCount) || 0,
+        loading: false,
+      });
+    } catch {
+      setState({ user: null, wishlistCount: 0, loading: false });
+    }
   }, []);
+
+  useEffect(() => {
+    const handleAuthStateChanged = () => {
+      void refresh();
+    };
+
+    window.addEventListener(AUTH_STATE_EVENT, handleAuthStateChanged);
+    return () => window.removeEventListener(AUTH_STATE_EVENT, handleAuthStateChanged);
+  }, [refresh]);
+
+  useEffect(() => {
+    if (initialState && !initialState.loading) return;
+    void refresh();
+  }, [initialState, refresh]);
 
   const value = useMemo(() => state, [state]);
   return <HeaderViewerContext.Provider value={value}>{children}</HeaderViewerContext.Provider>;

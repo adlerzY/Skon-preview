@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { notifyAuthStateChanged } from "@/components/Header/HeaderViewerProvider";
 import { Loader2, ShieldCheck, Copy, Check, MessageSquareText, KeyRound } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -53,6 +54,7 @@ export default function AdminTotpGate({
   const [smsError, setSmsError] = useState("");
 
   const goToAccount = useCallback(() => {
+    notifyAuthStateChanged();
     if (pathname === "/admin") {
       router.refresh();
     } else {

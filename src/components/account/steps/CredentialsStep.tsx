@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { notifyAuthStateChanged } from "@/components/Header/HeaderViewerProvider";
 import { Loader2, User, Lock, Eye, EyeOff } from "lucide-react";
 
 const normalizeDigits = (str: string) => {
@@ -65,7 +66,8 @@ export default function CredentialsStep({
         return;
       }
 
-      router.refresh();
+      notifyAuthStateChanged();
+        router.refresh();
     } catch {
       setError("خطا در برقراری ارتباط با سرور. لطفاً اینترنت خود را بررسی کنید.");
     } finally {

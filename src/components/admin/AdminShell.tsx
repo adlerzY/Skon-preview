@@ -7,11 +7,10 @@ import { Menu } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import { AdminContextProvider, useAdminContext } from "./AdminContext";
 import type { AdminBootstrap } from "@/lib/admin/server";
-import UserAvatar from "@/components/ui/UserAvatar";
 
 const AdminNotificationsBell = dynamic(() => import("./AdminNotificationsBell"), {
   ssr: false,
-  loading: () => <div className="h-9 w-9 rounded bg-white/[.025] animate-pulse" aria-hidden="true" />,
+  loading: () => <div className="h-8 w-8 rounded-[4px] bg-white/[.025] animate-pulse" aria-hidden="true" />,
 });
 
 export default function AdminShell({ children, initialContext }: { children: ReactNode; initialContext?: AdminBootstrap }) {
@@ -63,31 +62,25 @@ function AdminShellInner({ children }: { children: ReactNode }) {
   return (
     <div className="h-screen w-full bg-brand-bg flex overflow-hidden" dir="rtl">
       {!isDesktop && isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]" onClick={closeSidebar} aria-hidden="true" />
+        <div className="fixed inset-0 bg-black/60 z-[9998]" onClick={closeSidebar} aria-hidden="true" />
       )}
 
       <AdminSidebar user={currentUser} permissions={permissions} isOpen={isSidebarOpen} isDesktop={isDesktop} onClose={closeSidebar} />
 
       <div className="flex-1 min-w-0 flex flex-col h-screen">
-        <div className="h-[58px] rounded-none shrink-0 border-b border-brand-surface_hover flex items-center justify-between px-3 md:px-6 bg-brand-surface/50">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        <div className="h-14 shrink-0 border-b border-brand-surface_hover flex items-center justify-between px-3 md:px-5 bg-brand-surface">
+          <div className="flex items-center gap-2 min-w-0">
             <button type="button" onClick={toggleSidebar} className="text-brand-m_khonsa hover:text-white transition-colors p-2 shrink-0" aria-label="نمایش یا پنهان کردن منو" aria-expanded={isSidebarOpen}>
               <Menu size={20} />
             </button>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <UserAvatar src={currentUser.avatarUrl} name={currentUser.name} size="sm" />
-              <div className="min-w-0">
-                <span className="text-[9px] font-black tracking-[0.12em] text-brand-blue hidden sm:block">پنل مدیریت</span>
-                <span className="text-sm font-bold text-white truncate block">خوش اومدی {currentUser.name.split(" ")[0] || "مدیر"} 👋</span>
-              </div>
-            </div>
+            <span className="text-xs font-semibold text-white hidden sm:block">پنل مدیریت</span>
           </div>
           <div className="shrink-0">
             <AdminNotificationsBell />
           </div>
         </div>
 
-        <main className="flex-1 min-h-0 w-full p-4 md:p-6 pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-6 overflow-y-auto">
+        <main className="flex-1 min-h-0 w-full p-3 md:p-5 pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-5 overflow-y-auto">
           {children}
         </main>
       </div>
