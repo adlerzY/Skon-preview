@@ -4,6 +4,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { UPDATE_AVATAR_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { getJwtDatabaseId } from "@/lib/auth/jwt";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isValidAvatarId, resolveAvatarUrl } from "@/lib/avatars";
 
@@ -19,12 +20,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
   }
 
+  const jwtDatabaseId = getJwtDatabaseId(token);
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
   }
 
-  if (!(await checkRateLimit(`avatar-user:${user.databaseId}`, { max: 10, windowMs: 10 * 60 * 1000 }))) {
+  const userRateLimitId = jwtDatabaseId ?? user.databaseId;
+  if (!(await checkRateLimit(`avatar-user:${userRateLimitId}`, { max: 10, windowMs: 10 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد تغییر عکس پروفایل بیش از حد مجاز است" }, { status: 429 });
   }
 

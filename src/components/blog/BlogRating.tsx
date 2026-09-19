@@ -48,10 +48,10 @@ export default function BlogRating({
         setCount(data.ratingCount ?? count);
         setMyRating(data.myRating ?? value);
       } else {
-        showToast(data?.error || "ثبت امتیاز با خطا مواجه شد");
+        showToast(data?.error || "ثبت امتیاز انجام نشد", "error");
       }
     } catch {
-      showToast("خطا در ارتباط با سرور");
+      showToast("خطا در ارتباط با سرور", "error");
     } finally {
       setIsSubmitting(false);
     }

@@ -37,7 +37,7 @@ function ReplyForm({
   isSubmitting,
 }: {
   isStaff: boolean;
-  onSubmit: (content: string) => Promise<{ ok: boolean; approved: boolean }>;
+  onSubmit: (content: string) => Promise<{ ok: boolean; approved: boolean; error?: string }>;
   onCancel: () => void;
   isSubmitting: boolean;
 }) {
@@ -52,16 +52,12 @@ function ReplyForm({
       return;
     }
     setError("");
-    try {
-      const result = await onSubmit(trimmed);
-      if (result.ok) {
-        setContent("");
-        if (!result.approved) setPendingNotice(true);
-      } else {
-        setError("ثبت پاسخ با خطا مواجه شد");
-      }
-    } catch {
-      setError("خطا در ارتباط با سرور");
+    const result = await onSubmit(trimmed);
+    if (result.ok) {
+      setContent("");
+      if (!result.approved) setPendingNotice(true);
+    } else {
+      setError(result.error || "ثبت پاسخ انجام نشد");
     }
   };
 
@@ -120,7 +116,7 @@ function CommentCard({
   const [isReplying, setIsReplying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReply = async (content: string): Promise<{ ok: boolean; approved: boolean }> => {
+  const handleReply = async (content: string): Promise<{ ok: boolean; approved: boolean; error?: string }> => {
     if (!comment.databaseId) return { ok: false, approved: false };
     setIsSubmitting(true);
     try {
@@ -130,7 +126,7 @@ function CommentCard({
         body: JSON.stringify({ commentId: comment.databaseId, content }),
       });
       const data = await res.json();
-      if (!res.ok) return { ok: false, approved: false };
+      if (!res.ok) return { ok: false, approved: false, error: data?.error || "ثبت پاسخ انجام نشد" };
 
       const approved = Boolean(data.approved);
       if (approved) {

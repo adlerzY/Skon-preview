@@ -21,6 +21,7 @@ export default function AdminDashboard() {
 
   const hasTickets = permissions.includes("tickets.read");
   const hasReviews = permissions.includes("reviews.moderate");
+  const hasOrders = permissions.includes("orders.read");
 
   return (
     <AdminPage>
@@ -32,7 +33,7 @@ export default function AdminDashboard() {
       />
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        <AdminStatCard label="سفارش‌های در حال پردازش" value={loading ? "—" : summary.processingOrdersCount} helper="نیازمند پیگیری" tone="info" />
+        {hasOrders ? <AdminStatCard label="سفارش‌های در حال پردازش" value={loading ? "—" : summary.processingOrdersCount} helper="نیازمند پیگیری" tone="info" /> : null}
         <AdminStatCard label="تیکت‌های باز" value={loading ? "—" : summary.openTicketsCount} helper="صف پشتیبانی" tone={summary.openTicketsCount ? "warning" : "default"} />
         <AdminStatCard label="دیدگاه‌های منتظر بررسی" value={loading ? "—" : summary.pendingReviewsCount} helper="صف بررسی" tone={summary.pendingReviewsCount ? "warning" : "default"} />
       </div>
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
           <div className="grid gap-px bg-white/[.045] sm:grid-cols-2">
             {hasTickets ? <ActionTile href="/admin/tickets" icon={<LifeBuoy size={17} />} value={summary.openTicketsCount} title="تیکت باز" detail="صف پشتیبانی" /> : null}
             {hasReviews ? <ActionTile href="/admin/reviews" icon={<ClipboardCheck size={17} />} value={summary.pendingReviewsCount} title="دیدگاه منتظر بررسی" detail="صف moderation" /> : null}
-            <ActionTile href="/admin/orders" icon={<ShoppingCart size={17} />} value={summary.processingOrdersCount} title="سفارش در حال پردازش" detail="بررسی fulfillment" />
+            {hasOrders ? <ActionTile href="/admin/orders" icon={<ShoppingCart size={17} />} value={summary.processingOrdersCount} title="سفارش در حال پردازش" detail="بررسی fulfillment" /> : null}
           </div>
         </AdminCard>
 

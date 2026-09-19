@@ -20,18 +20,30 @@ export function useBlogPosts({ initialPosts, initialPageInfo, buildParams, debou
   const [isLoading, setIsLoading] = useState(false);
   const isFirstRun = useRef(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestSeqRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchPosts = useCallback(
     async (after?: string, append = false) => {
+      const requestSeq = ++requestSeqRef.current;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       setIsLoading(true);
       try {
         const params = buildParams(after);
-        const res = await fetch(`/api/blog/posts?${params.toString()}`, { cache: "no-store" });
+        const res = await fetch(`/api/blog/posts?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+        if (!res.ok) throw new Error("blog_posts_request_failed");
         const data = await res.json();
+        if (requestSeq !== requestSeqRef.current || controller.signal.aborted) return;
         setPosts((prev) => (append ? [...prev, ...(data.posts ?? [])] : data.posts ?? []));
         setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
+      } catch (error) {
+        if ((error as Error)?.name !== "AbortError") {
+          console.error("Blog posts request failed:", error);
+        }
       } finally {
-        setIsLoading(false);
+        if (requestSeq === requestSeqRef.current) setIsLoading(false);
       }
     },
     [buildParams]
@@ -53,6 +65,7 @@ export function useBlogPosts({ initialPosts, initialPageInfo, buildParams, debou
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
     };
   }, []);
 

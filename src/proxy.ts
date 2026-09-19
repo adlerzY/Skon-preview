@@ -1,4 +1,3 @@
-import { decodeJwtPayload } from "@/lib/auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
 
@@ -31,7 +30,20 @@ function resolveEndpoint(): { url: string; hostHeader?: string } {
   return { url: INTERNAL_WP_GRAPHQL_URL, hostHeader: PUBLIC_GRAPHQL_HOST };
 }
 
-
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const decodedBinary = atob(padded);
+    const bytes = Uint8Array.from(decodedBinary, (c) => c.charCodeAt(0));
+    const jsonString = new TextDecoder().decode(bytes);
+    return JSON.parse(jsonString);
+  } catch {
+    return null;
+  }
+}
 
 function needsRefresh(token: string | undefined): boolean {
   if (!token) return false;
@@ -173,7 +185,6 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
-    pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico" ||
     /\.[a-zA-Z0-9]+$/i.test(pathname)
@@ -191,6 +202,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const refreshed = hasAuthToken ? await applyAuthRefresh(request) : { token: null, cooldownSeconds: 0 };
+
+  if (pathname.startsWith("/api")) {
+    const response = NextResponse.next({ request });
+    return finalizeAuthCookie(response, refreshed);
+  }
 
   const isNonRegionRoute =
     pathname.startsWith("/my-account") ||

@@ -223,8 +223,12 @@ export async function getAdminNotifications(unreadOnly = false) {
   return Array.isArray(data?.adminNotifications) ? data.adminNotifications : [];
 }
 
-export async function adminMutation(query: string, variables: Record<string, unknown> = {}) {
-  await requireAdmin();
+export async function adminMutation(
+  query: string,
+  variables: Record<string, unknown> = {},
+  permission?: AdminPermission,
+) {
+  await requireAdmin(permission);
   return adminFetch(query, variables);
 }
 

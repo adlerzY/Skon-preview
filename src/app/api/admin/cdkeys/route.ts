@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminMutation, getAdminCdKeyStock, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { ADMIN_PERMISSIONS } from "@/lib/admin/permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +38,10 @@ export async function POST(request: NextRequest) {
           ? { orderId: Number(body.orderId), itemId: Number(body.itemId), key: String(body.key || "") }
           : { orderId: Number(body.orderId), itemId: Number(body.itemId) };
 
-    return NextResponse.json(await adminMutation(map[action], variables), { headers: { "Cache-Control": "no-store" } });
+    const permission = action === "reveal"
+      ? ADMIN_PERMISSIONS.CDKEYS_REVEAL
+      : ADMIN_PERMISSIONS.CDKEYS_WRITE;
+    return NextResponse.json(await adminMutation(map[action], variables, permission), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Admin CD Key mutation:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "عملیات CD Key انجام نشد" }, { status: 500 });

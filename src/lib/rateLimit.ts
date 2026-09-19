@@ -47,6 +47,10 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "revalidate",
   "review-",
   "review:",
+  "reviews-list:",
+  "wishlist-status:",
+  "blog-posts:",
+  "blog-comments-list:",
   "blog-comment-write",
   "blog-comment-reply",
   "blog-follow",
@@ -58,10 +62,6 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "revoke-session",
   "avatar-",
   "wishlist:",
-  "reviews-list:",
-  "wishlist-status:",
-  "blog-comments-list:",
-  "blog-posts-list:",
 ];
 let warnedMissingUpstash = false;
 
@@ -97,6 +97,8 @@ function getLimiter(max: number, windowMs: number): Ratelimit {
 
 export function getClientIp(request: Request): string {
   if (trustProxyHeaders) {
+    const cloudflareIp = request.headers.get("cf-connecting-ip")?.trim();
+    if (cloudflareIp) return cloudflareIp;
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     if (forwarded) return forwarded;
     const realIp = request.headers.get("x-real-ip")?.trim();

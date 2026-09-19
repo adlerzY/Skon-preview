@@ -36,10 +36,10 @@ export default function WishlistButton({ productId, size = 22, isLoggedIn = fals
         setActive(data.inWishlist);
         showToast(data.inWishlist ? "به علاقه‌مندی‌ها اضافه شد ❤️" : "از علاقه‌مندی‌ها حذف شد");
       } else {
-        showToast(data?.error || "تغییر علاقه‌مندی با خطا مواجه شد");
+        showToast(data?.error || "تغییر علاقه‌مندی انجام نشد", "error");
       }
     } catch {
-      showToast("خطا در ارتباط با سرور");
+      showToast("خطا در ارتباط با سرور", "error");
     } finally {
       setIsLoading(false);
     }

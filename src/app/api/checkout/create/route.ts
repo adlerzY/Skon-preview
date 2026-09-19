@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const siteUrl = (process.env.NEXT_PUBLIC_WORDPRESS_API_URL || "").replace("/graphql", "");
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
     const fallbackUrl = `${siteUrl}/checkout/order-pay/${order.databaseId}/?pay_for_order=true&key=${order.orderKey}`;
     const redirectUrl = order.paymentUrl || fallbackUrl;
 
