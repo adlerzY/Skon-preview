@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Loader2, Send, MessageCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Send, MessageCircle, CheckCircle2, LogIn } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AdminBadge from "@/components/ui/AdminBadge";
 
@@ -51,10 +52,16 @@ function ReplyForm({
       return;
     }
     setError("");
-    const result = await onSubmit(trimmed);
-    if (result.ok) {
-      setContent("");
-      if (!result.approved) setPendingNotice(true);
+    try {
+      const result = await onSubmit(trimmed);
+      if (result.ok) {
+        setContent("");
+        if (!result.approved) setPendingNotice(true);
+      } else {
+        setError("ثبت پاسخ با خطا مواجه شد");
+      }
+    } catch {
+      setError("خطا در ارتباط با سرور");
     }
   };
 
@@ -296,8 +303,20 @@ export default function CommentThread({
           </button>
         </form>
       ) : (
-        <div className="bg-brand-menu p-5 border border-brand-surface_hover text-center text-sm text-brand-surface_m">
-          برای ثبت نظر ابتدا وارد حساب کاربری خود شوید.
+        <div className="bg-brand-menu p-6 md:p-8 border border-brand-surface_hover flex flex-col items-center text-center gap-4">
+          <span className="w-12 h-12 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0">
+            <LogIn size={20} />
+          </span>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-bold text-brand-active">برای ثبت نظر ابتدا وارد شوید</span>
+            <span className="text-xs text-brand-surface_m">نظر شما به سایر کاربران در انتخاب بهتر کمک می‌کند.</span>
+          </div>
+          <Link
+            href="/my-account"
+            className="bg-brand-blue text-white text-sm font-bold py-2.5 px-8 hover:bg-brand-blue/80 transition-colors whitespace-nowrap"
+          >
+            ورود به حساب
+          </Link>
         </div>
       )}
 

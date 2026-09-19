@@ -5,6 +5,7 @@ import { SET_PASSWORD_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getCurrentUser, getSessionId } from "@/lib/auth/session";
+import { getJwtDatabaseId } from "@/lib/auth/jwt";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -17,12 +18,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
   }
 
-  const user = await getCurrentUser();
-  if (!user) {
+  const databaseId = getJwtDatabaseId(token) ?? (await getCurrentUser())?.databaseId;
+  if (!databaseId) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
   }
 
-  if (!(await checkRateLimit(`set-password-user:${user.databaseId}`, { max: 6, windowMs: 15 * 60 * 1000 }))) {
+  if (!(await checkRateLimit(`set-password-user:${databaseId}`, { max: 6, windowMs: 15 * 60 * 1000 }))) {
     return NextResponse.json({ error: "تعداد تلاش‌های تغییر رمز عبور بیش از حد مجاز است" }, { status: 429 });
   }
 

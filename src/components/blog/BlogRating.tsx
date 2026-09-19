@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Star, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastContext";
 
 interface BlogRatingProps {
   postId: number;
@@ -20,6 +21,7 @@ export default function BlogRating({
   initialMyRating = null,
 }: BlogRatingProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [average, setAverage] = useState(initialAverage);
   const [count, setCount] = useState(initialCount);
   const [myRating, setMyRating] = useState<number | null>(initialMyRating);
@@ -45,8 +47,11 @@ export default function BlogRating({
         setAverage(data.averageRating ?? average);
         setCount(data.ratingCount ?? count);
         setMyRating(data.myRating ?? value);
+      } else {
+        showToast(data?.error || "ثبت امتیاز با خطا مواجه شد");
       }
     } catch {
+      showToast("خطا در ارتباط با سرور");
     } finally {
       setIsSubmitting(false);
     }

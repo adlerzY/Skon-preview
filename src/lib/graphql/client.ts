@@ -16,7 +16,9 @@ if (!WP_GRAPHQL_URL && process.env.NODE_ENV === "production") {
 }
 
 function resolveEndpoint(): { url: string; hostHeader?: string } {
-  const publicUrl = WP_GRAPHQL_URL || FALLBACK_LOCAL_URL;
+  const publicUrl = WP_GRAPHQL_URL || (process.env.NODE_ENV === "production"
+    ? (() => { throw new Error("NEXT_PUBLIC_WORDPRESS_API_URL is required in production"); })()
+    : FALLBACK_LOCAL_URL);
 
   if (!INTERNAL_WP_GRAPHQL_URL) {
     return { url: publicUrl };

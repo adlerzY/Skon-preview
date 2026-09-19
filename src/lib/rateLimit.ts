@@ -58,6 +58,10 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "revoke-session",
   "avatar-",
   "wishlist:",
+  "reviews-list:",
+  "wishlist-status:",
+  "blog-comments-list:",
+  "blog-posts-list:",
 ];
 let warnedMissingUpstash = false;
 
