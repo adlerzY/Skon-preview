@@ -10,13 +10,11 @@ export interface HeaderViewerUser {
 
 interface HeaderViewerState {
   user: HeaderViewerUser | null;
-  wishlistCount: number;
   loading: boolean;
 }
 
 const HeaderViewerContext = createContext<HeaderViewerState>({
   user: null,
-  wishlistCount: 0,
   loading: false,
 });
 
@@ -40,12 +38,12 @@ export function HeaderViewerProvider({
   initialState?: HeaderViewerState;
 }) {
   const [state, setState] = useState<HeaderViewerState>(
-    initialState ?? { user: null, wishlistCount: 0, loading: true },
+    initialState ?? { user: null, loading: true },
   );
 
   const refresh = useCallback(async () => {
     if (!hasLoginCookie()) {
-      setState({ user: null, wishlistCount: 0, loading: false });
+      setState({ user: null, loading: false });
       return;
     }
 
@@ -58,15 +56,14 @@ export function HeaderViewerProvider({
         cache: "no-store",
       });
       const data = response.ok
-        ? ((await response.json()) as { user?: HeaderViewerUser | null; wishlistCount?: number })
+        ? ((await response.json()) as { user?: HeaderViewerUser | null })
         : null;
       setState({
         user: data?.user ?? null,
-        wishlistCount: Number(data?.wishlistCount) || 0,
         loading: false,
       });
     } catch {
-      setState({ user: null, wishlistCount: 0, loading: false });
+      setState({ user: null, loading: false });
     }
   }, []);
 

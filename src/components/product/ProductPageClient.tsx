@@ -28,7 +28,6 @@ interface Props {
   product: ProductNode;
   initialEdition?: string;
   activeRegion?: string;
-  wishlistSlot?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -65,7 +64,6 @@ export default function ProductPageClient({
   product,
   initialEdition,
   activeRegion,
-  wishlistSlot,
   children,
 }: Props) {
   const variations = useMemo(() => product.variationCards ?? [], [product.variationCards]);
@@ -349,7 +347,6 @@ export default function ProductPageClient({
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="text-2xl md:text-3xl font-black text-brand-active leading-tight">{product.name}</h1>
-                {wishlistSlot}
               </div>
               {product.shortNotify && (
                 <div className="mt-3 bg-brand-zard text-brand-menu text-xs px-3 py-2.5 font-medium border-r-4 border-brand-blue">

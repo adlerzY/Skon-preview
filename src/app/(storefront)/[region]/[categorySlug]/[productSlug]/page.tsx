@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import type { ProductNode, VariationCard } from "@/lib/graphql";
@@ -6,7 +5,6 @@ import ProductPageClient from "@/components/product/ProductPageClient";
 import ProductContentMatrix from "@/components/product/ProductContentMatrix";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
-import WishlistButtonAsync, { WishlistButtonSkeleton } from "@/components/product/WishlistButtonAsync";
 
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
@@ -72,11 +70,6 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         product={clientProduct}
         initialEdition={edition}
         activeRegion={region}
-        wishlistSlot={
-          <Suspense fallback={<WishlistButtonSkeleton size={22} />}>
-            <WishlistButtonAsync productId={product.databaseId} size={22} />
-          </Suspense>
-        }
       >
         <div className="cv-auto">
           <ProductContentMatrix contentMatrix={contentMatrix} />

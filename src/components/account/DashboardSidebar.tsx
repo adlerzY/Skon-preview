@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, Heart, LifeBuoy, MessageSquare, UserCog, LogOut, ArrowRight, X } from "lucide-react";
+import { LayoutDashboard, Package, LifeBuoy, MessageSquare, UserCog, LogOut, ArrowRight, X } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AdminBadge from "@/components/ui/AdminBadge";
 import Skeleton from "@/components/ui/Skeleton";
@@ -12,14 +12,12 @@ import { useLogout } from "@/lib/hooks/useLogout";
 const NAV_ITEMS = [
   { href: "/my-account", label: "پیشخوان", icon: LayoutDashboard, exact: true },
   { href: "/my-account/orders", label: "سفارش‌های من", icon: Package },
-  { href: "/my-account/wishlist", label: "علاقه‌مندی‌ها", icon: Heart },
   { href: "/my-account/reviews", label: "دیدگاه‌های من", icon: MessageSquare },
   { href: "/my-account/tickets", label: "تیکت‌های پشتیبانی", icon: LifeBuoy },
   { href: "/my-account/settings", label: "تنظیمات حساب", icon: UserCog },
 ];
 
 const STAFF_HIDDEN_HREFS = [
-  "/my-account/wishlist",
   "/my-account/orders",
   "/my-account/reviews",
   "/my-account/tickets",

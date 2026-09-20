@@ -4,6 +4,6 @@ import UserActions from "./UserActions";
 import { useHeaderViewer } from "./HeaderViewerProvider";
 
 export default function UserActionsAsync() {
-  const { user, wishlistCount, loading } = useHeaderViewer();
-  return <UserActions user={user} wishlistCount={wishlistCount} loading={loading} />;
+  const { user, loading } = useHeaderViewer();
+  return <UserActions user={user} loading={loading} />;
 }

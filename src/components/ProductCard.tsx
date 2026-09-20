@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ProductNode } from "@/lib/graphql";
-import WishlistRemoveButton from "@/components/product/WishlistRemoveButton";
 import ProductCardImage from "@/components/ProductCardImage";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
@@ -9,11 +8,9 @@ const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
 interface ProductCardProps {
   product: ProductNode & { activeRegion?: string; defaultEdition?: string };
   activeRegion?: string;
-  variant?: "price" | "wishlist";
-  onRemovedFromWishlist?: (productId: number) => void;
 }
 
-export default function ProductCard({ product, activeRegion, variant = "price", onRemovedFromWishlist }: ProductCardProps) {
+export default function ProductCard({ product, activeRegion }: ProductCardProps) {
   const categoryNodes = product.productCategories?.nodes ?? [];
   const category = categoryNodes[0];
   const categorySlug = category?.slug || "uncategorized";
@@ -30,10 +27,8 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
   const now = Date.now();
   const isNew = productDate > 0 && now - productDate < 15 * 24 * 60 * 60 * 1000;
 
-  if (variant === "price") {
-    if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
-    if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
-  }
+  if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
+  if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
 
   const targetRegion = product.activeRegion || activeRegion || "eu";
   const href = `/${targetRegion}/${categorySlug}/${product.slug}`;
@@ -44,7 +39,7 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
       prefetch={false}
       className="group flex flex-col bg-brand-surface duration-200 hover:bg-brand-surface_hover overflow-hidden relative h-full min-h-[300px] md:min-h-[380px]"
     >
-      {variant === "price" && badges.length > 0 && (
+      {badges.length > 0 && (
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
           {badges.map((badge, index) => (
             <span key={index} className={`${badge.color} text-brand-bg text-[10px] md:text-[13px] font-bold px-3.5 py-1 uppercase tracking-wider`}>
@@ -60,9 +55,7 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">بدون تصویر</div>
         )}
-        {variant === "price" && (
-          <div className="absolute inset-0 bg-gradient-to-t from-[#23252b] via-transparent to-transparent opacity-20"></div>
-        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#23252b] via-transparent to-transparent opacity-20"></div>
       </div>
 
       <div className="p-4 md:p-5 flex flex-col flex-grow">
@@ -80,50 +73,44 @@ export default function ProductCard({ product, activeRegion, variant = "price", 
             {product.name}
           </h3>
 
-          {variant === "price" && (
-            <>
-              {product.shortNotify && (
-                <div className="text-[#ffb400] text-[13px] mb-1 line-clamp-3 overflow-hidden">
-                  {product.shortNotify}
-                </div>
-              )}
-              {subCategories.length > 0 && (
-                <div className="text-[#8e98b0] text-[10px] font-medium leading-relaxed mb-2 line-clamp-1">
-                  {subCategories.map((sc) => `[${sc.name}]`).join(" ")}
-                </div>
-              )}
-            </>
-          )}
+          <>
+            {product.shortNotify && (
+              <div className="text-[#ffb400] text-[13px] mb-1 line-clamp-3 overflow-hidden">
+                {product.shortNotify}
+              </div>
+            )}
+            {subCategories.length > 0 && (
+              <div className="text-[#8e98b0] text-[10px] font-medium leading-relaxed mb-2 line-clamp-1">
+                {subCategories.map((sc) => `[${sc.name}]`).join(" ")}
+              </div>
+            )}
+          </>
         </div>
 
         <div className="mt-auto flex items-end justify-between pt-3">
-          {variant === "price" ? (
-            <div className="w-full flex flex-col justify-end h-[44px]">
-              {currentMinPrice ? (
-                <>
-                  {isActualSale && (
-                    <del className="text-[#8e98b0] text-[12px] opacity-70 line-through self-end mb-0.5">
-                      {formatToPersianDigits(regularMinPrice!)}
-                    </del>
-                  )}
+          <div className="w-full flex flex-col justify-end h-[44px]">
+            {currentMinPrice ? (
+              <>
+                {isActualSale && (
+                  <del className="text-[#8e98b0] text-[12px] opacity-70 line-through self-end mb-0.5">
+                    {formatToPersianDigits(regularMinPrice!)}
+                  </del>
+                )}
 
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[#8e98b0] text-[11px] font-medium">شروع قیمت:</span>
-                    <span className={`font-bold text-base md:text-[17px] flex items-center gap-1.5 ${isActualSale ? "text-[#75dd04]" : "text-white"}`}>
-                      {formatToPersianDigits(currentMinPrice)}
-                      <span className={`text-[12px] font-normal ${isActualSale ? "text-white" : "text-[#8e98b0]"}`}>تومان</span>
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-start w-full">
-                  <span className="text-[#ff4e4e] font-bold text-sm md:text-base">ناموجود</span>
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-[#8e98b0] text-[11px] font-medium">شروع قیمت:</span>
+                  <span className={`font-bold text-base md:text-[17px] flex items-center gap-1.5 ${isActualSale ? "text-[#75dd04]" : "text-white"}`}>
+                    {formatToPersianDigits(currentMinPrice)}
+                    <span className={`text-[12px] font-normal ${isActualSale ? "text-white" : "text-[#8e98b0]"}`}>تومان</span>
+                  </span>
                 </div>
-              )}
-            </div>
-          ) : (
-            <WishlistRemoveButton productId={product.databaseId} onRemoved={onRemovedFromWishlist} />
-          )}
+              </>
+            ) : (
+              <div className="flex items-center justify-start w-full">
+                <span className="text-[#ff4e4e] font-bold text-sm md:text-base">ناموجود</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Link>

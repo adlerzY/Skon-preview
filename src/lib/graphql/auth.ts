@@ -63,9 +63,6 @@ export const DASHBOARD_SUMMARY_QUERY = `
         }
       }
     }
-    viewer {
-      wishlistIds
-    }
     myTickets(first: 10) {
       nodes {
         id
@@ -180,13 +177,6 @@ export const CREATE_SUPPORT_TICKET_MUTATION = `
   }
 `;
 
-export const TOGGLE_WISHLIST_MUTATION = `
-  mutation ToggleWishlistItem($productId: Int!) {
-    toggleWishlistItem(input: { productId: $productId }) {
-      inWishlist
-    }
-  }
-`;
 
 export const REGISTER_SESSION_MUTATION = `
   mutation RegisterSession($sessionId: String!, $deviceLabel: String, $ipAddress: String, $userAgent: String) {

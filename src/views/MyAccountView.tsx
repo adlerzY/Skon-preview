@@ -38,7 +38,6 @@ export default async function MyAccountView() {
   const successfulOrdersCount = allOrders.filter(
     (o) => typeof o.status === "string" && SUCCESSFUL_STATUSES.has(o.status)
   ).length;
-  const wishlistIds: string[] = data?.viewer?.wishlistIds ?? [];
   const tickets: TicketSummary[] = data?.myTickets?.nodes ?? [];
   const openTicketsCount = tickets.filter(
     (t) => (t.ticketStatus ?? "open") !== "closed"
@@ -51,7 +50,6 @@ export default async function MyAccountView() {
         user={user}
         recentOrders={allOrders.slice(0, 3)}
         successfulOrdersCount={successfulOrdersCount}
-        wishlistCount={wishlistIds.length}
         recentTickets={tickets.slice(0, 3)}
         openTicketsCount={openTicketsCount}
         reviewsCount={reviewsCount}

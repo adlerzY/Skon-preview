@@ -219,62 +219,6 @@ export async function getProducts(categorySlug?: string, activeRegion: string = 
   return cached();
 }
 
-export async function getProductsByIds(ids: number[], activeRegion: string = "eu"): Promise<ProductNode[]> {
-  const uniqueIds = Array.from(
-    new Set((ids ?? []).map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))
-  );
-
-  if (uniqueIds.length === 0) return [];
-
-  const CHUNK_SIZE = 75;
-  const collected = new Map<number, ProductNode>();
-
-  for (let offset = 0; offset < uniqueIds.length; offset += CHUNK_SIZE) {
-    const include = uniqueIds.slice(offset, offset + CHUNK_SIZE);
-    let after: string | null = null;
-    let guard = 0;
-
-    do {
-      const data = await fetchGraphQL(
-        `
-          ${PRODUCT_CARD_FIELDS}
-          query GetProductsByIdsPaginated($include: [Int], $after: String, $regionSlug: String) {
-            products(first: 100, after: $after, where: { include: $include, status: "PUBLISH", regionSlug: $regionSlug }) {
-              pageInfo { hasNextPage endCursor }
-              nodes { ...ProductCardFields }
-            }
-          }
-        `,
-        { include, after, regionSlug: activeRegion },
-        [],
-        "no-store"
-      );
-
-      const nodes = formatProducts(data?.products?.nodes ?? [], true, activeRegion).filter(
-        (p) => p.isAvailableInRegion !== false
-      );
-
-      for (const product of nodes) {
-        if (Number.isInteger(product.databaseId)) {
-          collected.set(product.databaseId, product);
-        }
-      }
-
-      const pageInfo = data?.products?.pageInfo;
-      if (!pageInfo?.hasNextPage || !pageInfo.endCursor) break;
-
-      after = pageInfo.endCursor;
-      guard += 1;
-    } while (guard < 50);
-  }
-
-  // Preserve wishlist order even if WPGraphQL returns the connection in a
-  // different order after pagination or when some IDs are unavailable.
-  return uniqueIds
-    .map((id) => collected.get(id))
-    .filter((product): product is ProductNode => Boolean(product));
-}
-
 export async function getCategoryShell(slug: string) {
   if (!slug) return null;
 

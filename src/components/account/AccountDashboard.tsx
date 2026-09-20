@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Heart, LifeBuoy, ChevronLeft, MessageSquare } from "lucide-react";
+import { Package, LifeBuoy, MessageSquare } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
@@ -27,7 +27,6 @@ interface AccountDashboardProps {
   user: SessionUser;
   recentOrders: OrderSummary[];
   successfulOrdersCount: number;
-  wishlistCount: number;
   recentTickets: TicketSummary[];
   openTicketsCount: number;
   reviewsCount: number;
@@ -53,7 +52,6 @@ export default function AccountDashboard({
   user,
   recentOrders,
   successfulOrdersCount,
-  wishlistCount,
   recentTickets,
   openTicketsCount,
   reviewsCount,
@@ -94,9 +92,8 @@ export default function AccountDashboard({
         <XPLevelCard successfulOrdersCount={successfulOrdersCount} reviewsCount={reviewsCount} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 shrink-0">
         <StatCard href="/my-account/orders" icon={<Package size={18} />} label="سفارش‌های موفق" value={successfulOrdersCount} tone="blue" />
-        <StatCard href="/my-account/wishlist" icon={<Heart size={18} />} label="علاقه‌مندی‌ها" value={wishlistCount} tone="zard" />
         <StatCard href="/my-account/reviews" icon={<MessageSquare size={18} />} label="دیدگاه‌های من" value={reviewsCount} tone="blue" />
         <StatCard href="/my-account/tickets" icon={<LifeBuoy size={18} />} label="تیکت‌های باز" value={openTicketsCount} tone="sabz" />
       </div>

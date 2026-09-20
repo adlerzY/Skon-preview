@@ -8,11 +8,10 @@ import AdminBadge from "@/components/ui/AdminBadge";
 
 interface UserActionsProps {
   user: { name: string; avatarUrl?: string | null; isStaff?: boolean } | null;
-  wishlistCount?: number;
   loading?: boolean;
 }
 
-export default function UserActions({ user, wishlistCount = 0, loading = false }: UserActionsProps) {
+export default function UserActions({ user, loading = false }: UserActionsProps) {
   const router = useRouter();
   const { logout, isLoggingOut } = useLogout();
 
@@ -28,7 +27,6 @@ export default function UserActions({ user, wishlistCount = 0, loading = false }
   const isLoggedIn = Boolean(user);
   const prefetchAccount = () => router.prefetch("/my-account");
   const prefetchOrders = () => router.prefetch("/my-account/orders");
-  const prefetchWishlist = () => router.prefetch("/my-account/wishlist");
 
   return (
     <div className="relative group/user min-w-[128px]">
@@ -62,10 +60,6 @@ export default function UserActions({ user, wishlistCount = 0, loading = false }
             </div>
             <Link href="/my-account" onMouseEnter={prefetchAccount} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">پیشخوان من</Link>
             <Link href="/my-account/orders" onMouseEnter={prefetchOrders} className="flex items-center gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">سفارشات</Link>
-            <Link href="/my-account/wishlist" onMouseEnter={prefetchWishlist} className="flex items-center justify-between gap-2.5 p-2.5 text-brand-m_khonsa text-[13px] font-semibold transition-colors hover:bg-white/5 hover:text-white rounded text-right w-full">
-              <span>علاقه‌مندی‌ها</span>
-              {wishlistCount > 0 && <span className="text-brand-blue font-bold text-xs">{wishlistCount.toLocaleString("fa-IR")}</span>}
-            </Link>
             <button
               onClick={logout}
               disabled={isLoggingOut}

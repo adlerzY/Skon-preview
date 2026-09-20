@@ -20,7 +20,6 @@ export interface SessionUser {
 
 export interface HeaderViewerData {
   user: { name: string; avatarUrl: string | null; isStaff: boolean } | null;
-  wishlistCount: number;
 }
 
 const VIEWER_QUERY = `
@@ -52,17 +51,6 @@ const ADMIN_VIEWER_QUERY = `
   }
 `;
 
-const VIEWER_WITH_WISHLIST_QUERY = `
-  query GetHeaderViewer {
-    viewer {
-      id
-      name
-      avatarUrl
-      isStaff
-      wishlistCount
-    }
-  }
-`;
 
 export const getAuthToken = cache(async (): Promise<string | null> => {
   const cookieStore = await cookies();
@@ -147,12 +135,21 @@ export const getCurrentAdminUser = cache(async (): Promise<SessionUser | null> =
 
 export const getHeaderViewerData = cache(async (): Promise<HeaderViewerData> => {
   const token = await getAuthToken();
-  if (!token) return { user: null, wishlistCount: 0 };
+  if (!token) return { user: null };
 
   try {
     const sessionId = await getSessionId();
     const data = await fetchGraphQL(
-      VIEWER_WITH_WISHLIST_QUERY,
+      `
+        query GetHeaderViewer {
+          viewer {
+            id
+            name
+            avatarUrl
+            isStaff
+          }
+        }
+      `,
       {},
       [],
       "no-store",
@@ -161,15 +158,14 @@ export const getHeaderViewerData = cache(async (): Promise<HeaderViewerData> => 
     );
     const viewer = data?.viewer;
 
-    if (!viewer?.id) return { user: null, wishlistCount: 0 };
+    if (!viewer?.id) return { user: null };
 
     const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl ?? null);
 
     return {
       user: { name: viewer.name, avatarUrl, isStaff: Boolean(viewer.isStaff) },
-      wishlistCount: Number(viewer.wishlistCount) || 0,
     };
   } catch {
-    return { user: null, wishlistCount: 0 };
+    return { user: null };
   }
 });

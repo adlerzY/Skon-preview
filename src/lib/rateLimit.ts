@@ -48,7 +48,6 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "review-",
   "review:",
   "reviews-list:",
-  "wishlist-status:",
   "blog-posts:",
   "blog-comments-list:",
   "blog-comment-write",
@@ -61,7 +60,6 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "reveal:",
   "revoke-session",
   "avatar-",
-  "wishlist:",
 ];
 let warnedMissingUpstash = false;
 

@@ -14,7 +14,6 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
   const ACCOUNT_LINKS = [
     { label: "حساب کاربری", href: "/my-account" },
     { label: "سفارش‌های من", href: "/my-account/orders" },
-    { label: "علاقه‌مندی‌ها", href: "/my-account/wishlist" },
     { label: "تیکت‌های پشتیبانی", href: "/my-account/tickets" },
   ];
 
