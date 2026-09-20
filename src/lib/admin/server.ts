@@ -60,17 +60,10 @@ export interface AdminBootstrap {
     hasManualPassword: boolean;
   };
   permissions: string[];
-  summary: {
-    openTicketsCount: number;
-    pendingReviewsCount: number;
-    processingOrdersCount: number;
-    unreadNotificationsCount: number;
-  };
-  tickets: Array<any>;
 }
 
 export const getAdminBootstrap = cache(async (): Promise<AdminBootstrap> => {
-  const data = await adminFetch(ADMIN_BOOTSTRAP_QUERY, { first: 6 });
+  const data = await adminFetch(ADMIN_BOOTSTRAP_QUERY);
   const viewer = data?.viewer;
   if (!viewer?.id || viewer?.isStaff !== true) redirect("/admin-login");
   const permissions = Array.isArray(viewer.adminPermissions) ? viewer.adminPermissions : [];
@@ -86,18 +79,25 @@ export const getAdminBootstrap = cache(async (): Promise<AdminBootstrap> => {
       hasManualPassword: Boolean(viewer.hasManualPassword),
     },
     permissions,
-    summary: {
-      openTicketsCount: Number(data?.adminOpenTicketsCount ?? 0),
-      pendingReviewsCount: Number(data?.pendingReviewsCount ?? 0),
-      processingOrdersCount: Number(data?.adminProcessingOrdersCount ?? 0),
-      unreadNotificationsCount: Number(data?.adminUnreadNotificationsCount ?? 0),
-    },
-    tickets: Array.isArray(data?.adminOpenTickets) ? data.adminOpenTickets : [],
   };
 });
 
+export async function getAdminOpenTickets(first = 6) {
+  await requireAdmin("tickets.read");
+  const data = await adminFetch(ADMIN_OPEN_TICKETS_QUERY, { first: Math.min(Math.max(first, 1), 20) });
+  return Array.isArray(data?.adminOpenTickets) ? data.adminOpenTickets : [];
+}
+
 export async function getAdminSummary() {
-  return getAdminBootstrap();
+  const user = await getCurrentAdminUser();
+  if (!user?.isStaff) return null;
+  const data = await adminFetch(ADMIN_DASHBOARD_SUMMARY_QUERY);
+  return {
+    openTicketsCount: Number(data?.adminOpenTicketsCount ?? 0),
+    pendingReviewsCount: Number(data?.pendingReviewsCount ?? 0),
+    processingOrdersCount: Number(data?.adminProcessingOrdersCount ?? 0),
+    unreadNotificationsCount: Number(data?.adminUnreadNotificationsCount ?? 0),
+  };
 }
 
 

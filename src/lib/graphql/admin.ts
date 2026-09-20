@@ -1,7 +1,7 @@
 import "server-only";
 
 export const ADMIN_BOOTSTRAP_QUERY = `
-  query GetAdminBootstrap($first: Int) {
+  query GetAdminBootstrap {
     viewer {
       id
       databaseId
@@ -11,18 +11,6 @@ export const ADMIN_BOOTSTRAP_QUERY = `
       isStaff
       hasManualPassword
       adminPermissions
-    }
-    adminOpenTicketsCount
-    pendingReviewsCount
-    adminProcessingOrdersCount
-    adminUnreadNotificationsCount
-    adminOpenTickets(first: $first) {
-      id
-      databaseId
-      title
-      date
-      linkedOrderId
-      customerName
     }
   }
 `;

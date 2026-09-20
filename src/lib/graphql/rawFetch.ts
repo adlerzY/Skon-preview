@@ -36,9 +36,10 @@ export async function fetchGraphQLWithErrors(
   const { url: endpointUrl, hostHeader } = resolveEndpoint();
   let boundSessionId = sessionId;
   const needsSessionBinding = Boolean(authToken || bootstrapProof || previousAuthToken || sessionId);
-  if (needsSessionBinding && !boundSessionId) {
+  if (needsSessionBinding) {
     try {
-      boundSessionId = (await cookies()).get(SESSION_ID_COOKIE)?.value;
+      const cookieStore = await cookies();
+      if (!boundSessionId) boundSessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
     } catch {}
   }
   const controller = new AbortController();

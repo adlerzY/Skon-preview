@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Bell, Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useAdminContext } from "./AdminContext";
 
 type Notification = {
   databaseId: number;
@@ -16,7 +15,7 @@ type Notification = {
 };
 
 export default function AdminNotificationsBell() {
-  const { summary } = useAdminContext();
+  const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -39,13 +38,33 @@ export default function AdminNotificationsBell() {
   };
 
   useEffect(() => {
+    let active = true;
+    const loadUnreadCount = async () => {
+      try {
+        const response = await fetch("/api/admin/notifications?unreadOnly=true", { cache: "no-store", credentials: "same-origin" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (active) setUnreadCount(Array.isArray(data?.notifications) ? data.notifications.length : 0);
+      } catch {
+        // اعلان‌ها نباید روی رندر پنل اثر بگذارند.
+      }
+    };
+    void loadUnreadCount();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     void load();
     const id = window.setInterval(() => void load(), 30000);
     return () => window.clearInterval(id);
   }, [open]);
 
-  const unread = loaded ? items.filter((item) => !item.isRead).length : summary.unreadNotificationsCount;
+  useEffect(() => {
+    if (loaded) setUnreadCount(items.filter((item) => !item.isRead).length);
+  }, [items, loaded]);
+
+  const unread = unreadCount;
 
   const markAll = async () => {
     await fetch("/api/admin/notifications", {
@@ -54,6 +73,7 @@ export default function AdminNotificationsBell() {
       body: JSON.stringify({ notificationIds: [] }),
     });
     setItems((current) => current.map((item) => ({ ...item, isRead: true })));
+    setUnreadCount(0);
   };
 
   return (

@@ -53,8 +53,6 @@ const Context = createContext<AdminContextValue>({
 export function AdminContextProvider({ children, initialContext }: { children: ReactNode; initialContext?: {
   user: AdminUser;
   permissions: string[];
-  summary: AdminSummary;
-  tickets: AdminContextValue["tickets"];
 } }) {
   const router = useRouter();
   const [state, setState] = useState<Omit<AdminContextValue, "refresh">>({
@@ -67,8 +65,8 @@ export function AdminContextProvider({ children, initialContext }: { children: R
       loading: false,
       user: initialContext.user,
       permissions: initialContext.permissions,
-      summary: initialContext.summary,
-      tickets: initialContext.tickets,
+      summary: EMPTY_SUMMARY,
+      tickets: [],
     } : {}),
   });
 
@@ -91,13 +89,8 @@ export function AdminContextProvider({ children, initialContext }: { children: R
         loading: false,
         user: data?.user ?? null,
         permissions: Array.isArray(data?.permissions) ? data.permissions : [],
-        summary: {
-          openTicketsCount: Number(data?.summary?.openTicketsCount ?? 0),
-          pendingReviewsCount: Number(data?.summary?.pendingReviewsCount ?? 0),
-          processingOrdersCount: Number(data?.summary?.processingOrdersCount ?? 0),
-          unreadNotificationsCount: Number(data?.summary?.unreadNotificationsCount ?? 0),
-        },
-        tickets: Array.isArray(data?.tickets) ? data.tickets : [],
+        summary: EMPTY_SUMMARY,
+        tickets: [],
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;

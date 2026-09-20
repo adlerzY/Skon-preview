@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
-import { REFRESH_TOKEN_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/graphql/auth";
+import { REFRESH_TOKEN_MUTATION } from "@/lib/graphql/auth";
 import {
   AUTH_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -93,29 +93,21 @@ export async function POST(request: NextRequest) {
   try {
     // The GraphQL client already uses one attempt for mutations, so a failed
     // refresh cannot recursively retry at this layer.
-    const data = await fetchGraphQL(REFRESH_TOKEN_MUTATION, { refreshToken }, [], "no-store");
+    const data = await fetchGraphQL(
+      REFRESH_TOKEN_MUTATION,
+      { refreshToken },
+      [],
+      "no-store",
+      undefined,
+      sessionId,
+      undefined,
+      currentAuthToken,
+      { "X-BTL-Session-Refresh": "1" },
+    );
     const newToken = data?.refreshJwtAuthToken?.authToken;
 
     if (!newToken || !currentAuthToken) {
       const response = NextResponse.json({ error: "امکان تمدید نشست وجود ندارد" }, { status: 401 });
-      setCooldown(response, FAILURE_COOLDOWN_SECONDS);
-      clearAuthCookies(response);
-      return response;
-    }
-
-    const touched = await fetchGraphQL(
-      TOUCH_SESSION_MUTATION,
-      { sessionId },
-      [],
-      "no-store",
-      newToken,
-      sessionId,
-      undefined,
-      currentAuthToken
-    );
-
-    if (!touched?.touchSession?.success) {
-      const response = NextResponse.json({ error: "نشست شما لغو شده است" }, { status: 401 });
       setCooldown(response, FAILURE_COOLDOWN_SECONDS);
       clearAuthCookies(response);
       return response;

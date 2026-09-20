@@ -76,6 +76,9 @@ async function refreshAuthToken(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-BTL-Session-ID": sessionId,
+          "X-BTL-Session-Refresh": "1",
+          "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
           ...(hostHeader ? { Host: hostHeader } : {}),
         },
         body: JSON.stringify({
@@ -89,33 +92,7 @@ async function refreshAuthToken(
       if (!res.ok) return null;
       const json = await res.json().catch(() => null);
       const token = json?.data?.refreshJwtAuthToken?.authToken;
-      if (typeof token !== "string" || !token) return null;
-
-      const touchedController = new AbortController();
-      const touchedTimeoutId = setTimeout(() => touchedController.abort(), REFRESH_TIMEOUT_MS);
-      try {
-        const touched = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            "X-BTL-Session-ID": sessionId,
-            "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
-            ...(hostHeader ? { Host: hostHeader } : {}),
-          },
-          body: JSON.stringify({
-            query: "mutation TouchSession($sessionId: String!) { touchSession(input: { sessionId: $sessionId }) { success } }",
-            variables: { sessionId },
-          }),
-          cache: "no-store",
-          signal: touchedController.signal,
-        });
-        if (!touched.ok) return null;
-        const touchedJson = await touched.json().catch(() => null);
-        return touchedJson?.data?.touchSession?.success === true ? token : null;
-      } finally {
-        clearTimeout(touchedTimeoutId);
-      }
+      return typeof token === "string" && token ? token : null;
     } catch {
       return null;
     } finally {
@@ -145,9 +122,6 @@ async function applyAuthRefresh(request: NextRequest): Promise<RefreshOutcome> {
 
   const newToken = await refreshAuthToken(refreshToken, sessionId, authToken);
   if (newToken) {
-    // Make the rotated token available to the current request as well as the
-    // response cookie; otherwise the page being rendered could still use the
-    // just-expired token.
     request.cookies.set(AUTH_TOKEN_COOKIE, newToken);
   }
   return {
