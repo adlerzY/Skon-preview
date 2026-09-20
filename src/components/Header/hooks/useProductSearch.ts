@@ -1,6 +1,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { searchProductsByKeyword } from "@/actions/search";
 import type { ProductNode } from "@/lib/graphql";
+import { useActiveRegion } from "@/lib/hooks/useActiveRegion";
 
 interface UseProductSearchResult {
   searchQuery: string;
@@ -11,6 +12,7 @@ interface UseProductSearchResult {
 
 export function useProductSearch(): UseProductSearchResult {
   const [searchQuery, setSearchQuery] = useState("");
+  const { region: activeRegion } = useActiveRegion();
   const [searchResults, setSearchResults] = useState<ProductNode[]>([]);
   const [isPending, startTransition] = useTransition();
 
@@ -24,9 +26,9 @@ export function useProductSearch(): UseProductSearchResult {
 
     const timer = setTimeout(() => {
       startTransition(async () => {
-        const results = await searchProductsByKeyword(searchQuery);
+        const results = await searchProductsByKeyword(searchQuery, activeRegion);
         if (!cancelled) {
-          setSearchResults(results);
+          setSearchResults(results.products);
         }
       });
     }, 400);
@@ -35,7 +37,7 @@ export function useProductSearch(): UseProductSearchResult {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [searchQuery]);
+  }, [activeRegion, searchQuery]);
 
   return {
     searchQuery,
