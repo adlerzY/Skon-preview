@@ -2,7 +2,7 @@ import "server-only";
 import DOMPurify from "isomorphic-dompurify";
 import { parsePrice } from "./client";
 import { ProductNode, VariationCard } from "./types";
-import { regionsMatch } from "./regions";
+import { regionsMatch } from "../regions";
 
 export const sanitizeHtml = (html?: string | null): string | undefined => {
   if (!html) return html ?? undefined;
