@@ -17,7 +17,7 @@ interface SettingsData {
 export default function AdminAccountSettings({ initial }: { initial?: SettingsData }){
  const [data,setData]=useState<SettingsData|null>(initial ?? null),[error,setError]=useState("");
  useEffect(()=>{if(initial)return;fetch("/api/admin/account-settings",{cache:"no-store"}).then(async r=>{const body=await r.json();if(!r.ok)throw new Error(body?.error||"خطا در دریافت تنظیمات حساب");setData(body)}).catch(e=>setError(e instanceof Error?e.message:"خطا در دریافت تنظیمات حساب"))},[initial]);
- return <AdminPage className="max-w-[1080px]">
+ return <AdminPage className="max-w-none">
   <AdminPageIntro eyebrow="حساب مدیریت" title="تنظیمات پروفایل" description="اطلاعات حساب، امنیت و نشست‌ها را بدون خروج از پنل مدیریت کنترل کن."/>
   {error&&<div className="mb-4 rounded-[5px] border border-red-400/20 bg-red-500/5 p-4 text-xs text-red-300">{error}</div>}
   <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">

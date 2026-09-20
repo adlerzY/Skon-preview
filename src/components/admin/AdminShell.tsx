@@ -68,19 +68,19 @@ function AdminShellInner({ children }: { children: ReactNode }) {
       <AdminSidebar user={currentUser} permissions={permissions} isOpen={isSidebarOpen} isDesktop={isDesktop} onClose={closeSidebar} />
 
       <div className="flex-1 min-w-0 flex flex-col h-screen">
-        <div className="h-14 shrink-0 border-b border-brand-surface_hover flex items-center justify-between px-3 md:px-5 bg-brand-surface">
+        <div className="h-16 shrink-0 border-b border-brand-surface_hover flex items-center justify-between px-4 md:px-6 bg-brand-surface">
           <div className="flex items-center gap-2 min-w-0">
             <button type="button" onClick={toggleSidebar} className="text-brand-m_khonsa hover:text-white transition-colors p-2 shrink-0" aria-label="نمایش یا پنهان کردن منو" aria-expanded={isSidebarOpen}>
               <Menu size={20} />
             </button>
-            <span className="text-xs font-semibold text-white hidden sm:block">پنل مدیریت</span>
+            <span className="text-sm font-semibold text-white hidden sm:block">پنل مدیریت</span>
           </div>
           <div className="shrink-0">
             <AdminNotificationsBell />
           </div>
         </div>
 
-        <main className="flex-1 min-h-0 w-full p-3 md:p-5 pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-5 overflow-y-auto">
+        <main className="flex-1 min-h-0 w-full p-4 md:p-6 lg:p-7 overflow-y-auto">
           {children}
         </main>
       </div>

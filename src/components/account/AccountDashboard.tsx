@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, Package, LifeBuoy, MessageSquare } from "lucide-react";
+import { Package, LifeBuoy, MessageSquare } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
@@ -73,9 +73,6 @@ export default function AccountDashboard({
             <div className="flex flex-wrap gap-2 mt-1.5">
               <Link href="/my-account/settings" className="text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-1.5 transition-colors">
                 ویرایش پروفایل
-              </Link>
-              <Link href="/my-account/orders" className="text-xs font-bold text-brand-m_khonsa hover:text-white border border-brand-surface_hover hover:bg-brand-surface_hover px-3 py-1.5 transition-colors">
-                مشاهده سفارش‌ها
               </Link>
             </div>
           </div>

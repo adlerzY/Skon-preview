@@ -52,7 +52,7 @@ export default function AdminEngineClient({ initial }: { initial?: { health: Hea
     ["ورودی‌های حسابرسی", health.auditEntries, health.auditTableReady ? "جدول آماده" : "جدول ناقص"],
   ] as const : [], [health]);
 
-  return <AdminPage className="max-w-[1280px]">
+  return <AdminPage className="max-w-none">
     <AdminPageIntro eyebrow="فاز ۵ · موتور / سیستم" title="وضعیت موتور و زیرساخت" description="قیمت‌گذاری، نرخ ارز، زمان‌بندی، بازاعتبارسنجی، سلامت سیستم و کارهای ناموفق را از یک نقطه کنترل کن." action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />} />
     {(message || error) && <div className={`mb-4 rounded-[5px] border p-4 text-xs ${error ? "border-red-400/20 bg-red-500/5 text-red-200" : "border-emerald-400/20 bg-emerald-500/5 text-emerald-200"}`}>{error || message}</div>}
     {!health && loading ? <AdminEmpty title="در حال دریافت وضعیت موتور..." /> : !health ? <AdminEmpty title="وضعیت موتور در دسترس نیست." description={error || "دوباره بروزرسانی را بزن."} /> : <>

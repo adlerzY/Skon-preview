@@ -84,7 +84,7 @@ export default function DashboardSidebar({ avatarUrl, name, isStaff = false, isO
           <UserAvatar src={avatarUrl} name={name} size="lg" ring />
           {isStaff && <AdminBadge />}
           <span className="text-sm font-bold text-white truncate max-w-full">{name}</span>
-          <Link href="/" className="text-xs text-brand-m_khonsa hover:text-white flex items-center gap-1.5 transition-colors">
+          <Link href="/" className="text-sm font-medium text-brand-m_khonsa hover:text-white flex items-center gap-1.5 transition-colors">
             <ArrowRight size={14} />
             بازگشت به فروشگاه
           </Link>
