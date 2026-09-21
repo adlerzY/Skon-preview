@@ -128,6 +128,7 @@ export function useProductDelivery({
       productId,
       variationId: variationIdValue,
       name: productName,
+      imageUrl: selectedVariation.imageUrl?.trim() || undefined,
       price: currentPrice,
       regularPrice: regularPrice ?? undefined,
       deliveryMethod: deliveryType,

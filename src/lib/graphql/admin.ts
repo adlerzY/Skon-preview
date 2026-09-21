@@ -20,6 +20,7 @@ export const ADMIN_DASHBOARD_QUERY = `
     adminOpenTicketsCount
     pendingReviewsCount
     adminProcessingOrdersCount
+    adminPricingHealth { status apiConfigured apiHealthy apiStatus fallbackActive availableRates checkedAt }
     adminOpenTickets(first: $first) {
       id
       databaseId
@@ -36,6 +37,7 @@ export const ADMIN_DASHBOARD_SUMMARY_QUERY = `
     adminOpenTicketsCount
     pendingReviewsCount
     adminProcessingOrdersCount
+    adminPricingHealth { status apiConfigured apiHealthy apiStatus fallbackActive availableRates checkedAt }
   }
 `;
 

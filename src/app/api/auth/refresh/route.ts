@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
-import { REFRESH_TOKEN_MUTATION } from "@/lib/graphql/auth";
+import { REFRESH_TOKEN_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/graphql/auth";
 import {
   AUTH_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!refreshToken || !sessionId) {
-    const response = NextResponse.json({ error: "نشست شما منقضی شده، دوباره وارد شوید" }, { status: 401 });
+    const response = NextResponse.json({ code: "SESSION_EXPIRED", error: "نشست شما منقضی شده، دوباره وارد شوید" }, { status: 401 });
     setCooldown(response, FAILURE_COOLDOWN_SECONDS);
     clearAuthCookies(response);
     return response;
@@ -107,7 +107,25 @@ export async function POST(request: NextRequest) {
     const newToken = data?.refreshJwtAuthToken?.authToken;
 
     if (!newToken || !currentAuthToken) {
-      const response = NextResponse.json({ error: "امکان تمدید نشست وجود ندارد" }, { status: 401 });
+      const response = NextResponse.json({ code: "SESSION_REFRESH_FAILED", error: "امکان تمدید نشست وجود ندارد" }, { status: 401 });
+      setCooldown(response, FAILURE_COOLDOWN_SECONDS);
+      clearAuthCookies(response);
+      return response;
+    }
+
+    const touchData = await fetchGraphQL(
+      TOUCH_SESSION_MUTATION,
+      { sessionId },
+      [],
+      "no-store",
+      newToken,
+      sessionId,
+      undefined,
+      currentAuthToken,
+      { "X-BTL-Session-Refresh": "1" },
+    );
+    if (touchData?.touchSession?.success !== true) {
+      const response = NextResponse.json({ code: "SESSION_REFRESH_FAILED", error: "همگام‌سازی نشست انجام نشد؛ دوباره وارد شوید" }, { status: 401 });
       setCooldown(response, FAILURE_COOLDOWN_SECONDS);
       clearAuthCookies(response);
       return response;

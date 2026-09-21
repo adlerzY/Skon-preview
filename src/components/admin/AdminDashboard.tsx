@@ -8,11 +8,13 @@ import { useAdminContext } from "./AdminContext";
 
 export default function AdminDashboard({ initial }: { initial: {
   summary: { openTicketsCount: number; pendingReviewsCount: number; processingOrdersCount: number };
+  pricingHealth?: { status?: string; apiConfigured?: boolean; apiHealthy?: boolean; apiStatus?: string; fallbackActive?: boolean; availableRates?: number; checkedAt?: number } | null;
   tickets: Array<{ id: string; databaseId: number; title: string; date?: string; linkedOrderId?: number | null; customerName?: string | null }>;
 } }) {
   const { user, permissions } = useAdminContext();
   const [summary, setSummary] = useState(initial.summary);
   const [tickets, setTickets] = useState(initial.tickets);
+  const [pricingHealth, setPricingHealth] = useState(initial.pricingHealth ?? null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -32,6 +34,7 @@ export default function AdminDashboard({ initial }: { initial: {
         processingOrdersCount: Number(data?.summary?.processingOrdersCount ?? 0),
       });
       setTickets(Array.isArray(data?.tickets) ? data.tickets : []);
+      setPricingHealth(data?.pricingHealth ?? null);
     } catch {
       // Keep the last known dashboard state when refresh fails.
     } finally {
@@ -62,6 +65,21 @@ export default function AdminDashboard({ initial }: { initial: {
         {hasTickets ? <AdminStatCard label="تیکت‌های باز" value={dashboardLoading ? "—" : summary.openTicketsCount} helper="صف پشتیبانی" tone={summary.openTicketsCount ? "warning" : "default"} /> : null}
         {hasReviews ? <AdminStatCard label="دیدگاه‌های منتظر بررسی" value={dashboardLoading ? "—" : summary.pendingReviewsCount} helper="صف بررسی" tone={summary.pendingReviewsCount ? "warning" : "default"} /> : null}
       </div>
+
+      {pricingHealth ? <AdminCard className="mt-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-black text-white">وضعیت Pricing Engine</div>
+            <div className="mt-1 text-[10px] text-brand-m_khonsa">وضعیت منبع نرخ قبل از شروع عملیات قیمت‌گذاری.</div>
+          </div>
+          <HealthBadge status={pricingHealth.status} />
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <HealthMetric label="نرخ‌های آماده" value={`${Math.min(4, Number(pricingHealth.availableRates ?? 0))}/4`} />
+          <HealthMetric label="API" value={pricingHealth.apiConfigured ? (pricingHealth.apiHealthy ? "Healthy" : "Down") : "Manual"} />
+          <HealthMetric label="Fallback" value={pricingHealth.fallbackActive ? "Active" : "Inactive"} />
+        </div>
+      </AdminCard> : null}
 
       <div className="mt-3 grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
         <AdminCard className="overflow-hidden">
@@ -123,4 +141,21 @@ function ActionTile({ href, icon, value, title, detail }: { href: string; icon: 
       <div className="mt-1 text-[10px] text-brand-m_khonsa group-hover:text-white">{detail}</div>
     </Link>
   );
+}
+
+
+function HealthBadge({ status }: { status?: string }) {
+  const map: Record<string, { label: string; className: string }> = {
+    healthy: { label: "API Healthy", className: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20" },
+    partial: { label: "API Partial", className: "text-amber-300 bg-amber-400/10 border-amber-400/20" },
+    fallback: { label: "Fallback Active", className: "text-amber-300 bg-amber-400/10 border-amber-400/20" },
+    manual: { label: "Manual Pricing Mode", className: "text-brand-blue bg-brand-blue/10 border-brand-blue/20" },
+    failed: { label: "API Failed", className: "text-red-300 bg-red-400/10 border-red-400/20" },
+  };
+  const item = map[status ?? "failed"] ?? map.failed;
+  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black ${item.className}`}>{item.label}</span>;
+}
+
+function HealthMetric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-[5px] border border-white/[.06] bg-black/10 p-2.5"><div className="text-[9px] text-brand-m_khonsa">{label}</div><div className="mt-1 text-xs font-black text-white">{value}</div></div>;
 }

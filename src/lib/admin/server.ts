@@ -100,6 +100,7 @@ export async function getAdminDashboardWithContext(bootstrap: AdminBootstrap) {
       pendingReviewsCount: Number(data?.pendingReviewsCount ?? 0),
       processingOrdersCount: Number(data?.adminProcessingOrdersCount ?? 0),
     },
+    pricingHealth: data?.adminPricingHealth ?? null,
     tickets: includeTickets && Array.isArray(data?.adminOpenTickets) ? data.adminOpenTickets : [],
   };
 }

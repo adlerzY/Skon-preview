@@ -24,6 +24,7 @@ interface ProductStickyBarProps {
   onDeliverySelect?: (value: string) => void;
   price: number | null;
   regularPrice: number | null;
+  inventoryHint?: string | null;
   ctaLabel: string;
   ctaDisabled?: boolean;
   onCtaClick: () => void;
@@ -40,6 +41,7 @@ export default function ProductStickyBar({
   onDeliverySelect,
   price,
   regularPrice,
+  inventoryHint,
   ctaLabel,
   ctaDisabled = false,
   onCtaClick,
@@ -99,11 +101,21 @@ export default function ProductStickyBar({
         </div>
 
         <div className="flex items-center gap-2.5 md:gap-3 shrink-0">
-          {typeof price === "number" ? (
-            <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
-          ) : (
-            <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
-          )}
+          <div className="hidden md:flex items-center gap-2">
+            {inventoryHint ? <span className="text-[9px] font-black text-brand-zard whitespace-nowrap">{inventoryHint}</span> : null}
+            {typeof price === "number" ? (
+              <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
+            ) : (
+              <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
+            )}
+          </div>
+          <div className="md:hidden">
+            {typeof price === "number" ? (
+              <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
+            ) : (
+              <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={onCtaClick}

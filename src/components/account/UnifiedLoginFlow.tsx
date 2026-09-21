@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
+import { getClientCookie } from "@/lib/cookies";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
@@ -22,7 +25,33 @@ type Step =
   | { name: "admin-totp"; pendingTicket: string; requiresSetup: boolean };
 
 export default function UnifiedLoginFlow() {
+  const searchParams = useSearchParams();
+  const returnTo = useMemo(() => {
+    const value = searchParams.get("returnTo");
+    return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+  }, [searchParams]);
+  const shouldResumeCheckout = searchParams.get("resumeCheckout") === "1";
   const [step, setStep] = useState<Step>({ name: "phone" });
+
+  useEffect(() => {
+    if (!returnTo) return;
+    const target = returnTo;
+    const startedAt = Date.now();
+    let timer: number | null = null;
+    const check = () => {
+      if (getClientCookie(LOGGED_IN_COOKIE) === "1") {
+        const resumeUrl = target === "/cart" ? target + (target.includes("?") ? "&" : "?") + "resumeCheckout=1" : target;
+        window.location.assign(resumeUrl);
+        return;
+      }
+      if (Date.now() - startedAt >= 30_000) return;
+      timer = window.setTimeout(check, 350);
+    };
+    timer = window.setTimeout(check, 350);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [returnTo]);
 
   const handleAdminTotp = (pendingTicket: string, requiresSetup: boolean) => {
     setStep({ name: "admin-totp", pendingTicket, requiresSetup });
@@ -77,6 +106,12 @@ export default function UnifiedLoginFlow() {
         <div className="text-center flex flex-col gap-1">
           {title && <h1 className="text-xl font-black text-white">{title}</h1>}
           {subtitle && <p className="text-xs text-brand-m_khonsa leading-relaxed">{subtitle}</p>}
+        </div>
+      )}
+
+      {shouldResumeCheckout && returnTo === "/cart" && (
+        <div className="border border-brand-blue/20 bg-brand-blue/5 p-3 text-center text-xs leading-5 text-brand-active">
+          بعد از ورود، مستقیم به سبد خرید برمی‌گردید و می‌توانید پرداخت را ادامه دهید.
         </div>
       )}
 

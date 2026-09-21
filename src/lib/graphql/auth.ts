@@ -206,6 +206,31 @@ export const REFRESH_TOKEN_MUTATION = `
   }
 `;
 
+export const REVALIDATE_CUSTOMER_CART_MUTATION = `
+  mutation RevalidateCustomerCart($lineItems: [BtlOrderLineItemInput]!) {
+    revalidateCustomerCart(input: { lineItems: $lineItems }) {
+      result {
+        valid
+        changed
+        code
+        message
+        items {
+          index
+          productId
+          variationId
+          quantity
+          deliveryMethod
+          unitPrice
+          regularPrice
+          availableQuantity
+          status
+          message
+        }
+      }
+    }
+  }
+`;
+
 export const MY_REVIEWS_QUERY = `
   query GetMyReviews($after: String) {
     myReviews(first: 10, after: $after) {

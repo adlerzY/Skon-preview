@@ -16,6 +16,7 @@ export interface CartItem {
   productId: number;
   variationId?: number;
   name: string;
+  imageUrl?: string;
   price: number;
   regularPrice?: number;
   quantity: number;
@@ -49,7 +50,6 @@ function itemsMatch(a: NewCartItem, b: CartItem): boolean {
     a.deliveryMethod === b.deliveryMethod &&
     (a.region || "") === (b.region || "") &&
     (ac.email || "") === (bc.email || "") &&
-    (ac.password || "") === (bc.password || "") &&
     (ac.battleTag || "") === (bc.battleTag || "")
   );
 }
@@ -89,6 +89,7 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   updateCredentials: (id: string, credentials: NonNullable<CartItem["customFields"]>) => void;
+  updateItemSnapshot: (id: string, snapshot: { price?: number; regularPrice?: number; maxQuantity?: number | null }) => void;
   clearCart: () => void;
   clearSensitiveCredentials: () => void;
   totalPrice: number;
@@ -221,6 +222,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     []
   );
 
+  const updateItemSnapshot = useCallback((id: string, snapshot: { price?: number; regularPrice?: number; maxQuantity?: number | null }) => {
+    setCart((prev) => prev.map((item) => {
+      if (item.id !== id) return item;
+      return {
+        ...item,
+        ...(typeof snapshot.price === "number" ? { price: snapshot.price } : {}),
+        ...(typeof snapshot.regularPrice === "number" ? { regularPrice: snapshot.regularPrice } : {}),
+        ...(snapshot.maxQuantity === null ? { maxQuantity: undefined } : typeof snapshot.maxQuantity === "number" ? { maxQuantity: snapshot.maxQuantity } : {}),
+      };
+    }));
+  }, []);
+
   const clearSensitiveCredentials = useCallback(() => {
     cartRef.current.forEach((item) => removeCredentials(item.id));
     setCart((prev) => prev.map((item) => ({ ...item, customFields: undefined })));
@@ -250,6 +263,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeFromCart,
         updateQuantity,
         updateCredentials,
+        updateItemSnapshot,
         clearCart,
         clearSensitiveCredentials,
         totalPrice,

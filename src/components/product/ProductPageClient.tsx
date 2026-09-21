@@ -153,11 +153,19 @@ export default function ProductPageClient({
         accGiftRegular = typeof mv.parsedGiftRegularPrice === "number" ? mv.parsedGiftRegularPrice : mv.parsedGiftPrice;
         variationIdsByDelivery.gift = mv.databaseId;
       }
-      if (typeof mv.parsedCodePrice === "number" && (accCode === "disabled" || mv.parsedCodePrice < (accCode as number))) {
-        accCode = mv.parsedCodePrice;
-        accCodeRegular = typeof mv.parsedCodeRegularPrice === "number" ? mv.parsedCodeRegularPrice : mv.parsedCodePrice;
-        accCodeStock = mv.codeStockCount;
-        variationIdsByDelivery.code = mv.databaseId;
+      if (typeof mv.parsedCodePrice === "number") {
+        const currentViable = typeof accCodeStock === "number" && accCodeStock > 0;
+        const candidateViable = typeof mv.codeStockCount === "number" && mv.codeStockCount > 0;
+        const shouldReplace =
+          accCode === "disabled" ||
+          (candidateViable && !currentViable) ||
+          (candidateViable === currentViable && mv.parsedCodePrice < (accCode as number));
+        if (shouldReplace) {
+          accCode = mv.parsedCodePrice;
+          accCodeRegular = typeof mv.parsedCodeRegularPrice === "number" ? mv.parsedCodeRegularPrice : mv.parsedCodePrice;
+          accCodeStock = mv.codeStockCount;
+          variationIdsByDelivery.code = mv.databaseId;
+        }
       }
 
       const comboText = mv.attributes?.map((a) => a.value.toLowerCase()).join(" ") ?? "";
@@ -166,11 +174,19 @@ export default function ProductPageClient({
         accGiftRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
         variationIdsByDelivery.gift = mv.databaseId;
       }
-      if ((comboText.includes("کد") || comboText.includes("code")) && mv.parsedPrice != null && accCode === "disabled") {
-        accCode = mv.parsedPrice;
-        accCodeRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
-        accCodeStock = mv.codeStockCount;
-        variationIdsByDelivery.code = mv.databaseId;
+      if ((comboText.includes("کد") || comboText.includes("code")) && mv.parsedPrice != null) {
+        const currentViable = typeof accCodeStock === "number" && accCodeStock > 0;
+        const candidateViable = typeof mv.codeStockCount === "number" && mv.codeStockCount > 0;
+        const shouldReplace =
+          accCode === "disabled" ||
+          (candidateViable && !currentViable) ||
+          (candidateViable === currentViable && mv.parsedPrice < (accCode as number));
+        if (shouldReplace) {
+          accCode = mv.parsedPrice;
+          accCodeRegular = mv.parsedRegularPrice ?? mv.parsedPrice;
+          accCodeStock = mv.codeStockCount;
+          variationIdsByDelivery.code = mv.databaseId;
+        }
       }
     }
 
@@ -336,6 +352,11 @@ export default function ProductPageClient({
         onDeliverySelect={(value) => purchase.setDeliveryType(value as DeliveryType)}
         price={purchase.currentPrice}
         regularPrice={purchase.regularPrice}
+        inventoryHint={
+          purchase.deliveryType === "code" && typeof combinedAggregateVar.codeStockCount === "number" && combinedAggregateVar.codeStockCount > 0 && combinedAggregateVar.codeStockCount <= 5
+            ? `فقط ${combinedAggregateVar.codeStockCount.toLocaleString("fa-IR")} عدد باقی مانده`
+            : null
+        }
         ctaLabel={stickyCtaLabel}
         ctaDisabled={purchase.isAddingToCart || purchase.isCartFull}
         onCtaClick={handleStickyCta}

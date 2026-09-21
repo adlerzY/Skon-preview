@@ -13,6 +13,7 @@ const INTERNAL_WP_GRAPHQL_URL = process.env.INTERNAL_WORDPRESS_API_URL;
 const FALLBACK_PROD_URL = "https://api.arena2battle.com/graphql";
 const REFRESH_TIMEOUT_MS = 6_000;
 const REFRESH_SUCCESS_COOLDOWN_SECONDS = 90;
+const REFRESH_FAILURE_COOLDOWN_SECONDS = 45;
 
 const PUBLIC_GRAPHQL_HOST = (() => {
   try {
@@ -58,6 +59,42 @@ function cooldownActive(value: string | undefined): boolean {
   return Number.isFinite(until) && until > Math.floor(Date.now() / 1000);
 }
 
+async function touchSessionBinding(
+  newToken: string,
+  previousAuthToken: string,
+  sessionId: string
+): Promise<boolean> {
+  const { url, hostHeader } = resolveEndpoint();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${newToken}`,
+        "X-BTL-Session-ID": sessionId,
+        "X-BTL-Session-Refresh": "1",
+        "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
+        ...(hostHeader ? { Host: hostHeader } : {}),
+      },
+      body: JSON.stringify({
+        query: "mutation TouchSession($sessionId:String!){touchSession(input:{sessionId:$sessionId}){success}}",
+        variables: { sessionId },
+      }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) return false;
+    const json = await res.json().catch(() => null);
+    return json?.data?.touchSession?.success === true && !json?.errors?.length;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function refreshAuthToken(
   refreshToken: string,
   sessionId: string,
@@ -92,7 +129,9 @@ async function refreshAuthToken(
       if (!res.ok) return null;
       const json = await res.json().catch(() => null);
       const token = json?.data?.refreshJwtAuthToken?.authToken;
-      return typeof token === "string" && token ? token : null;
+      if (typeof token !== "string" || !token || json?.errors?.length) return null;
+      if (!(await touchSessionBinding(token, previousAuthToken, sessionId))) return null;
+      return token;
     } catch {
       return null;
     } finally {
@@ -108,7 +147,7 @@ async function refreshAuthToken(
   }
 }
 
-type RefreshOutcome = { token: string | null; cooldownSeconds: number };
+type RefreshOutcome = { token: string | null; cooldownSeconds: number; failed: boolean };
 
 async function applyAuthRefresh(request: NextRequest): Promise<RefreshOutcome> {
   const authToken = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
@@ -117,7 +156,7 @@ async function applyAuthRefresh(request: NextRequest): Promise<RefreshOutcome> {
   const cooldown = request.cookies.get(REFRESH_COOLDOWN_COOKIE)?.value;
 
   if (!authToken || !refreshToken || !sessionId || !needsRefresh(authToken) || cooldownActive(cooldown)) {
-    return { token: null, cooldownSeconds: 0 };
+    return { token: null, cooldownSeconds: 0, failed: false };
   }
 
   const newToken = await refreshAuthToken(refreshToken, sessionId, authToken);
@@ -126,7 +165,8 @@ async function applyAuthRefresh(request: NextRequest): Promise<RefreshOutcome> {
   }
   return {
     token: newToken,
-    cooldownSeconds: newToken ? REFRESH_SUCCESS_COOLDOWN_SECONDS : 45,
+    cooldownSeconds: newToken ? REFRESH_SUCCESS_COOLDOWN_SECONDS : REFRESH_FAILURE_COOLDOWN_SECONDS,
+    failed: !newToken,
   };
 }
 
@@ -175,10 +215,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const refreshed = hasAuthToken ? await applyAuthRefresh(request) : { token: null, cooldownSeconds: 0 };
+  const refreshed = hasAuthToken ? await applyAuthRefresh(request) : { token: null, cooldownSeconds: 0, failed: false };
 
   if (pathname.startsWith("/api")) {
-    const response = NextResponse.next({ request });
+    const forwardedHeaders = new Headers(request.headers);
+    if (refreshed.failed) {
+      forwardedHeaders.set("x-a2b-session-refresh-failed", "1");
+    }
+    const response = NextResponse.next({ request: { headers: forwardedHeaders } });
     return finalizeAuthCookie(response, refreshed);
   }
 
