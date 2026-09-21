@@ -18,7 +18,7 @@ export default function ProductGrid({ products, title, activeRegion }: ProductGr
   }
 
   return (
-    <section className="cv-auto w-full my-4 overflow-hidden" style={{ contain: "layout paint" }}>
+    <section className="w-full my-4 overflow-hidden">
       <div className="flex items-center justify-between mt-5 mb-5">
         <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
           {title}
