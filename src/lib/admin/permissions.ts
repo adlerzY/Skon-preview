@@ -6,23 +6,9 @@ export const ADMIN_PERMISSIONS = {
   TICKETS_WRITE: "tickets.write",
   TICKETS_CLAIM: "tickets.claim",
   REVIEWS_MODERATE: "reviews.moderate",
-  USERS_READ: "users.read",
-  USERS_WRITE: "users.write",
-  USERS_VERIFY: "users.verify",
   CDKEYS_READ: "cdkeys.read",
   CDKEYS_WRITE: "cdkeys.write",
   CDKEYS_REVEAL: "cdkeys.reveal",
-  GOLD_READ: "gold.read",
-  GOLD_WRITE: "gold.write",
-  GOLD_CLAIM: "gold.claim",
-  GOLD_PAYOUT: "gold.payout",
-  PRICING_READ: "pricing.read",
-  PRICING_WRITE: "pricing.write",
-  ENGINE_SCHEDULER: "engine.scheduler",
-  ENGINE_RATES: "engine.rates",
-  ENGINE_REVALIDATION: "engine.revalidation",
-  SETTINGS_MANAGE: "settings.manage",
-  AUDIT_READ: "audit.read",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];

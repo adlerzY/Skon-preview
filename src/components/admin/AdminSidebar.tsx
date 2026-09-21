@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import * as React from "react";
 import { usePathname } from "next/navigation";
-import { ArrowRight, ChevronDown, Activity, ClipboardList, FileText, LayoutDashboard, LifeBuoy, LogOut, Package, ShieldCheck, ShoppingCart, UserCog, Users, X } from "lucide-react";
+import { ArrowRight, ClipboardList, LayoutDashboard, LifeBuoy, LogOut, UserCog, ShieldCheck, ShoppingCart, X } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/admin/permissions";
 import { useLogout } from "@/lib/hooks/useLogout";
@@ -21,47 +20,25 @@ type AdminNavItem = {
   label: string;
   icon: typeof LayoutDashboard;
   permission?: AdminPermission;
-  anyPermissions?: AdminPermission[];
   exact?: boolean;
 };
 
-const PRIMARY_ITEMS: AdminNavItem[] = [
+const NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin", label: "پیشخوان", icon: LayoutDashboard, exact: true },
   { href: "/admin/orders", label: "سفارش‌ها", icon: ShoppingCart, permission: ADMIN_PERMISSIONS.ORDERS_READ },
   { href: "/admin/tickets", label: "تیکت‌ها", icon: LifeBuoy, permission: ADMIN_PERMISSIONS.TICKETS_READ },
-  { href: "/admin/customers", label: "مشتریان", icon: Users, permission: ADMIN_PERMISSIONS.USERS_READ },
+  { href: "/admin/cdkeys", label: "CD Keyها", icon: ShieldCheck, permission: ADMIN_PERMISSIONS.CDKEYS_READ },
   { href: "/admin/reviews", label: "دیدگاه‌ها", icon: ClipboardList, permission: ADMIN_PERMISSIONS.REVIEWS_MODERATE },
 ];
 
-const TOOL_ITEMS: AdminNavItem[] = [
-  { href: "/admin/cdkeys", label: "CD Keyها", icon: ShieldCheck, permission: ADMIN_PERMISSIONS.CDKEYS_READ },
-  { href: "/admin/gold", label: "تابلوی طلا", icon: Activity, permission: ADMIN_PERMISSIONS.GOLD_READ },
-  {
-    href: "/admin/engine",
-    label: "موتور فروش",
-    icon: Package,
-    anyPermissions: [ADMIN_PERMISSIONS.PRICING_READ, ADMIN_PERMISSIONS.ENGINE_SCHEDULER, ADMIN_PERMISSIONS.ENGINE_RATES, ADMIN_PERMISSIONS.ENGINE_REVALIDATION],
-  },
-  { href: "/admin/audit", label: "گزارش رویدادها", icon: FileText, permission: ADMIN_PERMISSIONS.AUDIT_READ },
-];
-
 function canSee(item: AdminNavItem, permissions: string[]) {
-  if (item.permission) return permissions.includes(item.permission);
-  if (item.anyPermissions?.length) return item.anyPermissions.some((permission) => permissions.includes(permission));
-  return true;
+  return !item.permission || permissions.includes(item.permission);
 }
 
 export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onClose }: Props) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
-  const primaryItems = PRIMARY_ITEMS.filter((item) => canSee(item, permissions));
-  const toolItems = TOOL_ITEMS.filter((item) => canSee(item, permissions));
-  const toolIsActive = toolItems.some((item) => pathname === item.href || pathname?.startsWith(`${item.href}/`));
-  const [toolsOpen, setToolsOpen] = React.useState(toolIsActive);
-
-  React.useEffect(() => {
-    if (toolIsActive) setToolsOpen(true);
-  }, [toolIsActive]);
+  const items = NAV_ITEMS.filter((item) => canSee(item, permissions));
 
   const containerClasses = isDesktop
     ? `shrink-0 h-screen bg-brand-surface border-l border-brand-surface_hover overflow-hidden transition-[width] duration-200 ease-out ${isOpen ? "w-[260px]" : "w-0"}`
@@ -83,26 +60,7 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
         </div>
 
         <nav className="flex flex-col flex-1 overflow-y-auto py-2">
-          {primaryItems.map((item) => <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} />)}
-
-          {toolItems.length > 0 && (
-            <div className="mt-2 border-t border-white/[.04] pt-2">
-              <button
-                type="button"
-                onClick={() => setToolsOpen((current) => !current)}
-                className={`flex w-full items-center justify-between px-4 py-3 text-sm font-medium transition-colors ${toolIsActive ? "text-white" : "text-brand-m_khonsa hover:text-white"}`}
-                aria-expanded={toolsOpen}
-              >
-                <span className="flex items-center gap-2"><Package size={15} /> ابزارها</span>
-                <ChevronDown size={14} className={`transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
-              </button>
-              {toolsOpen && (
-                <div className="space-y-0.5 pb-1">
-                  {toolItems.map((item) => <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} compact />)}
-                </div>
-              )}
-            </div>
-          )}
+          {items.map((item) => <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} />)}
 
           <div className="mt-auto border-t border-brand-surface_hover pt-2">
             <Link href="/admin/settings" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
@@ -121,7 +79,7 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
   );
 }
 
-function NavLink({ item, pathname, isDesktop, onClose, compact = false }: { item: AdminNavItem; pathname: string | null; isDesktop: boolean; onClose: () => void; compact?: boolean }) {
+function NavLink({ item, pathname, isDesktop, onClose }: { item: AdminNavItem; pathname: string | null; isDesktop: boolean; onClose: () => void }) {
   const active = item.exact ? pathname === item.href : pathname === item.href || pathname?.startsWith(`${item.href}/`);
   const Icon = item.icon;
   return (
@@ -129,9 +87,9 @@ function NavLink({ item, pathname, isDesktop, onClose, compact = false }: { item
       prefetch={false}
       href={item.href}
       onClick={!isDesktop ? onClose : undefined}
-      className={`flex items-center gap-3 mx-2 border-r-2 transition-colors ${compact ? "px-3 py-2.5 text-xs" : "px-3 py-3 text-sm"} ${active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/[.03]"}`}
+      className={`flex items-center gap-3 mx-2 border-r-2 px-3 py-3 text-sm transition-colors ${active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/[.03]"}`}
     >
-      <Icon size={compact ? 17 : 19} strokeWidth={2.25} />
+      <Icon size={19} strokeWidth={2.25} />
       {item.label}
     </Link>
   );

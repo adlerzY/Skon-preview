@@ -15,17 +15,11 @@ export const ADMIN_BOOTSTRAP_QUERY = `
   }
 `;
 
-export const ADMIN_DASHBOARD_SUMMARY_QUERY = `
-  query GetAdminDashboardSummary {
+export const ADMIN_DASHBOARD_QUERY = `
+  query GetAdminDashboard($first: Int) {
     adminOpenTicketsCount
     pendingReviewsCount
     adminProcessingOrdersCount
-    adminUnreadNotificationsCount
-  }
-`;
-
-export const ADMIN_OPEN_TICKETS_QUERY = `
-  query GetAdminOpenTickets($first: Int) {
     adminOpenTickets(first: $first) {
       id
       databaseId
@@ -34,6 +28,14 @@ export const ADMIN_OPEN_TICKETS_QUERY = `
       linkedOrderId
       customerName
     }
+  }
+`;
+
+export const ADMIN_DASHBOARD_SUMMARY_QUERY = `
+  query GetAdminDashboardSummary {
+    adminOpenTicketsCount
+    pendingReviewsCount
+    adminProcessingOrdersCount
   }
 `;
 
@@ -133,25 +135,6 @@ export const ADMIN_REASSIGN_TICKET_MUTATION = `
   }
 `;
 
-export const ADMIN_CUSTOMERS_QUERY = `
-  query GetAdminCustomers($first: Int, $after: String, $search: String) {
-    adminCustomers(first: $first, after: $after, search: $search) {
-      pageInfo { hasNextPage endCursor }
-      nodes { databaseId name email registeredAt isStaff ordersCount ticketsCount reviewsCount }
-    }
-  }
-`;
-
-export const ADMIN_CUSTOMER_QUERY = `
-  query GetAdminCustomer($id: Int!) {
-    adminCustomer(id: $id) {
-      customer { databaseId name email registeredAt isStaff ordersCount ticketsCount reviewsCount }
-      orders { databaseId orderNumber status paymentStatus fulfillmentStatus total currency date customerId customerName customerEmail }
-      tickets { databaseId title date status priority customerId customerName customerEmail linkedOrderId assigneeId assigneeName claimExpiresAt }
-      reviews { databaseId content rating date approved productId productName productSlug }
-    }
-  }
-`;
 
 export const ADMIN_REVIEWS_QUERY = `
   query GetAdminReviews($first: Int, $after: String, $state: String) {

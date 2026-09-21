@@ -2,76 +2,48 @@
 
 import Link from "next/link";
 import { AlertCircle, ClipboardCheck, LifeBuoy, ShoppingCart, ArrowLeft } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { AdminCard, AdminEmpty, AdminPage, AdminPageIntro, AdminRefreshButton, AdminStatCard } from "./AdminUi";
 import { useAdminContext } from "./AdminContext";
 
-export default function AdminDashboard() {
-  const { user, permissions, summary: bootstrapSummary, loading, refresh } = useAdminContext();
-  const [summary, setSummary] = useState(bootstrapSummary);
-  const [tickets, setTickets] = useState<Array<{
-    id: string;
-    databaseId: number;
-    title: string;
-    date?: string;
-    linkedOrderId?: number | null;
-    customerName?: string | null;
-  }>>([]);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
+export default function AdminDashboard({ initial }: { initial: {
+  summary: { openTicketsCount: number; pendingReviewsCount: number; processingOrdersCount: number };
+  tickets: Array<{ id: string; databaseId: number; title: string; date?: string; linkedOrderId?: number | null; customerName?: string | null }>;
+} }) {
+  const { user, permissions } = useAdminContext();
+  const [summary, setSummary] = useState(initial.summary);
+  const [tickets, setTickets] = useState(initial.tickets);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const hasTickets = permissions.includes("tickets.read");
   const hasReviews = permissions.includes("reviews.moderate");
   const hasOrders = permissions.includes("orders.read");
 
-  const loadSummary = useCallback(async () => {
+  const refreshDashboard = useCallback(async () => {
+    setDashboardLoading(true);
     try {
-      const response = await fetch("/api/admin/dashboard/summary", { cache: "no-store", credentials: "same-origin" });
-      if (!response.ok) throw new Error("summary_failed");
+      const response = await fetch("/api/admin/dashboard", { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok) throw new Error("dashboard_failed");
       const data = await response.json();
       setSummary({
-        openTicketsCount: Number(data?.summary?.openTicketsCount ?? data?.openTicketsCount ?? 0),
-        pendingReviewsCount: Number(data?.summary?.pendingReviewsCount ?? data?.pendingReviewsCount ?? 0),
-        processingOrdersCount: Number(data?.summary?.processingOrdersCount ?? data?.processingOrdersCount ?? 0),
-        unreadNotificationsCount: Number(data?.summary?.unreadNotificationsCount ?? data?.unreadNotificationsCount ?? 0),
+        openTicketsCount: Number(data?.summary?.openTicketsCount ?? 0),
+        pendingReviewsCount: Number(data?.summary?.pendingReviewsCount ?? 0),
+        processingOrdersCount: Number(data?.summary?.processingOrdersCount ?? 0),
       });
+      setTickets(Array.isArray(data?.tickets) ? data.tickets : []);
     } catch {
-      setSummary({ openTicketsCount: 0, pendingReviewsCount: 0, processingOrdersCount: 0, unreadNotificationsCount: 0 });
+      // Keep the last known dashboard state when refresh fails.
+    } finally {
+      setDashboardLoading(false);
     }
   }, []);
 
-  const loadTickets = useCallback(async () => {
-    if (!hasTickets) {
-      setTickets([]);
-      return;
-    }
-    try {
-      const response = await fetch("/api/admin/dashboard/tickets", { cache: "no-store", credentials: "same-origin" });
-      if (!response.ok) throw new Error("tickets_failed");
-      const data = await response.json();
-      setTickets(Array.isArray(data?.tickets) ? data.tickets : []);
-    } catch {
-      setTickets([]);
-    }
-  }, [hasTickets]);
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      await Promise.all([loadSummary(), loadTickets()]);
-      if (active) setDashboardLoading(false);
-    })();
-    return () => { active = false; };
-  }, [loadSummary, loadTickets]);
-
   const handleRefresh = async () => {
     setRefreshing(true);
-    setDashboardLoading(true);
     try {
-      await refresh();
-      await Promise.all([loadSummary(), loadTickets()]);
+      await refreshDashboard();
     } finally {
-      setDashboardLoading(false);
       setRefreshing(false);
     }
   };
@@ -86,9 +58,9 @@ export default function AdminDashboard() {
       />
 
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {hasOrders ? <AdminStatCard label="سفارش‌های در حال پردازش" value={loading || dashboardLoading ? "—" : summary.processingOrdersCount} helper="نیازمند پیگیری" tone="info" /> : null}
-        {hasTickets ? <AdminStatCard label="تیکت‌های باز" value={loading || dashboardLoading ? "—" : summary.openTicketsCount} helper="صف پشتیبانی" tone={summary.openTicketsCount ? "warning" : "default"} /> : null}
-        {hasReviews ? <AdminStatCard label="دیدگاه‌های منتظر بررسی" value={loading || dashboardLoading ? "—" : summary.pendingReviewsCount} helper="صف بررسی" tone={summary.pendingReviewsCount ? "warning" : "default"} /> : null}
+        {hasOrders ? <AdminStatCard label="سفارش‌های در حال پردازش" value={dashboardLoading ? "—" : summary.processingOrdersCount} helper="نیازمند پیگیری" tone="info" /> : null}
+        {hasTickets ? <AdminStatCard label="تیکت‌های باز" value={dashboardLoading ? "—" : summary.openTicketsCount} helper="صف پشتیبانی" tone={summary.openTicketsCount ? "warning" : "default"} /> : null}
+        {hasReviews ? <AdminStatCard label="دیدگاه‌های منتظر بررسی" value={dashboardLoading ? "—" : summary.pendingReviewsCount} helper="صف بررسی" tone={summary.pendingReviewsCount ? "warning" : "default"} /> : null}
       </div>
 
       <div className="mt-3 grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
@@ -112,7 +84,7 @@ export default function AdminDashboard() {
             <div className="mt-1 text-[10px] text-brand-m_khonsa">فقط چند مورد اخیر برای تصمیم سریع.</div>
           </div>
           {tickets.length === 0 ? (
-            <AdminEmpty title={loading ? "در حال دریافت اطلاعات…" : "تیکت بازی وجود ندارد."} />
+            <AdminEmpty title={dashboardLoading ? "در حال دریافت اطلاعات…" : "تیکت بازی وجود ندارد."} />
           ) : (
             <div>
               {tickets.slice(0, 5).map((ticket) => (

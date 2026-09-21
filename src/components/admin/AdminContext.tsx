@@ -11,42 +11,17 @@ interface AdminUser {
   avatarUrl: string | null;
 }
 
-export interface AdminSummary {
-  openTicketsCount: number;
-  pendingReviewsCount: number;
-  processingOrdersCount: number;
-  unreadNotificationsCount: number;
-}
-
 export interface AdminContextValue {
   loading: boolean;
   user: AdminUser | null;
   permissions: string[];
-  summary: AdminSummary;
-  tickets: Array<{
-    id: string;
-    databaseId: number;
-    title: string;
-    date?: string;
-    linkedOrderId?: number | null;
-    customerName?: string | null;
-  }>;
   refresh: () => Promise<void>;
 }
-
-const EMPTY_SUMMARY: AdminSummary = {
-  openTicketsCount: 0,
-  pendingReviewsCount: 0,
-  processingOrdersCount: 0,
-  unreadNotificationsCount: 0,
-};
 
 const Context = createContext<AdminContextValue>({
   loading: true,
   user: null,
   permissions: [],
-  summary: EMPTY_SUMMARY,
-  tickets: [],
   refresh: async () => {},
 });
 
@@ -56,18 +31,9 @@ export function AdminContextProvider({ children, initialContext }: { children: R
 } }) {
   const router = useRouter();
   const [state, setState] = useState<Omit<AdminContextValue, "refresh">>({
-    loading: true,
-    user: null,
-    permissions: [],
-    summary: EMPTY_SUMMARY,
-    tickets: [],
-    ...(initialContext ? {
-      loading: false,
-      user: initialContext.user,
-      permissions: initialContext.permissions,
-      summary: EMPTY_SUMMARY,
-      tickets: [],
-    } : {}),
+    loading: !initialContext,
+    user: initialContext?.user ?? null,
+    permissions: initialContext?.permissions ?? [],
   });
 
   const refresh = useCallback(async () => {
@@ -89,17 +55,16 @@ export function AdminContextProvider({ children, initialContext }: { children: R
         loading: false,
         user: data?.user ?? null,
         permissions: Array.isArray(data?.permissions) ? data.permissions : [],
-        summary: EMPTY_SUMMARY,
-        tickets: [],
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setState((current) => ({ ...current, loading: false }));
     }
-
   }, [router]);
 
-  useEffect(() => { if (!initialContext) void refresh(); }, [initialContext, refresh]);
+  useEffect(() => {
+    if (!initialContext) void refresh();
+  }, [initialContext, refresh]);
 
   const value = useMemo<AdminContextValue>(() => ({ ...state, refresh }), [state, refresh]);
   return <Context.Provider value={value}>{children}</Context.Provider>;

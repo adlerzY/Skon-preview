@@ -6,8 +6,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import {
   ADMIN_BOOTSTRAP_QUERY,
   ADMIN_CLAIM_TICKET_MUTATION,
-  ADMIN_CUSTOMER_QUERY,
-  ADMIN_CUSTOMERS_QUERY,
+  ADMIN_DASHBOARD_QUERY,
   ADMIN_DASHBOARD_SUMMARY_QUERY,
   ADMIN_MODERATE_REVIEW_MUTATION,
   ADMIN_NOTIFICATIONS_QUERY,
@@ -25,7 +24,6 @@ import {
   ADMIN_TICKET_QUERY,
   ADMIN_TICKETS_QUERY,
   ADMIN_STAFF_USERS_QUERY,
-  ADMIN_OPEN_TICKETS_QUERY,
   ADMIN_CDKEY_STOCK_QUERY,
   ADMIN_IMPORT_CDKEYS_MUTATION,
   ADMIN_ASSIGN_CDKEYS_MUTATION,
@@ -82,25 +80,33 @@ export const getAdminBootstrap = cache(async (): Promise<AdminBootstrap> => {
   };
 });
 
-export async function getAdminOpenTickets(first = 6) {
-  await requireAdmin("tickets.read");
-  const data = await adminFetch(ADMIN_OPEN_TICKETS_QUERY, { first: Math.min(Math.max(first, 1), 20) });
-  return Array.isArray(data?.adminOpenTickets) ? data.adminOpenTickets : [];
-}
 
-export async function getAdminSummary() {
-  const user = await getCurrentAdminUser();
-  if (!user?.isStaff) return null;
-  const data = await adminFetch(ADMIN_DASHBOARD_SUMMARY_QUERY);
+
+
+
+export async function getAdminDashboardWithContext(bootstrap: AdminBootstrap) {
+  if (!bootstrap?.user?.id) redirect("/admin-login");
+
+  const includeTickets = bootstrap.permissions.includes("tickets.read");
+  const data = await adminFetch(
+    includeTickets ? ADMIN_DASHBOARD_QUERY : ADMIN_DASHBOARD_SUMMARY_QUERY,
+    includeTickets ? { first: 6 } : {},
+  );
+
   return {
-    openTicketsCount: Number(data?.adminOpenTicketsCount ?? 0),
-    pendingReviewsCount: Number(data?.pendingReviewsCount ?? 0),
-    processingOrdersCount: Number(data?.adminProcessingOrdersCount ?? 0),
-    unreadNotificationsCount: Number(data?.adminUnreadNotificationsCount ?? 0),
+    summary: {
+      openTicketsCount: Number(data?.adminOpenTicketsCount ?? 0),
+      pendingReviewsCount: Number(data?.pendingReviewsCount ?? 0),
+      processingOrdersCount: Number(data?.adminProcessingOrdersCount ?? 0),
+    },
+    tickets: includeTickets && Array.isArray(data?.adminOpenTickets) ? data.adminOpenTickets : [],
   };
 }
 
-
+export async function getAdminDashboard() {
+  const bootstrap = await getAdminBootstrap();
+  return getAdminDashboardWithContext(bootstrap);
+}
 
 function assertAdminBootstrapPermission(bootstrap: AdminBootstrap, permission?: AdminPermission): void {
   if (!bootstrap?.user?.id) redirect("/admin-login");
@@ -131,17 +137,6 @@ export async function getAdminTicketWithContext(bootstrap: AdminBootstrap, id: n
   return data?.adminTicket ?? null;
 }
 
-export async function getAdminCustomersWithContext(bootstrap: AdminBootstrap, variables: Record<string, unknown> = {}) {
-  assertAdminBootstrapPermission(bootstrap, "users.read");
-  const data = await adminFetch(ADMIN_CUSTOMERS_QUERY, { first: 20, ...variables });
-  return data?.adminCustomers ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
-}
-
-export async function getAdminCustomerWithContext(bootstrap: AdminBootstrap, id: number) {
-  assertAdminBootstrapPermission(bootstrap, "users.read");
-  const data = await adminFetch(ADMIN_CUSTOMER_QUERY, { id });
-  return data?.adminCustomer ?? null;
-}
 
 export async function getAdminReviewsWithContext(bootstrap: AdminBootstrap, variables: Record<string, unknown> = {}) {
   assertAdminBootstrapPermission(bootstrap, "reviews.moderate");
@@ -183,17 +178,6 @@ export async function getAdminTicket(id: number) {
   return data?.adminTicket ?? null;
 }
 
-export async function getAdminCustomers(variables: Record<string, unknown> = {}) {
-  await requireAdmin("users.read");
-  const data = await adminFetch(ADMIN_CUSTOMERS_QUERY, { first: 20, ...variables });
-  return data?.adminCustomers ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
-}
-
-export async function getAdminCustomer(id: number) {
-  await requireAdmin("users.read");
-  const data = await adminFetch(ADMIN_CUSTOMER_QUERY, { id });
-  return data?.adminCustomer ?? null;
-}
 
 export async function getAdminReviews(variables: Record<string, unknown> = {}) {
   await requireAdmin("reviews.moderate");

@@ -78,25 +78,6 @@ export const DASHBOARD_SUMMARY_QUERY = `
   }
 `;
 
-export const ADMIN_DASHBOARD_SUMMARY_QUERY = `
-  query GetAdminDashboardSummary {
-    adminOpenTicketsCount
-    pendingReviewsCount
-  }
-`;
-
-export const ADMIN_OPEN_TICKETS_QUERY = `
-  query GetAdminOpenTickets($first: Int) {
-    adminOpenTickets(first: $first) {
-      id
-      databaseId
-      title
-      date
-      linkedOrderId
-      customerName
-    }
-  }
-`;
 
 export const CREATE_ORDER_MUTATION = `
   mutation CreateStoreOrder(
