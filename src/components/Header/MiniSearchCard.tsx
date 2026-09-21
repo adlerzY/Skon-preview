@@ -9,11 +9,10 @@ export default function MiniSearchCard({ product, activeRegion }: { product: Pro
   const categorySlug = category?.slug || "uncategorized";
   const region = activeRegion || DEFAULT_REGION;
 
-  const isOnSale = Boolean(
-    product.parsedRegularPrice &&
-    product.parsedPrice &&
-    product.parsedRegularPrice > product.parsedPrice
-  );
+  const isOnSale =
+    product.parsedRegularPrice != null &&
+    product.parsedPrice != null &&
+    product.parsedRegularPrice > product.parsedPrice;
 
   return (
     <Link
@@ -49,9 +48,11 @@ export default function MiniSearchCard({ product, activeRegion }: { product: Pro
         <h4 className="text-white text-[14px] truncate group-hover:text-brand-blue transition-colors">
           {product.name}
         </h4>
-        {product.parsedPrice ? (
+        {product.parsedPrice != null ? (
           <div className="mt-0.5 text-[12px] flex items-center gap-1">
-            <span className="text-[#ffb400] font-bold">{product.parsedPrice.toLocaleString("fa-IR")} تومان</span>
+            <span className="text-[#ffb400] font-bold">
+              {product.parsedPrice === 0 ? "رایگان" : `${product.parsedPrice.toLocaleString("fa-IR")} تومان`}
+            </span>
             {isOnSale && (
               <del className="text-brand-m_khonsa opacity-70">
                 {product.parsedRegularPrice?.toLocaleString("fa-IR")}

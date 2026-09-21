@@ -7,10 +7,10 @@ export interface VariationCard {
   salePrice: string;
   imageUrl: string;
   attributes: Array<{ name: string; value: string; slug: string; flagUrl: string }>;
-  giftPriceToman: string;
-  giftRegularPriceToman?: string;
-  codePriceToman: string;
-  codeRegularPriceToman?: string;
+  giftPrice: string;
+  giftRegularPrice?: string;
+  codePrice: string;
+  codeRegularPrice?: string;
   codeStockCount?: number;
   parsedPrice: number | null;
   parsedRegularPrice: number | null;
@@ -19,6 +19,11 @@ export interface VariationCard {
   parsedCodePrice: number | "disabled";
   parsedCodeRegularPrice: number | "disabled";
   regionSlug?: string;
+  currency?: string;
+  currencySymbol?: string;
+  gameDiscountPercent?: number;
+  commissionDiscountPercent?: number;
+  commissionDiscountBadge?: boolean;
   variationIdsByDelivery?: { direct?: number; gift?: number; code?: number };
 }
 
@@ -58,10 +63,12 @@ export interface ProductNode {
     price?: string | null;
     regularPrice?: string | null;
     isAvailableInRegion?: boolean | null;
+    commissionDiscountBadge?: boolean | null;
   } | null;
   parsedPrice: number | null;
   parsedRegularPrice: number | null;
   isAvailableInRegion?: boolean;
+  commissionDiscountBadge?: boolean;
   variationCards?: VariationCard[];
   isVariation?: boolean;
   defaultVariationId?: number;

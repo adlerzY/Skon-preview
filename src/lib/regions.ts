@@ -1,11 +1,18 @@
-export const REGION_ALIASES: Record<string, string[]> = {
-  eu: ["eu", "eu-global", "اروپا", "europe"],
-  us: ["us", "امریکا", "آمریکا", "america", "usa"],
-  tr: ["tr", "ترکیه", "turkey"],
-  ua: ["ua", "اوکراین", "ukraine"],
+export const REGION_REGISTRY = {
+  eu: { currency: "EUR", symbol: "€", aliases: ["eu", "eu-global", "اروپا", "europe"] },
+  us: { currency: "USD", symbol: "$", aliases: ["us", "امریکا", "آمریکا", "america", "usa"] },
+  tr: { currency: "TRY", symbol: "₺", aliases: ["tr", "ترکیه", "turkey"] },
+  ua: { currency: "UAH", symbol: "₴", aliases: ["ua", "اوکراین", "ukraine"] },
+} as const;
+
+export const REGION_ALIASES: Record<string, readonly string[]> = {
+  eu: REGION_REGISTRY.eu.aliases,
+  us: REGION_REGISTRY.us.aliases,
+  tr: REGION_REGISTRY.tr.aliases,
+  ua: REGION_REGISTRY.ua.aliases,
 };
 
-export const KNOWN_REGIONS = ["eu", "us", "tr", "ua"];
+export const KNOWN_REGIONS = Object.keys(REGION_REGISTRY);
 export const DEFAULT_REGION = "eu";
 
 export function normalizeRegionToken(value?: string | null): string {

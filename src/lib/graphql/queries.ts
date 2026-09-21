@@ -635,12 +635,17 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
           salePrice
           imageUrl
           regionSlug
+          currency
+          currencySymbol
+          gameDiscountPercent
+          commissionDiscountPercent
+          commissionDiscountBadge
 
-          giftPriceToman
-          giftRegularPriceToman
+          giftPrice
+          giftRegularPrice
 
-          codePriceToman
-          codeRegularPriceToman
+          codePrice
+          codeRegularPrice
           codeStockCount
 
           attributes {

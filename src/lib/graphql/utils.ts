@@ -51,7 +51,7 @@ function updateMinTier(
   price: unknown,
   regularPrice: unknown
 ): void {
-  if (typeof price !== "number" || price <= 0) {
+  if (typeof price !== "number" || price < 0) {
     return;
   }
 
@@ -116,6 +116,7 @@ export const formatProducts = (
         variationCards: [],
         isVariation: true,
         isAvailableInRegion: product.archivePricing.isAvailableInRegion !== false,
+        commissionDiscountBadge: product.archivePricing.commissionDiscountBadge === true,
       });
       continue;
     }
@@ -137,31 +138,35 @@ export const formatProducts = (
 
       for (const rawVariation of rawVariations) {
         const pGift = (
-          rawVariation.giftPriceToman === "disabled" ||
-          !rawVariation.giftPriceToman
+          rawVariation.giftPrice === "disabled" ||
+          rawVariation.giftPrice == null ||
+          rawVariation.giftPrice === ""
             ? "disabled"
-            : parsePrice(rawVariation.giftPriceToman) ?? "disabled"
+            : parsePrice(rawVariation.giftPrice) ?? "disabled"
         ) as number | "disabled";
 
         const pGiftReg = (
-          rawVariation.giftRegularPriceToman === "disabled" ||
-          !rawVariation.giftRegularPriceToman
+          rawVariation.giftRegularPrice === "disabled" ||
+          rawVariation.giftRegularPrice == null ||
+          rawVariation.giftRegularPrice === ""
             ? "disabled"
-            : parsePrice(rawVariation.giftRegularPriceToman) ?? "disabled"
+            : parsePrice(rawVariation.giftRegularPrice) ?? "disabled"
         ) as number | "disabled";
 
         const pCode = (
-          rawVariation.codePriceToman === "disabled" ||
-          !rawVariation.codePriceToman
+          rawVariation.codePrice === "disabled" ||
+          rawVariation.codePrice == null ||
+          rawVariation.codePrice === ""
             ? "disabled"
-            : parsePrice(rawVariation.codePriceToman) ?? "disabled"
+            : parsePrice(rawVariation.codePrice) ?? "disabled"
         ) as number | "disabled";
 
         const pCodeReg = (
-          rawVariation.codeRegularPriceToman === "disabled" ||
-          !rawVariation.codeRegularPriceToman
+          rawVariation.codeRegularPrice === "disabled" ||
+          rawVariation.codeRegularPrice == null ||
+          rawVariation.codeRegularPrice === ""
             ? "disabled"
-            : parsePrice(rawVariation.codeRegularPriceToman) ?? "disabled"
+            : parsePrice(rawVariation.codeRegularPrice) ?? "disabled"
         ) as number | "disabled";
 
         const parsedPrice = parsePrice(rawVariation.price) ?? null;
@@ -186,14 +191,14 @@ export const formatProducts = (
             : true;
 
         const directValid =
-          typeof parsedPrice === "number" && parsedPrice > 0;
+          typeof parsedPrice === "number" && parsedPrice >= 0;
 
         const giftValid =
-          typeof pGift === "number" && pGift > 0;
+          typeof pGift === "number" && pGift >= 0;
 
         const codeValid =
           typeof pCode === "number" &&
-          pCode > 0 &&
+          pCode >= 0 &&
           hasCodeStock;
 
         const anyGiftOrCode =
@@ -333,7 +338,7 @@ export const formatProducts = (
 
     isAvailableInRegion =
       finalPrice != null &&
-      finalPrice > 0;
+      finalPrice >= 0;
 
     const {
       shortDescription,

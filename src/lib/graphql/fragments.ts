@@ -37,6 +37,7 @@ export const PRODUCT_CARD_FIELDS = `
         price
         regularPrice
         isAvailableInRegion
+        commissionDiscountBadge
       }
     }
   }

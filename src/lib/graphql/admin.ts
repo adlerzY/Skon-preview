@@ -199,6 +199,12 @@ export const ADMIN_IMPORT_CDKEYS_MUTATION = `
   }
 `;
 
+export const ADMIN_DELETE_CDKEY_MUTATION = `
+  mutation AdminDeleteCdKey($stockId: Int!) {
+    adminDeleteCdKey(input: { stockId: $stockId }) { success }
+  }
+`;
+
 export const ADMIN_ASSIGN_CDKEYS_MUTATION = `
   mutation AdminAssignCdKeys($orderId: Int!, $itemId: Int!, $quantity: Int!) {
     adminAssignCdKeys(input: { orderId: $orderId, itemId: $itemId, quantity: $quantity }) {

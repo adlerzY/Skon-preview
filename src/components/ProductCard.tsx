@@ -19,16 +19,21 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
   const subCategories = categoryNodes.slice(1, 4);
 
   const currentMinPrice = product.parsedPrice;
-  const regularMinPrice = product.parsedRegularPrice ? Number(product.parsedRegularPrice) : null;
-  const isActualSale = regularMinPrice && currentMinPrice && regularMinPrice > currentMinPrice;
+  const regularMinPrice = product.parsedRegularPrice != null ? Number(product.parsedRegularPrice) : null;
+  const isActualSale = regularMinPrice != null && currentMinPrice != null && regularMinPrice > currentMinPrice;
 
-  const badges = [];
+  const badges: Array<{ text: string; color: string }> = [];
   const productDate = product.date ? new Date(product.date).getTime() : 0;
   const now = Date.now();
   const isNew = productDate > 0 && now - productDate < 15 * 24 * 60 * 60 * 1000;
 
   if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
   if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
+  const hasCommissionDiscount = Boolean(
+    product.commissionDiscountBadge ||
+    product.variationCards?.some((variation) => variation.commissionDiscountBadge)
+  );
+  if (hasCommissionDiscount) badges.push({ text: "تخفیف ویژه فروشگاه", color: "bg-brand-zard" });
 
   const targetRegion = product.activeRegion || activeRegion || "eu";
   const href = `/${targetRegion}/${categorySlug}/${product.slug}`;
@@ -89,7 +94,7 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
 
         <div className="mt-auto flex items-end justify-between pt-3">
           <div className="w-full flex flex-col justify-end h-[44px]">
-            {currentMinPrice ? (
+            {currentMinPrice != null ? (
               <>
                 {isActualSale && (
                   <del className="text-[#8e98b0] text-[12px] opacity-70 line-through self-end mb-0.5">
@@ -100,8 +105,8 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[#8e98b0] text-[11px] font-medium">شروع قیمت:</span>
                   <span className={`font-bold text-base md:text-[17px] flex items-center gap-1.5 ${isActualSale ? "text-[#75dd04]" : "text-white"}`}>
-                    {formatToPersianDigits(currentMinPrice)}
-                    <span className={`text-[12px] font-normal ${isActualSale ? "text-white" : "text-[#8e98b0]"}`}>تومان</span>
+                    {currentMinPrice === 0 ? "رایگان" : formatToPersianDigits(currentMinPrice)}
+                    {currentMinPrice !== 0 && <span className={`text-[12px] font-normal ${isActualSale ? "text-white" : "text-[#8e98b0]"}`}>تومان</span>}
                   </span>
                 </div>
               </>

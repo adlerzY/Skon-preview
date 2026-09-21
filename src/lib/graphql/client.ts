@@ -34,13 +34,17 @@ function resolveEndpoint(): { url: string; hostHeader?: string } {
 }
 
 export const parsePrice = (priceString?: string | null): number | null => {
-  if (!priceString) return null;
-  const splitString = String(priceString).split(/[-–—]|&ndash;/)[0];
-  const englishNumbers = splitString
+  if (priceString === null || priceString === undefined) return null;
+  const raw = String(priceString).trim();
+  if (raw === "" || raw.toLowerCase() === "disabled") return null;
+  const lowerBound = raw.split(/\s*(?:-|–|—|&ndash;)\s*/u)[0];
+  const englishNumbers = lowerBound
     .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d).toString())
     .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
-  const numericString = englishNumbers.replace(/[^0-9]/g, "");
-  return numericString ? parseInt(numericString, 10) : null;
+  const numericString = englishNumbers.replace(/[,،\s]/g, "");
+  if (!/^\d+(?:\.\d+)?$/.test(numericString)) return null;
+  const value = Number(numericString);
+  return Number.isFinite(value) && value >= 0 ? value : null;
 };
 
 type CacheStrategy =

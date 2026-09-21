@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     const action = String(body?.action || "");
     const map: Record<string, string> = {
       import: ADMIN_MUTATIONS.importCdKeys,
+      delete: ADMIN_MUTATIONS.deleteCdKey,
       assign: ADMIN_MUTATIONS.assignCdKeys,
       manualAssign: ADMIN_MUTATIONS.assignCdKeyManually,
       reveal: ADMIN_MUTATIONS.revealCdKeys,
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
 
     const variables = action === "import"
       ? { productId: Number(body.productId), variationId: Number(body.variationId), keys: String(body.keys || "") }
+      : action === "delete"
+        ? { stockId: Number(body.stockId) }
       : action === "assign"
         ? { orderId: Number(body.orderId), itemId: Number(body.itemId), quantity: Number(body.quantity) }
         : action === "manualAssign"

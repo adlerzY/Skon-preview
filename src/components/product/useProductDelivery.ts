@@ -107,7 +107,7 @@ export function useProductDelivery({
   }, [deliveryType, email, password, battleTag]);
 
   const handleAddToCart = useCallback((): boolean => {
-    if (!isFormValid() || !deliveryType || !selectedVariation) return false;
+    if (!isFormValid() || !deliveryType || !selectedVariation || currentPrice === null) return false;
 
     setIsAddingToCart(true);
 
@@ -128,8 +128,8 @@ export function useProductDelivery({
       productId,
       variationId: variationIdValue,
       name: productName,
-      price: currentPrice || 0,
-      regularPrice: regularPrice || undefined,
+      price: currentPrice,
+      regularPrice: regularPrice ?? undefined,
       deliveryMethod: deliveryType,
       region: regionValue,
       variationName: variationNameValue,

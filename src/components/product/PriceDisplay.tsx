@@ -24,15 +24,15 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
     return value.toLocaleString("fa-IR") + " تومان";
   };
 
-  const hasDiscount = Boolean(regularPrice && price && regularPrice > price);
+  const hasDiscount = typeof regularPrice === "number" && typeof price === "number" && regularPrice > price;
   
   const priceSizeClass = compact ? "text-sm md:text-base font-black" : "text-xl md:text-2xl font-black";
   const labelSizeClass = compact ? "text-xs font-bold" : "text-sm font-bold";
   const strikeSizeClass = compact ? "text-xs font-semibold" : "text-sm font-medium";
 
   const getDerivedRegularPrice = (currentPrice: number | "disabled" | undefined): number | null => {
-    if (!hasDiscount || !regularPrice || !price) return null;
-    if (typeof currentPrice !== "number" || currentPrice <= 0) return null;
+    if (!hasDiscount || typeof regularPrice !== "number" || typeof price !== "number") return null;
+    if (typeof currentPrice !== "number" || currentPrice < 0) return null;
 
     const discountRatio = (regularPrice - price) / regularPrice;
     if (discountRatio <= 0 || discountRatio >= 1) return null;
@@ -41,7 +41,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   };
 
   if (selectedType === "gift") {
-    const isGiftDisabled = giftPrice === "disabled" || !giftPrice;
+    const isGiftDisabled = giftPrice === "disabled" || giftPrice === undefined;
     const derivedRegularPrice = !isGiftDisabled ? getDerivedRegularPrice(giftPrice) : null;
 
     return (
@@ -60,7 +60,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   }
 
   if (selectedType === "code") {
-    const isCodeDisabled = codePrice === "disabled" || !codePrice;
+    const isCodeDisabled = codePrice === "disabled" || codePrice === undefined;
     const derivedRegularPrice = !isCodeDisabled ? getDerivedRegularPrice(codePrice) : null;
 
     return (

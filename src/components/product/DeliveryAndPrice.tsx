@@ -297,6 +297,11 @@ export default function DeliveryAndPrice({ selectedVariation, purchase }: Delive
       )}
 
       <div className="flex flex-col gap-2 mt-2">
+        {selectedVariation.commissionDiscountBadge && (
+          <div className="self-start bg-brand-sabz/10 border border-brand-sabz/40 text-brand-sabz px-3 py-1 text-xs font-bold">
+            تخفیف ویژه فروشگاه
+          </div>
+        )}
         <div className="flex justify-between items-center bg-brand-surface p-4 border border-brand-surface_hover">
           <span className="text-sm text-brand-surface_m font-medium">مبلغ نهایی:</span>
           {deliveryType === null ? (
