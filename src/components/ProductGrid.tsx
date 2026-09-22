@@ -20,8 +20,7 @@ export default function ProductGrid({ products, title, activeRegion, showTitle =
 
   return (
     <section
-      className={showTitle ? "cv-auto w-full my-4 overflow-hidden" : "cv-auto w-full overflow-hidden"}
-      style={{ contain: "layout paint" }}
+      className={showTitle ? "w-full my-4 overflow-hidden" : "w-full overflow-hidden"}
     >
       {showTitle && (
         <div className="flex items-center justify-between mt-5 mb-5">

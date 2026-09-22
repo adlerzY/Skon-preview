@@ -17,7 +17,7 @@ export async function getMaintenanceSettings(): Promise<MaintenanceSettings> {
     SITE_MAINTENANCE_QUERY,
     {},
     [MAINTENANCE_CACHE_TAG],
-    "force-cache",
+    "no-store",
   );
   const settings = data?.siteMaintenanceSettings;
   return {
