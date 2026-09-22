@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Header from "@/components/Header/Header";
 import SubHeaderBar from "@/components/Header/SubHeaderBar";
-import Footer from "@/components/Footer/Footer";
 import { DEFAULT_REGION, KNOWN_REGIONS } from "@/lib/regions";
 
 export const metadata: Metadata = {
@@ -21,7 +20,6 @@ export default async function CartLayout({ children }: { children: ReactNode }) 
       <Header activeRegion={activeRegion} />
       <SubHeaderBar />
       {children}
-      <Footer activeRegion={activeRegion} />
     </>
   );
 }

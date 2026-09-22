@@ -1,11 +1,10 @@
 export default function Loading() {
   return (
-    <div className="mx-auto h-full w-full max-w-[1500px]" aria-hidden="true">
+    <div className="mx-auto h-full w-full max-w-[1500px]" aria-busy="true">
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="h-2.5 w-20 rounded bg-white/[.03]" />
-          <div className="mt-3 h-8 w-40 rounded bg-white/[.035]" />
-          <div className="mt-2 h-3 w-64 max-w-full rounded bg-white/[.025]" />
+          <h1 className="text-2xl font-bold text-white">پنل مدیریت</h1>
+          <p className="mt-2 text-sm text-brand-m_khonsa">اطلاعات زنده در حال دریافت است.</p>
         </div>
         <div className="h-10 w-28 rounded-[5px] bg-white/[.03]" />
       </div>

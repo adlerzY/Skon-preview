@@ -230,7 +230,11 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/my-account") ||
     pathname.startsWith("/cart") ||
     pathname.startsWith("/admin-login") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    pathname === "/shop" ||
+    pathname.startsWith("/shop/") ||
+    pathname === "/product" ||
+    pathname.startsWith("/product/");
 
   if (isNonRegionRoute) {
     const response = NextResponse.next({ request });

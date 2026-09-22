@@ -12,7 +12,7 @@ interface LineItem {
   metaData?: MetaEntry[];
 }
 interface OrderNode {
-  id: string; databaseId: number; orderNumber?: string; status?: string; date?: string; total?: string;
+  id: string; databaseId: number; orderNumber?: string; status?: string; date?: string; cancelledAt?: string; total?: string;
   lineItems?: { nodes?: LineItem[] };
 }
 interface DownloadableItem { downloadId: string; url: string; product?: { databaseId?: number }; }

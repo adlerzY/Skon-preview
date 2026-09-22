@@ -13,7 +13,7 @@ interface BlogPostCardProps {
     commentsCount?: number;
     featuredImage?: { node?: { sourceUrl?: string } };
     author?: { node?: { name?: string } };
-    categories?: { nodes?: { slug?: string; name?: string }[] };
+    categories?: { nodes?: { slug?: string; name?: string; parent?: { node?: { slug?: string; name?: string } } }[] };
   };
   region: string;
   categorySlug?: string;
@@ -25,7 +25,7 @@ function stripHtml(html?: string) {
 
 function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
   const category = post.categories?.nodes?.[0];
-  const resolvedCategorySlug = categorySlug || category?.slug || "uncategorized";
+  const resolvedCategorySlug = categorySlug || category?.parent?.node?.slug || category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
   const excerpt = stripHtml(post.excerpt);
 

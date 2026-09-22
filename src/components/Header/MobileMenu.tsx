@@ -10,6 +10,7 @@ import MobileRegionSwitcher from "./MobileRegionSwitcher";
 import UserAvatar from "@/components/ui/UserAvatar";
 import Skeleton from "@/components/ui/Skeleton";
 import { Menu, Search, User, X, ChevronDown, ChevronLeft } from "lucide-react";
+import SiteNotice from "./SiteNotice";
 import { useActiveRegion, buildRegionHref } from "@/lib/hooks/useActiveRegion";
 import { useHeaderViewer } from "./HeaderViewerProvider";
 
@@ -33,6 +34,7 @@ export interface MobileMenuDrawerData {
 
 interface MobileMenuProps {
   activeRegion: string;
+  siteNotice: { title: string; message: string } | null;
   regionsPromise: Promise<Region[]>;
   drawerDataPromise: Promise<MobileMenuDrawerData>;
 }
@@ -157,7 +159,7 @@ function DrawerGamesGridSkeleton() {
   );
 }
 
-export default function MobileMenu({ activeRegion, regionsPromise, drawerDataPromise }: MobileMenuProps) {
+export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, drawerDataPromise }: MobileMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { region: currentRegion } = useActiveRegion();
@@ -221,7 +223,7 @@ export default function MobileMenu({ activeRegion, regionsPromise, drawerDataPro
           <Menu size={24} strokeWidth={2.5} />
         </button>
 
-        <Link href="/" className="flex items-center justify-center" aria-label="صفحه اصلی">
+        <Link href={`/${activeRegion}`} prefetch={false} className="flex items-center justify-center" aria-label="صفحه اصلی">
           <Image
             src="/images/arena2battleLogo.webp"
             alt="Arena 2 Battle"
@@ -244,6 +246,8 @@ export default function MobileMenu({ activeRegion, regionsPromise, drawerDataPro
           >
             <Search size={20} strokeWidth={2.5} />
           </button>
+
+          {siteNotice && <SiteNotice title={siteNotice.title} message={siteNotice.message} />}
         </div>
       </div>
 

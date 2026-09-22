@@ -1,7 +1,13 @@
 import { getHeaderPublicNavigationData, getHeaderRegionsData } from "@/lib/graphql";
 import MobileMenu from "./MobileMenu";
 
-export default function MobileMenuAsync({ activeRegion }: { activeRegion: string }) {
+export default function MobileMenuAsync({
+  activeRegion,
+  siteNotice,
+}: {
+  activeRegion: string;
+  siteNotice: { title: string; message: string } | null;
+}) {
   // Start public navigation and region data independently. The mobile drawer
   // only consumes them when the user opens it, so neither one blocks the
   // initial mobile header shell.
@@ -21,6 +27,7 @@ export default function MobileMenuAsync({ activeRegion }: { activeRegion: string
   return (
     <MobileMenu
       activeRegion={activeRegion}
+      siteNotice={siteNotice}
       regionsPromise={regionsPromise}
       drawerDataPromise={drawerDataPromise}
     />

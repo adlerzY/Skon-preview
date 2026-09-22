@@ -30,7 +30,7 @@ export const CUSTOMER_ORDERS_QUERY = `
       orders(first: 10, after: $after, where: { statuses: $statuses }) {
         pageInfo { hasNextPage endCursor }
         nodes {
-          id databaseId orderNumber status date total
+          id databaseId orderNumber status date cancelledAt total
           lineItems {
             nodes {
               id databaseId quantity total

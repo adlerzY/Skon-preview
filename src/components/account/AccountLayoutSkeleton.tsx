@@ -1,4 +1,5 @@
 export default function AccountLayoutSkeleton() {
+  const navItems = ["نمای کلی", "سفارش‌ها", "تیکت‌ها", "نظرهای من", "تنظیمات"];
   return (
     <div className="h-screen w-full bg-brand-bg flex overflow-hidden" dir="rtl">
       <aside className="hidden lg:flex flex-col shrink-0 w-[260px] h-screen bg-brand-surface border-l border-brand-surface_hover p-6 gap-3">
@@ -6,8 +7,8 @@ export default function AccountLayoutSkeleton() {
           <div className="w-16 h-16 rounded-full bg-white/[.03]" />
           <div className="w-24 h-4 bg-white/[.03] rounded" />
         </div>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="w-full h-9 bg-white/[.03] rounded" />
+        {navItems.map((item) => (
+          <div key={item} className="w-full min-h-9 px-3 flex items-center text-sm font-bold text-brand-m_khonsa">{item}</div>
         ))}
       </aside>
 
@@ -16,7 +17,7 @@ export default function AccountLayoutSkeleton() {
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-9 h-9 bg-white/[.03] rounded" />
             <div className="w-8 h-8 rounded-full bg-white/[.03]" />
-            <div className="h-4 w-28 hidden sm:block bg-white/[.03] rounded" />
+            <span className="hidden sm:block text-sm font-bold text-white">حساب کاربری</span>
           </div>
           <div className="w-9 h-9 bg-white/[.03]" />
         </div>

@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getCategoryShell, getCategoryProducts } from "@/lib/graphql";
 import CategoryHero from "@/components/Hero";
 import SubcategoryMenu from "@/components/ui/SubcategoryMenu";
 import DynamicProductGrid from "@/components/ProductGrid";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbSchema } from "@/lib/seo/jsonld";
+import { makeMetadata, SEO_REGION } from "@/lib/seo/site";
 import { ProductGridSkeleton } from "@/components/home/HomeSkeletons";
 
 interface CategoryPageProps {
@@ -61,6 +66,24 @@ async function CategoryProductGroups({
   );
 }
 
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { categorySlug, region } = await params;
+  const category = await getCategoryShell(categorySlug);
+  if (!category) {
+    return {
+      title: "دسته‌بندی پیدا نشد",
+      robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    };
+  }
+
+  return makeMetadata({
+    title: `خرید ${category.name}`,
+    description: `مشاهده و خرید محصولات ${category.name} در Arena2Battle.`,
+    path: region === SEO_REGION ? `/${SEO_REGION}/${category.slug}` : undefined,
+    noIndex: region !== SEO_REGION,
+  });
+}
+
 export default async function CategoryArchivePage({ params }: CategoryPageProps) {
   const { categorySlug, region } = await params;
   const category = await getCategoryShell(categorySlug);
@@ -68,10 +91,24 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
   if (!category) notFound();
 
   const { name, banners } = category;
+  const canonicalPath = `/${SEO_REGION}/${category.slug}`;
 
   return (
     <main className="container mx-auto px-6 max-w-site pb-12">
+      {region === SEO_REGION && (
+        <JsonLd data={breadcrumbSchema([
+          { name: "فروشگاه", url: `/${SEO_REGION}` },
+          { name, url: canonicalPath },
+        ])} />
+      )}
+      <Breadcrumbs
+        items={[
+          { label: "فروشگاه", href: `/${region}` },
+          { label: name },
+        ]}
+      />
       <CategoryHero
+        heading={name}
         banners={banners && banners.length > 0 ? banners : [{ title: name, subtitle: `محصولات و خدمات ${name}` }]}
       />
 

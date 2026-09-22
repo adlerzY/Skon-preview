@@ -4,4 +4,4 @@ export * from './client';
 export * from './utils';
 export * from './queries';
 export * from './auth';
-export * from './blog';
+export * from './blog';export * from './seo';

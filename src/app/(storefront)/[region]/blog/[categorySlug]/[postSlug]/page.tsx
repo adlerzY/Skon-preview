@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getPostDetail } from "@/lib/graphql";
@@ -11,6 +12,10 @@ import { BlogPostLoadingShell } from "@/components/ui/BlogLoadingShells";
 import RelatedNewsPanelAsync from "@/components/blog/RelatedNewsPanelAsync";
 import RelatedNewsPanelSkeleton from "@/components/blog/RelatedNewsPanelSkeleton";
 import PostCommentsSection from "@/components/blog/PostCommentsSection";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import { articleSchema, breadcrumbSchema } from "@/lib/seo/jsonld";
+import { makeMetadata, SEO_REGION, stripHtml, absoluteUrl } from "@/lib/seo/site";
 
 interface PostPageProps {
   params: Promise<{ region: string; categorySlug: string; postSlug: string }>;
@@ -18,10 +23,36 @@ interface PostPageProps {
 
 interface BlogPostStreamProps {
   region: string;
+  requestedCategorySlug: string;
   postPromise: ReturnType<typeof getPostDetail>;
 }
 
-async function BlogPostStream({ region, postPromise }: BlogPostStreamProps) {
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+  const { region, categorySlug, postSlug } = await params;
+  const post = await getPostDetail(postSlug);
+
+  if (!post) {
+    return {
+      title: "مقاله پیدا نشد",
+      robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    };
+  }
+
+  const category = post.categories?.nodes?.[0];
+  const mainCategory = category?.parent?.node ?? category;
+  const canonicalCategorySlug = mainCategory?.slug || category?.slug || categorySlug;
+  const canonicalPath = `/${SEO_REGION}/blog/${canonicalCategorySlug}/${post.slug}`;
+
+  return makeMetadata({
+    title: post.title,
+    description: stripHtml(post.excerpt || post.content || post.title),
+    path: region === SEO_REGION ? canonicalPath : undefined,
+    image: post.featuredImage?.node?.sourceUrl,
+    noIndex: region !== SEO_REGION,
+  });
+}
+
+async function BlogPostStream({ region, requestedCategorySlug, postPromise }: BlogPostStreamProps) {
   const post = await postPromise;
   if (!post) {
     notFound();
@@ -30,15 +61,48 @@ async function BlogPostStream({ region, postPromise }: BlogPostStreamProps) {
 
   const category = post.categories?.nodes?.[0];
   const mainCategory = category?.parent?.node ?? category;
-  const canonicalSlug = mainCategory?.slug ?? "uncategorized";
+  const canonicalSlug = mainCategory?.slug ?? category?.slug ?? requestedCategorySlug;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const canonicalUrl = `${siteUrl}/${region}/blog/${canonicalSlug}/${post.slug}`;
+  if (canonicalSlug && canonicalSlug !== requestedCategorySlug) {
+    permanentRedirect(`/${region}/blog/${canonicalSlug}/${post.slug}`);
+  }
 
+  const canonicalUrl = `/${region}/blog/${canonicalSlug}/${post.slug}`;
+  const isSeoRegion = region === SEO_REGION;
+  const categoryName = mainCategory?.name ?? category?.name ?? canonicalSlug;
   const postTags = post.tags?.nodes ?? [];
 
   return (
     <div className="w-full text-white">
+      {isSeoRegion && (
+        <JsonLd
+          data={[
+            articleSchema({
+              title: post.title,
+              description: stripHtml(post.excerpt || post.content || post.title),
+              url: canonicalUrl,
+              image: post.featuredImage?.node?.sourceUrl,
+              datePublished: post.date,
+              dateModified: post.modified,
+              authorName: post.author?.node?.name,
+            }),
+            breadcrumbSchema([
+              { name: "فروشگاه", url: `/${SEO_REGION}` },
+              { name: "وبلاگ", url: `/${SEO_REGION}/blog` },
+              { name: categoryName, url: `/${SEO_REGION}/blog/${canonicalSlug}` },
+              { name: post.title, url: canonicalUrl },
+            ]),
+          ]}
+        />
+      )}
+      <Breadcrumbs
+        items={[
+          { label: "فروشگاه", href: `/${region}` },
+          { label: "وبلاگ", href: `/${region}/blog` },
+          { label: categoryName, href: `/${region}/blog/${canonicalSlug}` },
+          { label: post.title },
+        ]}
+      />
       {post.featuredImage?.node?.sourceUrl && (
         <div className="w-full h-[220px] sm:h-[300px] md:h-[420px] relative rounded-xl overflow-hidden bg-white/5 mb-6 md:mb-8">
           <Image
@@ -91,7 +155,7 @@ async function BlogPostStream({ region, postPromise }: BlogPostStreamProps) {
         </aside>
 
         <article className="order-1 lg:order-2 lg:col-span-6 flex flex-col gap-6 min-w-0">
-          <SocialShare url={canonicalUrl} title={post.title} />
+          <SocialShare url={absoluteUrl(canonicalUrl)} title={post.title} />
           <div
             className="prose prose-invert max-w-none"
             dangerouslySetInnerHTML={{ __html: post.content }}
@@ -116,13 +180,13 @@ async function BlogPostStream({ region, postPromise }: BlogPostStreamProps) {
 }
 
 export default async function BlogPostPage({ params }: PostPageProps) {
-  const { region, postSlug } = await params;
+  const { region, categorySlug, postSlug } = await params;
   const postPromise = getPostDetail(postSlug);
 
   return (
     <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
       <Suspense fallback={<BlogPostLoadingShell />}>
-        <BlogPostStream region={region} postPromise={postPromise} />
+        <BlogPostStream region={region} requestedCategorySlug={categorySlug} postPromise={postPromise} />
       </Suspense>
     </main>
   );

@@ -19,6 +19,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   const router = useRouter();
   const [code, setCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isCompletingLogin, setIsCompletingLogin] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(initialCooldown);
   const [error, setError] = useState("");
@@ -66,14 +67,17 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
       }
 
       if (data.success) {
+        setIsCompletingLogin(true);
         notifyAuthStateChanged();
+        router.replace("/my-account");
         router.refresh();
+        return;
       }
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {
       verifyingRef.current = false;
-      setIsVerifying(false);
+      if (!isCompletingLogin) setIsVerifying(false);
     }
   };
 
@@ -151,11 +155,11 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
 
       <button
         type="submit"
-        disabled={isVerifying || !isCodeComplete}
+        disabled={isVerifying || isCompletingLogin || !isCodeComplete}
         className="bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
       >
-        {isVerifying && <Loader2 size={16} className="animate-spin" />}
-        {isVerifying ? "در حال بررسی..." : "تأیید و ورود"}
+        {(isVerifying || isCompletingLogin) && <Loader2 size={16} className="animate-spin" />}
+        {isCompletingLogin ? "در حال ورود..." : isVerifying ? "در حال بررسی..." : "تأیید و ورود"}
       </button>
 
       <button

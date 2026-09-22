@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import type { ProductNode, VariationCard } from "@/lib/graphql";
 import ProductPageClient from "@/components/product/ProductPageClient";
@@ -7,6 +8,10 @@ import ProductContentMatrix from "@/components/product/ProductContentMatrix";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
 import ProductPageShell from "@/components/product/ProductPageShell";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbSchema, productSchema } from "@/lib/seo/jsonld";
+import { makeMetadata, SEO_REGION, stripHtml, selectSeoCategory } from "@/lib/seo/site";
 
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
@@ -33,14 +38,40 @@ function toClientVariations(cards: VariationCard[] | undefined): VariationCard[]
   } as VariationCard));
 }
 
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { region, categorySlug, productSlug } = await params;
+  const product = await getProductDetail(productSlug, SEO_REGION);
+
+  if (!product) {
+    return {
+      title: "محصول پیدا نشد",
+      robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    };
+  }
+
+  const primaryCategory = selectSeoCategory(product.productCategories?.nodes);
+  const canonicalCategory = primaryCategory?.slug || categorySlug;
+  const canonicalPath = `/${SEO_REGION}/${canonicalCategory}/${product.slug}`;
+
+  return makeMetadata({
+    title: product.name,
+    description: stripHtml(product.shortDescription || product.description || `خرید ${product.name} از Arena2Battle.`),
+    path: region === SEO_REGION ? canonicalPath : undefined,
+    image: product.imageLarge?.sourceUrl || product.image?.sourceUrl,
+    noIndex: region !== SEO_REGION,
+  });
+}
+
 async function ProductDetailStream({
   productPromise,
   initialEdition,
   region,
+  requestedCategorySlug,
 }: {
   productPromise: Promise<ProductNode | null>;
   initialEdition?: string;
   region: string;
+  requestedCategorySlug: string;
 }) {
   const product = await productPromise;
 
@@ -49,7 +80,16 @@ async function ProductDetailStream({
     return null;
   }
 
+  const primaryCategory = selectSeoCategory(product.productCategories?.nodes);
+  if (primaryCategory?.slug && primaryCategory.slug !== requestedCategorySlug) {
+    permanentRedirect(`/${region}/${primaryCategory.slug}/${product.slug}`);
+  }
+
   const { secondaryGallery, description, reviewCount, averageRating, contentMatrix } = product;
+  const canonicalCategorySlug = primaryCategory?.slug || requestedCategorySlug;
+  const canonicalPath = `/${region}/${canonicalCategorySlug}/${product.slug}`;
+  const isSeoRegion = region === SEO_REGION;
+  const categoryName = primaryCategory?.name || canonicalCategorySlug;
 
   const clientProduct = {
     id: product.id,
@@ -69,6 +109,25 @@ async function ProductDetailStream({
 
   return (
     <>
+      {isSeoRegion && (
+        <JsonLd
+          data={[
+            productSchema(product, canonicalPath),
+            breadcrumbSchema([
+              { name: "فروشگاه", url: `/${SEO_REGION}` },
+              { name: categoryName, url: `/${SEO_REGION}/${canonicalCategorySlug}` },
+              { name: product.name, url: canonicalPath },
+            ]),
+          ]}
+        />
+      )}
+      <Breadcrumbs
+        items={[
+          { label: "فروشگاه", href: `/${region}` },
+          { label: categoryName, href: `/${region}/${canonicalCategorySlug}` },
+          { label: product.name },
+        ]}
+      />
       <ProductPageClient
         product={clientProduct}
         initialEdition={initialEdition}
@@ -93,7 +152,7 @@ async function ProductDetailStream({
 }
 
 export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
-  const [{ region, productSlug }, { edition }] = await Promise.all([params, searchParams]);
+  const [{ region, categorySlug, productSlug }, { edition }] = await Promise.all([params, searchParams]);
   const productPromise = getProductDetail(productSlug, region);
 
   return (
@@ -103,6 +162,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           productPromise={productPromise}
           initialEdition={edition}
           region={region}
+          requestedCategorySlug={categorySlug}
         />
       </Suspense>
     </main>

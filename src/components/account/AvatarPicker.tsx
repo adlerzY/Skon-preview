@@ -55,6 +55,7 @@ export default function AvatarPicker({
     try {
       const res = await fetch("/api/avatars", { cache: "no-store" });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "avatar list failed");
       setAvatars(data.avatars ?? []);
       setAdminAvatars(data.adminAvatars ?? []);
       setHasLoaded(true);
@@ -87,8 +88,8 @@ export default function AvatarPicker({
       setMessage("عکس پروفایل بروزرسانی شد");
       setIsOpen(false);
       router.refresh();
-    } catch {
-      setMessage("خطا در ذخیره‌سازی");
+    } catch (error) {
+      setMessage(error instanceof Error && error.message !== "avatar save failed" ? error.message : "خطا در ذخیره‌سازی");
     } finally {
       setIsSaving(false);
     }

@@ -460,6 +460,7 @@ export async function getPostDetail(slug: string) {
               content
               excerpt
               date
+              modified
               commentsCount
               averageRating
               ratingCount
@@ -902,7 +903,7 @@ export async function getAllBlogPosts(options: {
             id title slug date excerpt
             featuredImage { node { sourceUrl(size: MEDIUM) } }
             author { node { name } }
-            categories(first: 1) { nodes { slug name } }
+            categories(first: 1) { nodes { slug name parent { node { slug name } } } }
             commentsCount
           }
         }

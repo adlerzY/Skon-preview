@@ -4,12 +4,10 @@ function Line({ className = "" }: { className?: string }) {
 
 export function AccountOrdersLoadingShell() {
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6" aria-hidden="true">
-      <Line className="h-4 w-40" />
-      <Line className="h-8 w-48" />
-      <div className="bg-brand-surface border border-brand-surface_hover min-h-[120px]" />
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 4 }).map((_, i) => <Line key={i} className="h-9 w-24" />)}
+    <div className="max-w-4xl mx-auto flex flex-col gap-6" aria-busy="true">
+      <div>
+        <h1 className="text-2xl font-black text-white">سفارش‌های من</h1>
+        <p className="mt-2 text-sm text-brand-m_khonsa">در حال دریافت آخرین وضعیت سفارش‌ها...</p>
       </div>
       <div className="flex flex-col gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -22,11 +20,10 @@ export function AccountOrdersLoadingShell() {
 
 export function AccountReviewsLoadingShell() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl" aria-hidden="true">
-      <Line className="h-4 w-40" />
+    <div className="flex flex-col gap-6 max-w-2xl" aria-busy="true">
       <div>
-        <Line className="h-8 w-48" />
-        <Line className="h-4 w-72 mt-3" />
+        <h1 className="text-2xl font-black text-white">نظرهای من</h1>
+        <p className="mt-2 text-sm text-brand-m_khonsa">نظرها در حال بارگذاری‌اند.</p>
       </div>
       <div className="flex flex-col gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -39,10 +36,10 @@ export function AccountReviewsLoadingShell() {
 
 export function AccountSettingsLoadingShell() {
   return (
-    <div className="flex flex-col gap-6 max-w-2xl" aria-hidden="true">
+    <div className="flex flex-col gap-6 max-w-2xl" aria-busy="true">
       <div>
-        <Line className="h-8 w-48" />
-        <Line className="h-4 w-80 mt-3" />
+        <h1 className="text-2xl font-black text-white">تنظیمات حساب</h1>
+        <p className="mt-2 text-sm text-brand-m_khonsa">اطلاعات پروفایل و امنیت در حال دریافت است.</p>
       </div>
       <div className="bg-brand-surface border border-brand-surface_hover p-6 min-h-[220px]" />
       <div className="bg-brand-surface border border-brand-surface_hover p-6 min-h-[150px]" />
@@ -57,9 +54,9 @@ export function AccountSettingsLoadingShell() {
 
 export function AccountTicketsLoadingShell() {
   return (
-    <div className="flex flex-col gap-4" aria-hidden="true">
+    <div className="flex flex-col gap-4" aria-busy="true">
       <div className="flex items-center justify-between">
-        <Line className="h-8 w-48" />
+        <h1 className="text-2xl font-black text-white">تیکت‌های پشتیبانی</h1>
         <Line className="h-10 w-28" />
       </div>
       <div className="h-11 w-full bg-brand-surface border border-brand-surface_hover" />

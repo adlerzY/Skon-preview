@@ -14,12 +14,13 @@ interface Banner {
 
 interface Props {
   banners: Banner[];
+  heading?: string;
 }
 
 const AUTOPLAY_MS = 5000;
 const MOUNT_REST_AFTER_MS = 1500;
 
-export default function CategoryHero({ banners }: Props) {
+export default function CategoryHero({ banners, heading }: Props) {
   const total = banners?.length ?? 0;
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -59,7 +60,9 @@ export default function CategoryHero({ banners }: Props) {
     return () => clearInterval(interval);
   }, [isPlaying, total, handleNext]);
 
-  if (!banners || total === 0) return null;
+  if (!banners || total === 0) {
+    return heading ? <div className="sr-only"><h1>{heading}</h1></div> : null;
+  }
 
   const currentBanner = banners[activeIndex];
 
@@ -103,6 +106,9 @@ export default function CategoryHero({ banners }: Props) {
         </div>
 
         <div key={activeIndex} className="relative h-full flex flex-col justify-center px-[5.5rem] md:px-[5.5rem] w-full max-w-2xl z-30">
+          {heading && (
+            <h1 className="text-2xl md:text-4xl font-black text-white leading-tight mb-3">{heading}</h1>
+          )}
           {currentBanner.secondimage && (
             <div className="relative w-48 h-16 md:w-64 md:h-24 mb-2">
               <Image

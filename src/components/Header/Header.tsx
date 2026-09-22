@@ -11,14 +11,18 @@ import GamesNavSkeleton from "./GamesNavSkeleton";
 import MobileMenuAsync from "./MobileMenuAsync";
 import MobileBottomNavAsync from "./MobileBottomNavAsync";
 import { HeaderViewerProvider } from "./HeaderViewerProvider";
-import { Download, HelpCircle, AlertCircle } from "lucide-react";
+import { Download, HelpCircle } from "lucide-react";
+import { getSiteNotice } from "@/lib/maintenance";
+import SiteNotice from "./SiteNotice";
 
 const ACTION_BUTTON_CLASSES =
   "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
 const ICON_WRAPPER_CLASSES =
   "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
-export default function Header({ activeRegion }: { activeRegion: string }) {
+export default async function Header({ activeRegion }: { activeRegion: string }) {
+  const siteNotice = await getSiteNotice();
+
   return (
     <HeaderViewerProvider>
       <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-brand-bg" dir="rtl">
@@ -37,8 +41,8 @@ export default function Header({ activeRegion }: { activeRegion: string }) {
             <DesktopNavLinks activeRegion={activeRegion} />
           </div>
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-            <MaintenanceNotice />
+          <div className="relative shrink-0">
+            {siteNotice.enabled && <SiteNotice title={siteNotice.title} message={siteNotice.message} desktop />}
           </div>
 
           <div className="flex items-center">
@@ -79,11 +83,11 @@ export default function Header({ activeRegion }: { activeRegion: string }) {
           </div>
         </div>
 
-        <div className="lg:hidden relative flex items-center justify-between h-[60px] px-4 bg-brand-bg border-b border-white/5">
-          <MobileMenuAsync activeRegion={activeRegion} />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <MaintenanceNotice />
-          </div>
+        <div className="lg:hidden">
+          <MobileMenuAsync
+            activeRegion={activeRegion}
+            siteNotice={siteNotice.enabled ? { title: siteNotice.title, message: siteNotice.message } : null}
+          />
         </div>
       </header>
 
@@ -111,24 +115,3 @@ function RegionSwitcherImmediateFallback({ region }: { region: string }) {
   );
 }
 
-function MaintenanceNotice() {
-  return (
-    <div className="relative group flex items-center justify-center">
-      <button
-        type="button"
-        aria-label="اطلاعیه"
-        className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-surface hover:bg-brand-surface_hover border border-brand-surface_hover hover:border-brand-zard text-brand-zard transition-colors cursor-pointer"
-      >
-        <AlertCircle size={18} />
-      </button>
-
-      <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[10001] w-64 pointer-events-none group-hover:pointer-events-auto">
-        <div className="bg-brand-surface border border-brand-surface_hover rounded-[5px] p-3 shadow-lg text-right">
-          <p className="text-xs text-white leading-relaxed">
-            درحال افزودن محصولات و اعمال تغییرات هستیم؛ خرید درحال حاضر بسته می‌باشد.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}

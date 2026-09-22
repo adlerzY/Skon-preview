@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { searchProductsByKeyword } from "@/actions/search";
 import ProductGrid from "@/components/ProductGrid";
 import SearchLoadingShell from "@/components/ui/SearchLoadingShell";
+
+export const metadata: Metadata = {
+  title: "جستجوی محصولات",
+  robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+};
 
 interface SearchPageProps {
   params: Promise<{ region: string }>;

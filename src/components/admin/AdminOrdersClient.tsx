@@ -31,7 +31,7 @@ interface OrderNode {
   customerEmail: string;
 }
 
-const STATUS_LABEL: Record<string, string> = { processing: "در حال پردازش", pending: "در انتظار", completed: "تکمیل‌شده", cancelled: "لغوشده", all: "همه" };
+const STATUS_LABEL: Record<string, string> = { processing: "در حال پردازش", completed: "تکمیل‌شده", all: "همه پرداخت‌شده‌ها" };
 const FULFILLMENT_LABEL: Record<string, string> = { processing: "در حال پردازش", partially_fulfilled: "ناقص", fulfilled: "تحویل کامل", completed: "تکمیل‌شده", pending: "در انتظار" };
 
 const statusTone = (status: string) => status === "completed" ? "success" : status === "cancelled" ? "danger" : status === "processing" ? "info" : "warning";
@@ -72,7 +72,7 @@ export default function AdminOrdersClient({ initial, permissions = [] }: { initi
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} onEnter={() => void load()} placeholder="شناسه سفارش، نام یا ایمیل" />
         <AdminSelect value={status} onChange={(event) => setStatus(event.target.value)} className="lg:w-[190px] lg:flex-none">
-          <option value="processing">در حال پردازش</option><option value="pending">در انتظار</option><option value="completed">تکمیل‌شده</option><option value="cancelled">لغوشده</option><option value="all">همه</option>
+          <option value="processing">در حال پردازش</option><option value="completed">تکمیل‌شده</option><option value="all">همه پرداخت‌شده‌ها</option>
         </AdminSelect>
         <AdminButton variant="primary" onClick={() => void load()} className="lg:min-w-[96px]">جستجو</AdminButton>
       </AdminFilterBar>

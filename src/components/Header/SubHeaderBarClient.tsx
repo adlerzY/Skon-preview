@@ -24,6 +24,10 @@ export default function SubHeaderBarClient() {
   if (filteredSegments.length === 0) return null;
   if (HIDDEN_ROUTES.includes(filteredSegments[0].toLowerCase())) return null;
 
+  const currentRegion = KNOWN_REGIONS.includes(pathSegments[0]?.toLowerCase())
+    ? pathSegments[0].toLowerCase()
+    : "eu";
+
   const edition = searchParams.get("edition");
 
   const getSegmentLabel = (segment: string) => {
@@ -40,7 +44,7 @@ export default function SubHeaderBarClient() {
     <div className="w-full" dir="rtl">
       <div className="w-full container mx-auto px-6 max-w-[1600px] h-[40px] flex items-center justify-between">
         <nav className="flex items-center gap-2 text-[13px] font-medium text-white/80">
-          <Link prefetch={false} href="/" className="hover:text-brand-white transition-colors flex items-center gap-1">
+          <Link prefetch={false} href={`/${currentRegion}`} className="hover:text-brand-white transition-colors flex items-center gap-1">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                   <polyline points="9 22 9 12 15 12 15 22"></polyline>

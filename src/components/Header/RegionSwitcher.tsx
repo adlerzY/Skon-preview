@@ -32,7 +32,7 @@ export default function RegionSwitcher({ regions, initialRegion }: RegionSwitche
   if (!firstSegmentIsRegion) {
     return (
       <Link
-        href="/"
+        href={`/${initialRegion || "eu"}`}
         className="flex items-center justify-center h-[60px] w-[140px] bg-brand-surface hover:bg-brand-surface_hover transition-colors rounded-[5px]"
         aria-label="بازگشت به فروشگاه"
       >

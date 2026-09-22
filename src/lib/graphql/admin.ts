@@ -232,12 +232,28 @@ export const ADMIN_REVEAL_CDKEYS_MUTATION = `
 
 export const SITE_MAINTENANCE_QUERY = `
   query GetSiteMaintenanceMode {
-    siteMaintenanceMode
+    siteMaintenanceSettings { enabled title description }
+  }
+`;
+
+export const SITE_NOTICE_QUERY = `
+  query GetSiteNotice {
+    siteNotice { enabled title message }
   }
 `;
 
 export const ADMIN_SET_MAINTENANCE_MUTATION = `
-  mutation SetSiteMaintenanceMode($enabled: Boolean!) {
-    setSiteMaintenanceMode(input: { enabled: $enabled }) { success enabled }
+  mutation SetSiteMaintenanceMode($enabled: Boolean!, $title: String, $description: String) {
+    setSiteMaintenanceMode(input: { enabled: $enabled, title: $title, description: $description }) {
+      success enabled title description
+    }
+  }
+`;
+
+export const ADMIN_SET_SITE_NOTICE_MUTATION = `
+  mutation SetSiteNotice($enabled: Boolean!, $title: String, $message: String) {
+    setSiteNotice(input: { enabled: $enabled, title: $title, message: $message }) {
+      success enabled title message
+    }
   }
 `;

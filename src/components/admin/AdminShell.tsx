@@ -60,7 +60,7 @@ function AdminShellInner({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="h-screen w-full bg-brand-bg flex overflow-hidden" dir="rtl">
+    <div className="admin-shell h-screen w-full bg-brand-bg flex overflow-hidden text-base" dir="rtl">
       {!isDesktop && isSidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-[9998]" onClick={closeSidebar} aria-hidden="true" />
       )}

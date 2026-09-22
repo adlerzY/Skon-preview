@@ -3,6 +3,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .admin-shell main {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .admin-shell main :where(p, td, label, input, textarea, select, button) {
+    font-size: max(0.875rem, 1em);
+  }
+}
+
 @layer base {
   :root {
     --background: #15171e;

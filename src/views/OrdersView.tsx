@@ -11,10 +11,15 @@ import { AccountOrdersLoadingShell } from "@/components/account/AccountPageLoadi
 type OrdersData = Awaited<ReturnType<typeof fetchGraphQL>>;
 
 const ALL_STATUSES = ["PENDING", "PROCESSING", "ON_HOLD", "COMPLETED", "CANCELLED", "REFUNDED", "FAILED"];
+const RECENT_CANCELLED_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 async function OrdersDataStream({ dataPromise }: { dataPromise: Promise<OrdersData> }) {
   const data = await dataPromise;
-  const orders = data?.customer?.orders?.nodes ?? [];
+  const orders = (data?.customer?.orders?.nodes ?? []).filter((order: { status?: string; date?: string; cancelledAt?: string }) => {
+    if (!["CANCELLED", "FAILED"].includes(String(order.status))) return true;
+    const cancelledAt = order.cancelledAt ? new Date(order.cancelledAt).getTime() : 0;
+    return cancelledAt > 0 && Date.now() - cancelledAt <= RECENT_CANCELLED_WINDOW_MS;
+  });
   const pageInfo = data?.customer?.orders?.pageInfo ?? { hasNextPage: false, endCursor: null };
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
 

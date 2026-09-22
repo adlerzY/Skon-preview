@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import CommerceProviders from "@/components/providers/CommerceProviders";
 import ScrollToTopButton from "@/components/ui/ScrollToTopButton";
 import MaintenancePage from "@/components/MaintenancePage";
-import { hasMaintenanceBypass, isMaintenanceEnabled } from "@/lib/maintenance";
+import { getMaintenanceSettings, hasMaintenanceBypass } from "@/lib/maintenance";
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
-  const maintenanceEnabled = await isMaintenanceEnabled();
+  const maintenance = await getMaintenanceSettings();
 
-  if (maintenanceEnabled && !(await hasMaintenanceBypass())) {
-    return <MaintenancePage />;
+  if (maintenance.enabled && !(await hasMaintenanceBypass())) {
+    return <MaintenancePage title={maintenance.title} description={maintenance.description} />;
   }
 
   return (

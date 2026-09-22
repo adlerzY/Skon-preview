@@ -29,6 +29,9 @@ async function AccountDashboardStream({
   const successfulOrdersCount = allOrders.filter(
     (o) => typeof o.status === "string" && SUCCESSFUL_STATUSES.has(o.status)
   ).length;
+  const recentSuccessfulOrders = allOrders.filter(
+    (o) => typeof o.status === "string" && SUCCESSFUL_STATUSES.has(o.status)
+  );
   const tickets: TicketSummary[] = data?.myTickets?.nodes ?? [];
   const openTicketsCount = tickets.filter(
     (t) => (t.ticketStatus ?? "open") !== "closed"
@@ -38,7 +41,7 @@ async function AccountDashboardStream({
   return (
     <AccountDashboard
       user={user}
-      recentOrders={allOrders.slice(0, 3)}
+      recentOrders={recentSuccessfulOrders.slice(0, 3)}
       successfulOrdersCount={successfulOrdersCount}
       recentTickets={tickets.slice(0, 3)}
       openTicketsCount={openTicketsCount}

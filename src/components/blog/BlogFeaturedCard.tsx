@@ -9,14 +9,14 @@ interface BlogFeaturedCardProps {
     slug: string;
     date?: string;
     featuredImage?: { node?: { sourceUrl?: string } };
-    categories?: { nodes?: { slug?: string; name?: string }[] };
+    categories?: { nodes?: { slug?: string; name?: string; parent?: { node?: { slug?: string; name?: string } } }[] };
   };
   region: string;
 }
 
 function BlogFeaturedCard({ post, region }: BlogFeaturedCardProps) {
   const category = post.categories?.nodes?.[0];
-  const categorySlug = category?.slug || "uncategorized";
+  const categorySlug = category?.parent?.node?.slug || category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
 
   return (

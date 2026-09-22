@@ -36,6 +36,7 @@ export default function AdminTotpGate({
 
   const [code, setCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isCompletingLogin, setIsCompletingLogin] = useState(false);
   const [error, setError] = useState("");
 
   const [setupData, setSetupData] = useState<{ secret: string; otpauthUrl: string } | null>(null);
@@ -54,6 +55,7 @@ export default function AdminTotpGate({
   const [smsError, setSmsError] = useState("");
 
   const goToAccount = useCallback(() => {
+    setIsCompletingLogin(true);
     notifyAuthStateChanged();
     if (pathname === "/admin") {
       router.refresh();
@@ -323,11 +325,11 @@ export default function AdminTotpGate({
             />
             <button
               type="submit"
-              disabled={isVerifyingSms || !smsCodeSent || !isSmsCodeReady}
+              disabled={isVerifyingSms || isCompletingLogin || !smsCodeSent || !isSmsCodeReady}
               className="bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
             >
-              {isVerifyingSms && <Loader2 size={16} className="animate-spin" />}
-              {isVerifyingSms ? "در حال بررسی..." : "تأیید و ورود"}
+              {(isVerifyingSms || isCompletingLogin) && <Loader2 size={16} className="animate-spin" />}
+              {isCompletingLogin ? "در حال ورود..." : isVerifyingSms ? "در حال بررسی..." : "تأیید و ورود"}
             </button>
             <button
               type="button"
@@ -413,11 +415,11 @@ export default function AdminTotpGate({
 
       <button
         type="submit"
-        disabled={isVerifying || code.length !== 6}
+          disabled={isVerifying || isCompletingLogin || code.length !== 6}
         className="bg-brand-blue hover:bg-[#0062d1] disabled:opacity-60 text-white font-bold py-3 flex items-center justify-center gap-2 transition-colors"
       >
-        {isVerifying && <Loader2 size={16} className="animate-spin" />}
-        {isVerifying ? "در حال بررسی..." : "تأیید"}
+        {(isVerifying || isCompletingLogin) && <Loader2 size={16} className="animate-spin" />}
+        {isCompletingLogin ? "در حال ورود..." : isVerifying ? "در حال بررسی..." : "تأیید"}
       </button>
 
       {!requiresSetup && (
