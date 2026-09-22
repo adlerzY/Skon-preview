@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, LifeBuoy, MessageSquare } from "lucide-react";
+import { Package, LifeBuoy, MessageSquare, ChevronLeft } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
