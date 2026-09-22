@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import type { ProductNode, VariationCard } from "@/lib/graphql";
@@ -7,7 +6,6 @@ import ProductPageClient from "@/components/product/ProductPageClient";
 import ProductContentMatrix from "@/components/product/ProductContentMatrix";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
-import ProductPageShell from "@/components/product/ProductPageShell";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema, productSchema } from "@/lib/seo/jsonld";
@@ -157,14 +155,12 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
 
   return (
     <main className="container mx-auto px-6 max-w-site py-8">
-      <Suspense fallback={<ProductPageShell />}>
-        <ProductDetailStream
-          productPromise={productPromise}
-          initialEdition={edition}
-          region={region}
-          requestedCategorySlug={categorySlug}
-        />
-      </Suspense>
+      <ProductDetailStream
+        productPromise={productPromise}
+        initialEdition={edition}
+        region={region}
+        requestedCategorySlug={categorySlug}
+      />
     </main>
   );
 }

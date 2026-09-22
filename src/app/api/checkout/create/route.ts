@@ -99,9 +99,7 @@ export async function POST(request: NextRequest) {
       token
     );
 
-    console.error("Checkout GraphQL error:", errorMessage);
-
-const order = data?.submitCustomerOrder?.order;
+    const order = data?.submitCustomerOrder?.order;
 
     if (!order?.databaseId || !order?.orderKey) {
       const raw = String(errorMessage || "");

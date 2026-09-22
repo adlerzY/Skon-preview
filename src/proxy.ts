@@ -60,11 +60,14 @@ async function getStaffStatus(request: NextRequest): Promise<boolean> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), MAINTENANCE_REQUEST_TIMEOUT_MS);
   try {
+    const adminSharedSecret = process.env.BTL_ADMIN_GRAPHQL_SHARED_SECRET?.trim();
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "X-BTL-Admin-Request": "1",
+        ...(adminSharedSecret ? { "X-BTL-Admin-Secret": adminSharedSecret } : {}),
         ...(hostHeader ? { Host: hostHeader } : {}),
       },
       body: JSON.stringify({ query: STAFF_STATUS_QUERY }),

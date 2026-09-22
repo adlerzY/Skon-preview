@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Header from "@/components/Header/Header";
-import SubHeaderBar from "@/components/Header/SubHeaderBar";
 import Footer from "@/components/Footer/Footer";
 import { DEFAULT_REGION, KNOWN_REGIONS } from "@/lib/regions";
 import { DEFAULT_SEO_DESCRIPTION, SEO_REGION, makeMetadata, absoluteUrl } from "@/lib/seo/site";
@@ -53,7 +52,6 @@ export default async function RegionLayout({
   return (
     <>
       <Header activeRegion={activeRegion} />
-      <SubHeaderBar />
       {children}
       <Footer activeRegion={activeRegion} />
     </>
