@@ -4,6 +4,7 @@ import { ProductNode } from "@/lib/graphql";
 import ProductCardImage from "@/components/ProductCardImage";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
+const CURRENT_TIME_MS = Date.now();
 
 interface ProductCardProps {
   product: ProductNode & { activeRegion?: string; defaultEdition?: string };
@@ -24,16 +25,19 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
 
   const badges: Array<{ text: string; color: string }> = [];
   const productDate = product.date ? new Date(product.date).getTime() : 0;
-  const now = Date.now();
-  const isNew = productDate > 0 && now - productDate < 15 * 24 * 60 * 60 * 1000;
+  const isNew = productDate > 0 && CURRENT_TIME_MS - productDate < 15 * 24 * 60 * 60 * 1000;
 
+  if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue text-white" });
   if (isActualSale) badges.push({ text: "حراج", color: "bg-brand-sabz" });
-  if (isNew) badges.push({ text: "جدید", color: "bg-brand-blue" });
+
   const hasCommissionDiscount = Boolean(
     product.commissionDiscountBadge ||
     product.variationCards?.some((variation) => variation.commissionDiscountBadge)
   );
-  if (hasCommissionDiscount) badges.push({ text: "تخفیف ویژه فروشگاه", color: "bg-brand-zard" });
+
+  if (hasCommissionDiscount) {
+    badges.push({ text: "تخفیف ویژه فروشگاه", color: "bg-brand-zard" });
+  }
 
   const targetRegion = product.activeRegion || activeRegion || "eu";
   const href = `/${targetRegion}/${categorySlug}/${product.slug}`;
