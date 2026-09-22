@@ -15,7 +15,7 @@ export default function SiteNotice({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`relative ${desktop ? "flex items-center" : "flex items-center justify-center"}`}>
+    <div className={`relative ${desktop ? "group flex flex-col items-center" : "flex items-center justify-center"}`}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -27,32 +27,30 @@ export default function SiteNotice({
         <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <div
-          className={`absolute z-[10001] w-[min(340px,calc(100vw-32px))] ${
-            desktop
-              ? "right-full top-1/2 -translate-y-1/2 mr-2"
-              : "left-1/2 top-full -translate-x-1/2 mt-2"
-          }`}
-        >
-          <div className="bg-brand-surface border border-brand-surface_hover rounded-[5px] p-3 shadow-[0_15px_30px_rgba(0,0,0,0.6)] text-right">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white leading-6">{title}</p>
-                <p className="mt-1 text-xs text-brand-m_khonsa leading-6">{message}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="بستن اطلاعیه"
-                className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full text-brand-m_khonsa hover:text-white hover:bg-brand-surface_hover"
-              >
-                <X size={15} />
-              </button>
+      <div
+        className={`absolute z-[10001] w-[min(340px,calc(100vw-32px))] transition-all duration-150 ${
+          desktop
+            ? "left-1/2 top-full mt-2 -translate-x-1/2 invisible pointer-events-none opacity-0 group-hover:visible group-hover:pointer-events-auto group-hover:opacity-100"
+            : `left-1/2 top-full mt-2 -translate-x-1/2 ${open ? "visible pointer-events-auto opacity-100" : "invisible pointer-events-none opacity-0"}`
+        }`}
+      >
+        <div className="bg-brand-surface border border-brand-surface_hover rounded-[5px] p-3 shadow-[0_15px_30px_rgba(0,0,0,0.6)] text-right">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white leading-6">{title}</p>
+              <p className="mt-1 text-xs text-brand-m_khonsa leading-6">{message}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="بستن اطلاعیه"
+              className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full text-brand-m_khonsa hover:text-white hover:bg-brand-surface_hover"
+            >
+              <X size={15} />
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

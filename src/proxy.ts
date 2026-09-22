@@ -17,6 +17,7 @@ const REFRESH_SUCCESS_COOLDOWN_SECONDS = 90;
 const REFRESH_FAILURE_COOLDOWN_SECONDS = 45;
 const MAINTENANCE_REQUEST_TIMEOUT_MS = 2_500;
 const MAINTENANCE_CACHE_TTL_MS = 1_500;
+const STAFF_STATUS_CACHE_TTL_MS = 5_000;
 
 const SITE_MAINTENANCE_QUERY = `
   query GetSiteMaintenanceMode {
@@ -24,10 +25,17 @@ const SITE_MAINTENANCE_QUERY = `
   }
 `;
 
+const STAFF_STATUS_QUERY = `
+  query GetMaintenanceViewer {
+    viewer { id isStaff }
+  }
+`;
+
 type MaintenanceState = { enabled: boolean; title: string; description: string };
 
 let maintenanceCache: { expiresAt: number; state: MaintenanceState } | null = null;
 let maintenanceRequest: Promise<MaintenanceState> | null = null;
+const staffStatusCache = new Map<string, { expiresAt: number; isStaff: boolean }>();
 
 const PUBLIC_GRAPHQL_HOST = (() => {
   try {
@@ -38,6 +46,46 @@ const PUBLIC_GRAPHQL_HOST = (() => {
 })();
 
 const refreshInFlight = new Map<string, Promise<string | null>>();
+
+async function getStaffStatus(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
+  if (!token) return false;
+
+  const now = Date.now();
+  const cached = staffStatusCache.get(token);
+  if (cached && cached.expiresAt > now) return cached.isStaff;
+  if (cached) staffStatusCache.delete(token);
+
+  const { url, hostHeader } = resolveEndpoint();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MAINTENANCE_REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(hostHeader ? { Host: hostHeader } : {}),
+      },
+      body: JSON.stringify({ query: STAFF_STATUS_QUERY }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) return false;
+    const json = await res.json().catch(() => null);
+    const isStaff = json?.data?.viewer?.isStaff === true && !json?.errors?.length;
+    staffStatusCache.set(token, { expiresAt: Date.now() + STAFF_STATUS_CACHE_TTL_MS, isStaff });
+    if (staffStatusCache.size > 32) {
+      const oldestKey = staffStatusCache.keys().next().value;
+      if (oldestKey) staffStatusCache.delete(oldestKey);
+    }
+    return isStaff;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function getMaintenanceState(): Promise<MaintenanceState> {
   const now = Date.now();
@@ -283,15 +331,28 @@ export async function proxy(request: NextRequest) {
 
   const isMaintenanceRoute = pathname === "/maintenance" || pathname.startsWith("/maintenance/");
   const isAdminLoginRoute = pathname === "/admin-login" || pathname.startsWith("/admin-login/");
-  const isStaff = request.cookies.get(IS_STAFF_COOKIE)?.value === "1";
 
-  if (!isMaintenanceRoute && !isAdminRoute && !isAdminLoginRoute && !isStaff) {
+  if (!isMaintenanceRoute && !isAdminRoute && !isAdminLoginRoute) {
     const maintenance = await getMaintenanceState();
     if (maintenance.enabled) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/maintenance";
-      url.search = "";
-      const response = NextResponse.rewrite(url);
+      const hasStaffCookie = request.cookies.get(IS_STAFF_COOKIE)?.value === "1";
+      const isStaff = hasStaffCookie || await getStaffStatus(request);
+      if (!isStaff) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/maintenance";
+        url.search = "";
+        const response = NextResponse.rewrite(url);
+        return finalizeAuthCookie(response, refreshed);
+      }
+
+      const response = NextResponse.next({ request });
+      response.cookies.set(IS_STAFF_COOKIE, "1", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: AUTH_TOKEN_MAX_AGE,
+      });
       return finalizeAuthCookie(response, refreshed);
     }
   }
