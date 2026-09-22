@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
+import { IS_STAFF_COOKIE } from "@/lib/auth/constants";
 
 const REGION_COOKIE = "store_region";
 const AUTH_TOKEN_COOKIE = "a2b_auth_token";
@@ -14,6 +15,62 @@ const FALLBACK_PROD_URL = "https://api.arena2battle.com/graphql";
 const REFRESH_TIMEOUT_MS = 6_000;
 const REFRESH_SUCCESS_COOLDOWN_SECONDS = 90;
 const REFRESH_FAILURE_COOLDOWN_SECONDS = 45;
+const MAINTENANCE_REQUEST_TIMEOUT_MS = 2_500;
+const MAINTENANCE_CACHE_TTL_MS = 1_500;
+
+const SITE_MAINTENANCE_QUERY = `
+  query GetSiteMaintenanceMode {
+    siteMaintenanceSettings { enabled title description }
+  }
+`;
+
+type MaintenanceState = { enabled: boolean; title: string; description: string };
+
+let maintenanceCache: { expiresAt: number; state: MaintenanceState } | null = null;
+let maintenanceRequest: Promise<MaintenanceState> | null = null;
+
+async function getMaintenanceState(): Promise<MaintenanceState> {
+  const now = Date.now();
+  if (maintenanceCache && maintenanceCache.expiresAt > now) return maintenanceCache.state;
+  if (maintenanceRequest) return maintenanceRequest;
+
+  maintenanceRequest = (async () => {
+    const { url, hostHeader } = resolveEndpoint();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MAINTENANCE_REQUEST_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(hostHeader ? { Host: hostHeader } : {}),
+        },
+        body: JSON.stringify({ query: SITE_MAINTENANCE_QUERY }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
+      }
+      const json = await res.json().catch(() => null);
+      const settings = json?.data?.siteMaintenanceSettings;
+      const state = {
+        enabled: settings?.enabled === true,
+        title: typeof settings?.title === "string" ? settings.title : "",
+        description: typeof settings?.description === "string" ? settings.description : "",
+      };
+      maintenanceCache = { expiresAt: Date.now() + MAINTENANCE_CACHE_TTL_MS, state };
+      return state;
+    } catch {
+      return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
+    } finally {
+      clearTimeout(timeoutId);
+      maintenanceRequest = null;
+    }
+  })();
+
+  return maintenanceRequest;
+}
 
 const PUBLIC_GRAPHQL_HOST = (() => {
   try {
@@ -224,6 +281,21 @@ export async function proxy(request: NextRequest) {
     }
     const response = NextResponse.next({ request: { headers: forwardedHeaders } });
     return finalizeAuthCookie(response, refreshed);
+  }
+
+  const isMaintenanceRoute = pathname === "/maintenance" || pathname.startsWith("/maintenance/");
+  const isAdminLoginRoute = pathname === "/admin-login" || pathname.startsWith("/admin-login/");
+  const isStaff = request.cookies.get(IS_STAFF_COOKIE)?.value === "1";
+
+  if (!isMaintenanceRoute && !isAdminRoute && !isAdminLoginRoute && !isStaff) {
+    const maintenance = await getMaintenanceState();
+    if (maintenance.enabled) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/maintenance";
+      url.search = "";
+      const response = NextResponse.rewrite(url);
+      return finalizeAuthCookie(response, refreshed);
+    }
   }
 
   const isNonRegionRoute =

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin/server";
 import { fetchGraphQL } from "@/lib/graphql";
 import { ADMIN_SET_MAINTENANCE_MUTATION, SITE_MAINTENANCE_QUERY } from "@/lib/graphql/admin";
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
   if (!result?.success) return NextResponse.json({ error: "تغییر وضعیت تعمیرات انجام نشد" }, { status: 500 });
 
   revalidateTag("site-maintenance", { expire: 0 });
+  revalidatePath("/", "layout");
   return NextResponse.json({
     enabled: Boolean(result.enabled),
     title: result.title || title,
