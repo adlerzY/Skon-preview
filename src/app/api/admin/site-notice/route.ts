@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin/server";
 import { fetchGraphQL } from "@/lib/graphql";
 import { ADMIN_SET_SITE_NOTICE_MUTATION, SITE_NOTICE_QUERY } from "@/lib/graphql/admin";
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
   }
 
   revalidateTag("site-notice", { expire: 0 });
+  revalidatePath("/", "layout");
 
   return NextResponse.json({
     enabled: result.enabled === true,

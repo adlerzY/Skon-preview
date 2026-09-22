@@ -29,6 +29,16 @@ type MaintenanceState = { enabled: boolean; title: string; description: string }
 let maintenanceCache: { expiresAt: number; state: MaintenanceState } | null = null;
 let maintenanceRequest: Promise<MaintenanceState> | null = null;
 
+const PUBLIC_GRAPHQL_HOST = (() => {
+  try {
+    return new URL(WP_GRAPHQL_URL || FALLBACK_PROD_URL).host;
+  } catch {
+    return undefined;
+  }
+})();
+
+const refreshInFlight = new Map<string, Promise<string | null>>();
+
 async function getMaintenanceState(): Promise<MaintenanceState> {
   const now = Date.now();
   if (maintenanceCache && maintenanceCache.expiresAt > now) return maintenanceCache.state;
@@ -49,9 +59,7 @@ async function getMaintenanceState(): Promise<MaintenanceState> {
         cache: "no-store",
         signal: controller.signal,
       });
-      if (!res.ok) {
-        return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
-      }
+      if (!res.ok) return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
       const json = await res.json().catch(() => null);
       const settings = json?.data?.siteMaintenanceSettings;
       const state = {
@@ -71,16 +79,6 @@ async function getMaintenanceState(): Promise<MaintenanceState> {
 
   return maintenanceRequest;
 }
-
-const PUBLIC_GRAPHQL_HOST = (() => {
-  try {
-    return new URL(WP_GRAPHQL_URL || FALLBACK_PROD_URL).host;
-  } catch {
-    return undefined;
-  }
-})();
-
-const refreshInFlight = new Map<string, Promise<string | null>>();
 
 function resolveEndpoint(): { url: string; hostHeader?: string } {
   const publicUrl = WP_GRAPHQL_URL || FALLBACK_PROD_URL;
@@ -306,7 +304,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/shop" ||
     pathname.startsWith("/shop/") ||
     pathname === "/product" ||
-    pathname.startsWith("/product/");
+    pathname.startsWith("/product/") ||
+    pathname === "/maintenance" ||
+    pathname.startsWith("/maintenance/");
 
   if (isNonRegionRoute) {
     const response = NextResponse.next({ request });

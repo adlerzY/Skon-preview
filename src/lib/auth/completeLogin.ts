@@ -85,7 +85,7 @@ export async function completeLogin(
   });
 
   response.cookies.set(IS_STAFF_COOKIE, isStaff ? "1" : "0", {
-    httpOnly: false,
+    httpOnly: true,
     secure: isProd,
     sameSite: "lax",
     path: "/",

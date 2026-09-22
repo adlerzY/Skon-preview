@@ -41,9 +41,11 @@ export default async function Header({ activeRegion }: { activeRegion: string })
             <DesktopNavLinks activeRegion={activeRegion} />
           </div>
 
-          <div className="relative shrink-0">
-            {siteNotice.enabled && <SiteNotice title={siteNotice.title} message={siteNotice.message} desktop />}
-          </div>
+          {siteNotice.enabled ? (
+            <div className="relative shrink-0">
+              <SiteNotice title={siteNotice.title} message={siteNotice.message} desktop />
+            </div>
+          ) : null}
 
           <div className="flex items-center">
             <Link href={`/${activeRegion}/download`} prefetch={false} className={ACTION_BUTTON_CLASSES}>

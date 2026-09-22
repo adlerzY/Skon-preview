@@ -13,12 +13,7 @@ export interface MaintenanceSettings {
 }
 
 export async function getMaintenanceSettings(): Promise<MaintenanceSettings> {
-  const data = await fetchGraphQL(
-    SITE_MAINTENANCE_QUERY,
-    {},
-    [],
-    "no-store",
-  );
+  const data = await fetchGraphQL(SITE_MAINTENANCE_QUERY, {}, [], "no-store");
   const settings = data?.siteMaintenanceSettings;
   return {
     enabled: settings?.enabled === true,
@@ -38,7 +33,7 @@ export async function getSiteNotice(): Promise<SiteNoticeSettings> {
     SITE_NOTICE_QUERY,
     {},
     [SITE_NOTICE_CACHE_TAG],
-    "force-cache",
+    { type: "revalidate", seconds: 60 },
   );
   const notice = data?.siteNotice;
   return {

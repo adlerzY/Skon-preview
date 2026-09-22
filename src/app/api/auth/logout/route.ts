@@ -16,7 +16,7 @@ export async function POST() {
   }
   const response = NextResponse.json({ success: true });
   for (const name of [AUTH_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, LOGGED_IN_COOKIE, IS_STAFF_COOKIE, SESSION_ID_COOKIE, BYPASS_COOKIE]) {
-    response.cookies.set(name, "", { httpOnly: name !== LOGGED_IN_COOKIE && name !== IS_STAFF_COOKIE, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
+    response.cookies.set(name, "", { httpOnly: name !== LOGGED_IN_COOKIE, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
   }
   return response;
 }
