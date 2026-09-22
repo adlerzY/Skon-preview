@@ -1,13 +1,19 @@
+import { Suspense } from "react";
 import { getAllBlogPosts } from "@/lib/graphql";
 import BlogArchiveClient from "@/components/blog/BlogArchiveClient";
+import { BlogArchivePostsLoadingShell } from "@/components/ui/BlogLoadingShells";
 
 interface BlogPageProps {
   params: Promise<{ region: string }>;
 }
 
+async function BlogArchivePosts({ region }: { region: string }) {
+  const { posts, pageInfo } = await getAllBlogPosts();
+  return <BlogArchiveClient initialPosts={posts} initialPageInfo={pageInfo} region={region} />;
+}
+
 export default async function BlogArchivePage({ params }: BlogPageProps) {
   const { region } = await params;
-  const { posts, pageInfo } = await getAllBlogPosts();
 
   return (
     <main className="container mx-auto px-6 py-12 text-white max-w-site">
@@ -16,7 +22,9 @@ export default async function BlogArchivePage({ params }: BlogPageProps) {
         <p className="text-brand-m_khonsa text-sm">جدیدترین اخبار و مقالات آموزشی</p>
       </div>
 
-      <BlogArchiveClient initialPosts={posts} initialPageInfo={pageInfo} region={region} />
+      <Suspense fallback={<BlogArchivePostsLoadingShell />}>
+        <BlogArchivePosts region={region} />
+      </Suspense>
     </main>
   );
 }

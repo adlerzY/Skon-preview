@@ -4,6 +4,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { CREATE_SUPPORT_TICKET_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -17,16 +18,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, 32 * 1024);
     const title = typeof body?.title === "string" ? body.title.trim() : "";
     const content = typeof body?.content === "string" ? body.content.trim() : "";
     const linkedOrderId = Number.isInteger(body?.linkedOrderId) ? body.linkedOrderId : undefined;
 
-    if (title.length < 3) {
-      return NextResponse.json({ error: "عنوان تیکت را کامل‌تر وارد کنید" }, { status: 400 });
+    if (title.length < 3 || title.length > 160) {
+      return NextResponse.json({ error: "عنوان تیکت باید بین ۳ تا ۱۶۰ کاراکتر باشد" }, { status: 400 });
     }
-    if (content.length < 5) {
-      return NextResponse.json({ error: "متن تیکت را کامل‌تر وارد کنید" }, { status: 400 });
+    if (content.length < 5 || content.length > 10000) {
+      return NextResponse.json({ error: "متن تیکت باید بین ۵ تا ۱۰٬۰۰۰ کاراکتر باشد" }, { status: 400 });
     }
 
     const data = await fetchGraphQL(
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, ticketId });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Create ticket error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });
   }

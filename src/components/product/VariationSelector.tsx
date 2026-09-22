@@ -98,7 +98,7 @@ export default function VariationSelector({
   }, [groupedAttributes, variations, selectedAttrs, regionInfo]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full">
       {groupedAttributes.map((group) => {
         const cleanGroupName = group.name.replace("pa_", "").replace("attribute_", "");
 

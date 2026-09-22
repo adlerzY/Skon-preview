@@ -228,7 +228,6 @@ export default function MobileMenu({ activeRegion, regionsPromise, drawerDataPro
             width={100}
             height={30}
             className="h-[30px] w-auto object-contain"
-            priority
             style={{ width: "auto" }}
           />
         </Link>

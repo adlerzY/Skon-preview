@@ -5,6 +5,7 @@ import { SUBMIT_CUSTOMER_ORDER_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/gr
 import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 interface CheckoutCartItem {
   productId: number;
@@ -48,15 +49,15 @@ export async function POST(request: NextRequest) {
     if (sessionPreflight.data?.touchSession?.success !== true) {
       return errorResponse("SESSION_INVALID", "نشست شما معتبر نیست؛ دوباره وارد شوید", 401);
     }
-    const body = await request.json();
+    const body = await readJsonBody(request, 64 * 1024);
     const items: CheckoutCartItem[] = Array.isArray(body?.items) ? body.items : [];
     const idempotencyKey = typeof body?.idempotencyKey === "string" ? body.idempotencyKey.trim() : "";
     if (!/^[A-Za-z0-9._:-]{8,100}$/.test(idempotencyKey)) {
       return errorResponse("VALIDATION_ERROR", "شناسه یکتای سفارش نامعتبر است", 400);
     }
 
-    if (items.length === 0) {
-      return errorResponse("VALIDATION_ERROR", "سبد خرید شما خالی است", 400);
+    if (items.length === 0 || items.length > 10) {
+      return errorResponse("VALIDATION_ERROR", "تعداد اقلام سبد خرید نامعتبر است", 400);
     }
 
     let totalQuantity = 0;
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, success: true, code: "ORDER_CREATED", redirectUrl, orderNumber: order.orderNumber });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Checkout error:", error);
     return errorResponse("INTERNAL_ERROR", "خطا در ارتباط با سرور", 500);
   }

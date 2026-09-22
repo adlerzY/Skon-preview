@@ -90,7 +90,6 @@ export default function UnifiedLoginFlow() {
             height={44}
             style={{ width: "auto" }}
             className="h-9 w-auto object-contain"
-            priority
           />
         </Link>
         <Link

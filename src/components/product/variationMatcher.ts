@@ -111,7 +111,7 @@ export function matchesSelection(
 ): boolean {
   return groupedAttributes.every((group) => {
     const attr = variation.attributes?.find((candidate) => candidate.name === group.name);
-    return !attr || attr.value === selectedAttrs[group.name];
+    return Boolean(attr) && attr.value === selectedAttrs[group.name];
   });
 }
 
@@ -171,6 +171,5 @@ export function findMatchingVariations(
     (variation) => matchesSelection(variation, groupedAttributes, selectedAttrs) && matchesRegion(variation, regionInfo)
   );
 
-  if (matching.length > 0) return matching;
-  return variations.filter((variation) => matchesRegion(variation, regionInfo));
+  return matching;
 }

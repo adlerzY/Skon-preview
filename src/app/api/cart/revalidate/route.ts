@@ -4,6 +4,7 @@ import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
 import { REVALIDATE_CUSTOMER_CART_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 interface CartItem {
   productId: number;
@@ -29,9 +30,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, 64 * 1024);
     const items: CartItem[] = Array.isArray(body?.items) ? body.items : [];
     if (!items.length) return errorResponse("VALIDATION_ERROR", "سبد خرید شما خالی است", 400);
+
+    if (items.length > 10) return errorResponse("VALIDATION_ERROR", "تعداد اقلام سبد خرید نامعتبر است", 400);
 
     let totalQuantity = 0;
     for (const item of items) {
@@ -89,6 +92,8 @@ export async function POST(request: NextRequest) {
       items: Array.isArray(result.items) ? result.items : [],
     }, { status: 200 });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Cart revalidation error:", error);
     return errorResponse("INTERNAL_ERROR", "خطا در بررسی سبد خرید", 500);
   }

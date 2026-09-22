@@ -13,6 +13,7 @@ import {
   REFRESH_TOKEN_MAX_AGE,
 } from "@/lib/auth/constants";
 import { detectDeviceLabel } from "@/lib/deviceLabel";
+import { getClientIp } from "@/lib/rateLimit";
 
 export async function completeLogin(
   request: NextRequest,
@@ -21,10 +22,7 @@ export async function completeLogin(
 ) {
   const sessionId = randomUUID();
   const userAgent = request.headers.get("user-agent") || "";
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  const ip = getClientIp(request);
 
   let isStaff = false;
   const bindingSecret = process.env.SESSION_BINDING_SECRET;

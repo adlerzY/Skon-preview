@@ -5,6 +5,7 @@ import { WRITE_BLOG_COMMENT_MUTATION } from "@/lib/graphql/blog";
 import { getPostComments } from "@/lib/graphql/blogComments";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
@@ -33,15 +34,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, 32 * 1024);
     const postId = Number(body?.postId);
     const content = typeof body?.content === "string" ? body.content.trim() : "";
 
     if (!Number.isInteger(postId) || postId <= 0) {
       return NextResponse.json({ error: "شناسه پست نامعتبر است" }, { status: 400 });
     }
-    if (content.length < 2) {
-      return NextResponse.json({ error: "متن نظر خیلی کوتاه است" }, { status: 400 });
+    if (content.length < 2 || content.length > 5000) {
+      return NextResponse.json({ error: "متن نظر باید بین ۲ تا ۵٬۰۰۰ کاراکتر باشد" }, { status: 400 });
     }
 
     const data = await fetchGraphQL(WRITE_BLOG_COMMENT_MUTATION, { postId, content }, [], "no-store", token);
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, approved: Boolean(data.writeBlogComment.approved) });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Write blog comment error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });
   }

@@ -95,10 +95,12 @@ export default function ProductPageClient({
     getFirstValidAttributes(initialEdition)
   );
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
+  const [shouldPreloadImage, setShouldPreloadImage] = useState(true);
 
   useEffect(() => {
     setSelectedAttrs(getFirstValidAttributes(initialEdition));
     setSelectedGalleryImage(null);
+    setShouldPreloadImage(true);
   }, [getFirstValidAttributes, initialEdition, product.databaseId]);
 
   const combinedAggregateVar = useMemo((): VariationCard | null => {
@@ -131,7 +133,7 @@ export default function ProductPageClient({
       regionInfo
     );
 
-    if (candidates.length === 0) return variations[0] ?? null;
+    if (candidates.length === 0) return null;
 
     let accPrice: number | null = null;
     let accRegularPrice: number | null = null;
@@ -212,11 +214,18 @@ export default function ProductPageClient({
     regionInfo,
   });
 
+  const selectedVariationImageUrl = useMemo(
+    () => combinedAggregateVar?.imageUrl?.trim() || null,
+    [combinedAggregateVar]
+  );
+
   const allGalleryImages = useMemo(() => {
+    const MAX_GALLERY_IMAGES = 12;
     const seen = new Set<string>();
     const images: string[] = [];
 
     const add = (url: string | undefined | null) => {
+      if (images.length >= MAX_GALLERY_IMAGES) return;
       const trimmed = url?.trim();
       if (!trimmed) return;
       const dedupeKey = stripSizeSuffix(trimmed);
@@ -226,25 +235,16 @@ export default function ProductPageClient({
     };
 
     add(product.imageLarge?.sourceUrl || product.image?.sourceUrl);
-    for (const v of variations) add(v.imageUrl);
     for (const g of product.galleryImages?.nodes ?? []) add(g.sourceUrl);
+    add(selectedVariationImageUrl);
+    for (const v of variations) add(v.imageUrl);
 
     return images;
-  }, [product, variations]);
-
-  const firstBranchVarImageUrl = useMemo(() => {
-    if (variations.length === 0 || groupedAttributes.length === 0) return null;
-    const firstGroup = groupedAttributes[0];
-    const selectedVal = selectedAttrs[firstGroup.name];
-    return (
-      variations.find((v) => v.attributes?.some((a) => a.name === firstGroup.name && a.value === selectedVal) && v.imageUrl)
-        ?.imageUrl?.trim() ?? null
-    );
-  }, [variations, groupedAttributes, selectedAttrs]);
+  }, [product, variations, selectedVariationImageUrl]);
 
   const displayImage =
     selectedGalleryImage ||
-    firstBranchVarImageUrl ||
+    selectedVariationImageUrl ||
     product.imageLarge?.sourceUrl?.trim() ||
     product.image?.sourceUrl?.trim() ||
     "/placeholder.jpg";
@@ -340,7 +340,7 @@ export default function ProductPageClient({
   }, [purchase, showToast]);
 
   return (
-    <div className="flex flex-col gap-12 w-full animate-in fade-in duration-300" dir="rtl">
+    <div className="flex flex-col gap-12 w-full" dir="rtl">
       <ProductStickyBar
         visible={showStickyBar}
         productName={product.name}
@@ -353,7 +353,7 @@ export default function ProductPageClient({
         price={purchase.currentPrice}
         regularPrice={purchase.regularPrice}
         inventoryHint={
-          purchase.deliveryType === "code" && typeof combinedAggregateVar.codeStockCount === "number" && combinedAggregateVar.codeStockCount > 0 && combinedAggregateVar.codeStockCount <= 5
+          purchase.deliveryType === "code" && typeof combinedAggregateVar?.codeStockCount === "number" && combinedAggregateVar.codeStockCount > 0 && combinedAggregateVar.codeStockCount <= 5
             ? `فقط ${combinedAggregateVar.codeStockCount.toLocaleString("fa-IR")} عدد باقی مانده`
             : null
         }
@@ -396,10 +396,11 @@ export default function ProductPageClient({
                   src={displayImage}
                   alt={product.name}
                   fill
-                  priority
-                  fetchPriority="high"
+                  preload={shouldPreloadImage}
                   quality={80}
                   className="object-cover transition-opacity duration-300"
+                  onLoad={() => setShouldPreloadImage(false)}
+                  onError={() => setShouldPreloadImage(false)}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 58vw"
                 />
                 {allGalleryImages.length > 1 && (

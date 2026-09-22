@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminMutation, getAdminCdKeyStock, ADMIN_MUTATIONS } from "@/lib/admin/server";
 import { ADMIN_PERMISSIONS } from "@/lib/admin/permissions";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, 1024 * 1024);
     const action = String(body?.action || "");
     const map: Record<string, string> = {
       import: ADMIN_MUTATIONS.importCdKeys,
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
       : ADMIN_PERMISSIONS.CDKEYS_WRITE;
     return NextResponse.json(await adminMutation(map[action], variables, permission), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Admin CD Key mutation:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "عملیات CD Key انجام نشد" }, { status: 500 });
   }

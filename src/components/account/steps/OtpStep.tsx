@@ -23,6 +23,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   const [cooldown, setCooldown] = useState(initialCooldown);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const verifyingRef = useRef(false);
 
   const isCodeComplete = code.trim().length === OTP_LENGTH;
 
@@ -37,6 +38,8 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
   }, [cooldown]);
 
   const submitCode = async (submittedCode: string) => {
+    if (verifyingRef.current) return;
+    verifyingRef.current = true;
     setError("");
     setIsVerifying(true);
     try {
@@ -69,6 +72,7 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {
+      verifyingRef.current = false;
       setIsVerifying(false);
     }
   };
@@ -131,7 +135,13 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
           type="text"
           inputMode="numeric"
           value={code}
-          onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
+          onChange={(e) => {
+            const nextCode = e.target.value.replace(/[^\d]/g, "").slice(0, OTP_LENGTH);
+            setCode(nextCode);
+            if (nextCode.length === OTP_LENGTH && !verifyingRef.current) {
+              void submitCode(nextCode);
+            }
+          }}
           maxLength={OTP_LENGTH}
           dir="ltr"
           placeholder="⋅ ⋅ ⋅ ⋅ ⋅"

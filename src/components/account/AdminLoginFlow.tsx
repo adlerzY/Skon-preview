@@ -71,7 +71,6 @@ export default function AdminLoginFlow() {
             height={44}
             style={{ width: "auto" }}
             className="h-9 w-auto object-contain"
-            priority
           />
         </Link>
         <Link href="/" className="flex items-center gap-1 text-xs text-brand-m_khonsa hover:text-white transition-colors">

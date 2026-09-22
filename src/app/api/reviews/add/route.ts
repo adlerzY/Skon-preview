@@ -4,6 +4,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { WRITE_REVIEW_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request, 32 * 1024);
     const productId = Number(body?.productId);
     const rating = Number(body?.rating);
     const content = typeof body?.content === "string" ? body.content.trim() : "";
@@ -36,8 +37,8 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return NextResponse.json({ error: "امتیاز باید بین ۱ تا ۵ باشد" }, { status: 400 });
     }
-    if (content.length < 3) {
-      return NextResponse.json({ error: "متن نظر خیلی کوتاه است" }, { status: 400 });
+    if (content.length < 3 || content.length > 1000) {
+      return NextResponse.json({ error: "متن نظر باید بین ۳ تا ۱٬۰۰۰ کاراکتر باشد" }, { status: 400 });
     }
 
     const data = await fetchGraphQL(
@@ -60,6 +61,8 @@ export async function POST(request: NextRequest) {
       message: "نظر شما با موفقیت ثبت شد و پس از تأیید ادمین نمایش داده می‌شود.",
     });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Add review error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });
   }

@@ -23,14 +23,14 @@ const CONTACT_CHANNELS: ContactChannel[] = [
   {
     icon: "/images/support/Discord-Emblem.webp",
     label: "دیسکورد",
-    value: "پاسخگویی آنلاین",
-    href: "https://wa.me/idddddd",
+    value: "Discord",
+    href: "https://discord.com",
     responseTime: "پاسخگویی آنلاین و سریع",
   },
   {
     icon: "/images/support/flash.webp",
     label: "شماره تماس",
-    value: "00000000000000",
+    value: "support@arena2battle.com",
     href: "mailto:support@arena2battle.com",
     responseTime: "پاسخ گویی فوری",
   },
@@ -131,9 +131,9 @@ export default function SupportPage({ region }: { region: string }) {
         <div className="bg-brand-surface border border-brand-surface_hover p-6 flex flex-col gap-4">
           <StatRow icon={<Clock size={16} className="text-brand-zard" />} title="ساعات پاسخگویی" desc="هر روز هفته، از ساعت ۹ صبح تا ۱۲ شب" />
           <div className="border-t border-brand-surface_hover" />
-          <StatRow icon={<ShieldCheck size={16} className="text-brand-sabz" />} title="امنیت اطلاعات" desc="اطلاعات حساب و پرداخت شما رمزنگاری و محافظت می‌شود (جدی همینطوره)" />
+          <StatRow icon={<ShieldCheck size={16} className="text-brand-sabz" />} title="امنیت اطلاعات" desc="اطلاعات حساب و پرداخت شما با کنترل دسترسی و رمزنگاری محافظت می‌شود." />
           <div className="border-t border-brand-surface_hover" />
-          <StatRow icon={<Star size={16} className="text-brand-blue" />} title="رضایت مشتریان" desc="بیش از 100٪ رضایت در سفارش‌های تکمیل‌شده (مثلا)" />
+          <StatRow icon={<Star size={16} className="text-brand-blue" />} title="رضایت مشتریان" desc="پشتیبانی سفارش‌ها هر روز پیگیری و ثبت می‌شود." />
         </div>
       </div>
 
@@ -174,12 +174,12 @@ export default function SupportPage({ region }: { region: string }) {
             <Download size={18} />
           </span>
           <div className="flex flex-col">
-            <span className="font-bold text-sm text-white">میخوای با نت داخلی بازیارو دانلود کنی؟ نگران نباش بیا پیش عمو</span>
+            <span className="font-bold text-sm text-white">دانلود بازی‌ها با لینک مستقیم</span>
             <span className="text-xs text-brand-m_khonsa">لینک دانلود مستقیم و پرسرعت بازی‌ها را اینجا پیدا میکنی.</span>
           </div>
         </div>
         <Link href={`/${region}/download`} className="bg-brand-bg border border-brand-surface_hover hover:bg-brand-surface_hover text-white text-sm font-bold px-5 py-2.5 transition-colors whitespace-nowrap">
-         بخدا گولت نمیزنم همش همینجاست
+         مشاهده لینک‌های دانلود
         </Link>
       </div>
     </main>

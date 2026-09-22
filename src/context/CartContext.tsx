@@ -1,13 +1,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { getClientCookie, setClientCookie, removeClientCookie } from "@/lib/cookies";
+import { getClientCookie, removeClientCookie } from "@/lib/cookies";
 import { saveCredentials, getCredentials, removeCredentials } from "@/lib/secureCartStorage";
 import { useToast } from "@/context/ToastContext";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
 
 const CART_COOKIE = "a2b_cart";
-const CART_COOKIE_DAYS = 30;
+const CART_STORAGE_KEY = "a2b_cart_v2";
+const CART_STORAGE_VERSION = 2;
+const CART_STORAGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_CART_ITEMS = 10;
 
 const CAP_MESSAGE = `کاربر گرامی، سقف خرید ${MAX_CART_QUANTITY.toLocaleString("fa-IR")} عدد می‌باشد`;
 
@@ -67,10 +70,61 @@ function parseStoredCart(raw: string | null): CartItem[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isValidCartItem) : [];
+    const items = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === "object" && Array.isArray(parsed.items)
+        ? parsed.items
+        : [];
+    return items.filter(isValidCartItem).slice(0, MAX_CART_ITEMS);
   } catch {
     return [];
   }
+}
+
+function readStoredCart(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.version === CART_STORAGE_VERSION && typeof parsed?.savedAt === "number") {
+        if (Date.now() - parsed.savedAt <= CART_STORAGE_TTL_MS) {
+          return parseStoredCart(JSON.stringify(parsed.items));
+        }
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+      }
+    }
+  } catch {
+    try {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+    } catch {}
+  }
+
+  const legacy = parseStoredCart(getClientCookie(CART_COOKIE));
+  if (legacy.length) {
+    try {
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
+        version: CART_STORAGE_VERSION,
+        savedAt: Date.now(),
+        items: legacy.map(stripSensitiveFields).slice(0, MAX_CART_ITEMS),
+      }));
+      removeClientCookie(CART_COOKIE);
+    } catch {}
+  }
+  return legacy;
+}
+
+function persistCart(items: CartItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const sanitized = items.slice(0, MAX_CART_ITEMS).map(stripSensitiveFields);
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
+      version: CART_STORAGE_VERSION,
+      savedAt: Date.now(),
+      items: sanitized,
+    }));
+    removeClientCookie(CART_COOKIE);
+  } catch {}
 }
 
 export function itemNeedsCredentials(item: CartItem): boolean {
@@ -110,7 +164,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart]);
 
   useEffect(() => {
-    const stored = parseStoredCart(getClientCookie(CART_COOKIE));
+    const stored = readStoredCart();
     const hydrated = stored.map((item) => ({
       ...item,
       customFields: getCredentials(item.id) ?? undefined,
@@ -122,11 +176,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!isMounted) return;
     const timer = setTimeout(() => {
-      try {
-        const sanitized = cart.map(stripSensitiveFields);
-        setClientCookie(CART_COOKIE, JSON.stringify(sanitized), { days: CART_COOKIE_DAYS });
-      } catch {}
-    }, 300);
+      persistCart(cart);
+    }, 150);
     return () => clearTimeout(timer);
   }, [cart, isMounted]);
 
@@ -159,6 +210,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             idx === existingIndex ? { ...p, quantity: p.quantity + 1 } : p
           );
         }
+        if (prev.length >= MAX_CART_ITEMS) return prev;
         return [...prev, { ...item, id, quantity: 1 }];
       });
 
@@ -242,6 +294,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => {
     clearSensitiveCredentials();
     setCart([]);
+    try {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+    } catch {}
     removeClientCookie(CART_COOKIE);
   }, [clearSensitiveCredentials]);
 

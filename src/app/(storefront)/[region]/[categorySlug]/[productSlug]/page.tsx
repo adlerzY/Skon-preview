@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getProductDetail } from "@/lib/graphql";
 import type { ProductNode, VariationCard } from "@/lib/graphql";
@@ -5,6 +6,7 @@ import ProductPageClient from "@/components/product/ProductPageClient";
 import ProductContentMatrix from "@/components/product/ProductContentMatrix";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
+import ProductPageShell from "@/components/product/ProductPageShell";
 
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
@@ -16,17 +18,8 @@ function toClientVariations(cards: VariationCard[] | undefined): VariationCard[]
 
   return cards.map((v) => ({
     databaseId: v.databaseId,
-    name: v.name,
-    slug: v.slug,
-    price: v.price,
-    regularPrice: v.regularPrice,
-    salePrice: v.salePrice,
     imageUrl: v.imageUrl,
     attributes: v.attributes,
-    giftPrice: v.giftPrice,
-    giftRegularPrice: v.giftRegularPrice,
-    codePrice: v.codePrice,
-    codeRegularPrice: v.codeRegularPrice,
     codeStockCount: v.codeStockCount,
     parsedPrice: v.parsedPrice,
     parsedRegularPrice: v.parsedRegularPrice,
@@ -35,16 +28,26 @@ function toClientVariations(cards: VariationCard[] | undefined): VariationCard[]
     parsedCodePrice: v.parsedCodePrice,
     parsedCodeRegularPrice: v.parsedCodeRegularPrice,
     regionSlug: v.regionSlug,
+    commissionDiscountBadge: v.commissionDiscountBadge,
     variationIdsByDelivery: v.variationIdsByDelivery,
-  }));
+  } as VariationCard));
 }
 
-export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
-  const [{ region, productSlug }, { edition }] = await Promise.all([params, searchParams]);
+async function ProductDetailStream({
+  productPromise,
+  initialEdition,
+  region,
+}: {
+  productPromise: Promise<ProductNode | null>;
+  initialEdition?: string;
+  region: string;
+}) {
+  const product = await productPromise;
 
-  const product = await getProductDetail(productSlug, region);
-
-  if (!product) notFound();
+  if (!product) {
+    notFound();
+    return null;
+  }
 
   const { secondaryGallery, description, reviewCount, averageRating, contentMatrix } = product;
 
@@ -65,10 +68,10 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   } as ProductNode;
 
   return (
-    <main className="container mx-auto px-6 max-w-site py-8">
+    <>
       <ProductPageClient
         product={clientProduct}
-        initialEdition={edition}
+        initialEdition={initialEdition}
         activeRegion={region}
       >
         <div className="cv-auto">
@@ -85,6 +88,23 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
           />
         </div>
       </ProductPageClient>
+    </>
+  );
+}
+
+export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
+  const [{ region, productSlug }, { edition }] = await Promise.all([params, searchParams]);
+  const productPromise = getProductDetail(productSlug, region);
+
+  return (
+    <main className="container mx-auto px-6 max-w-site py-8">
+      <Suspense fallback={<ProductPageShell />}>
+        <ProductDetailStream
+          productPromise={productPromise}
+          initialEdition={edition}
+          region={region}
+        />
+      </Suspense>
     </main>
   );
 }

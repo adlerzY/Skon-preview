@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { isIP } from "node:net";
 
 interface RateLimitEntry { count: number; resetAt: number; }
 
@@ -93,18 +94,29 @@ function getLimiter(max: number, windowMs: number): Ratelimit {
   return limiter;
 }
 
+function validIp(value: string | null | undefined): string | null {
+  const candidate = value?.trim() || "";
+  return candidate && isIP(candidate) ? candidate : null;
+}
+
 export function getClientIp(request: Request): string {
   if (trustProxyHeaders) {
-    const cloudflareIp = request.headers.get("cf-connecting-ip")?.trim();
+    const cloudflareIp = validIp(request.headers.get("cf-connecting-ip"));
     if (cloudflareIp) return cloudflareIp;
-    const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    if (forwarded) return forwarded;
-    const realIp = request.headers.get("x-real-ip")?.trim();
-    if (realIp) return realIp;
+
+    if (process.env.RATE_LIMIT_USE_X_FORWARDED_FOR === "true") {
+      const forwardedValues = request.headers.get("x-forwarded-for")?.split(",") || [];
+      for (const value of forwardedValues) {
+        const ip = validIp(value);
+        if (ip) return ip;
+      }
+    }
   }
 
-  const directIp = request.headers.get("x-real-ip")?.trim();
-  if (directIp && process.env.RATE_LIMIT_TRUST_REAL_IP === "true") return directIp;
+  if (process.env.RATE_LIMIT_TRUST_REAL_IP === "true") {
+    const realIp = validIp(request.headers.get("x-real-ip"));
+    if (realIp) return realIp;
+  }
 
   return "unknown";
 }

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
@@ -10,6 +11,11 @@ import LoginPageSkeleton from "@/components/account/LoginPageSkeleton";
 import { getCurrentUser } from "@/lib/auth/session";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 import AccountProviders from "@/components/providers/AccountProviders";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: "حساب کاربری",
+};
 
 async function AccountLayoutContent({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -26,7 +32,6 @@ async function AccountLayoutContent({ children }: { children: React.ReactNode })
               height={44}
               style={{ width: "auto" }}
               className="h-9 w-auto object-contain"
-              priority
             />
           </Link>
           <Link

@@ -7,6 +7,7 @@ import SocialShare from "@/components/blog/SocialShare";
 import BlogSidebarInfo from "@/components/blog/BlogSidebarInfo";
 import BlogRatingSlot from "@/components/blog/BlogRatingSlot";
 import BlogRatingSkeleton from "@/components/blog/BlogRatingSkeleton";
+import { BlogPostLoadingShell } from "@/components/ui/BlogLoadingShells";
 import RelatedNewsPanelAsync from "@/components/blog/RelatedNewsPanelAsync";
 import RelatedNewsPanelSkeleton from "@/components/blog/RelatedNewsPanelSkeleton";
 import PostCommentsSection from "@/components/blog/PostCommentsSection";
@@ -15,10 +16,17 @@ interface PostPageProps {
   params: Promise<{ region: string; categorySlug: string; postSlug: string }>;
 }
 
-export default async function BlogPostPage({ params }: PostPageProps) {
-  const { region, postSlug } = await params;
-  const post = await getPostDetail(postSlug);
-  if (!post) notFound();
+interface BlogPostStreamProps {
+  region: string;
+  postPromise: ReturnType<typeof getPostDetail>;
+}
+
+async function BlogPostStream({ region, postPromise }: BlogPostStreamProps) {
+  const post = await postPromise;
+  if (!post) {
+    notFound();
+    return null;
+  }
 
   const category = post.categories?.nodes?.[0];
   const mainCategory = category?.parent?.node ?? category;
@@ -30,7 +38,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const postTags = post.tags?.nodes ?? [];
 
   return (
-    <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
+    <div className="w-full text-white">
       {post.featuredImage?.node?.sourceUrl && (
         <div className="w-full h-[220px] sm:h-[300px] md:h-[420px] relative rounded-xl overflow-hidden bg-white/5 mb-6 md:mb-8">
           <Image
@@ -38,8 +46,9 @@ export default async function BlogPostPage({ params }: PostPageProps) {
             alt={post.title}
             fill
             sizes="(max-width: 1200px) 100vw, 1200px"
+            quality={88}
             className="object-cover"
-            priority
+            preload
           />
         </div>
       )}
@@ -102,6 +111,19 @@ export default async function BlogPostPage({ params }: PostPageProps) {
           initialCommentsCount={post.commentsCount ?? 0}
         />
       </div>
+    </div>
+  );
+}
+
+export default async function BlogPostPage({ params }: PostPageProps) {
+  const { region, postSlug } = await params;
+  const postPromise = getPostDetail(postSlug);
+
+  return (
+    <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 text-white max-w-site">
+      <Suspense fallback={<BlogPostLoadingShell />}>
+        <BlogPostStream region={region} postPromise={postPromise} />
+      </Suspense>
     </main>
   );
 }

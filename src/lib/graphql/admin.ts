@@ -228,3 +228,16 @@ export const ADMIN_REVEAL_CDKEYS_MUTATION = `
     adminRevealCdKeys(input: { orderId: $orderId, itemId: $itemId }) { values }
   }
 `;
+
+
+export const SITE_MAINTENANCE_QUERY = `
+  query GetSiteMaintenanceMode {
+    siteMaintenanceMode
+  }
+`;
+
+export const ADMIN_SET_MAINTENANCE_MUTATION = `
+  mutation SetSiteMaintenanceMode($enabled: Boolean!) {
+    setSiteMaintenanceMode(input: { enabled: $enabled }) { success enabled }
+  }
+`;

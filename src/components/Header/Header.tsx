@@ -11,8 +11,6 @@ import GamesNavSkeleton from "./GamesNavSkeleton";
 import MobileMenuAsync from "./MobileMenuAsync";
 import MobileBottomNavAsync from "./MobileBottomNavAsync";
 import { HeaderViewerProvider } from "./HeaderViewerProvider";
-import { cookies } from "next/headers";
-import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 import { Download, HelpCircle, AlertCircle } from "lucide-react";
 
 const ACTION_BUTTON_CLASSES =
@@ -20,12 +18,9 @@ const ACTION_BUTTON_CLASSES =
 const ICON_WRAPPER_CLASSES =
   "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
-export default async function Header({ activeRegion }: { activeRegion: string }) {
-  const cookieStore = await cookies();
-  const likelyLoggedIn = cookieStore.get(LOGGED_IN_COOKIE)?.value === "1";
-
+export default function Header({ activeRegion }: { activeRegion: string }) {
   return (
-    <HeaderViewerProvider initialState={{ user: null, loading: likelyLoggedIn }}>
+    <HeaderViewerProvider>
       <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-brand-bg" dir="rtl">
         <div className="hidden lg:flex relative w-full justify-between items-center h-[60px] px-6 max-w-[1600px] mx-auto">
           <div className="flex items-center h-full gap-8">
@@ -36,7 +31,6 @@ export default async function Header({ activeRegion }: { activeRegion: string })
                 width={100}
                 height={40}
                 className="h-10 w-auto object-contain"
-                priority
                 style={{ width: "auto" }}
               />
             </Link>

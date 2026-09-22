@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
 const REPLY_MUTATION = `
   mutation ReplyToSupportTicket($ticketId: Int!, $content: String!) {
@@ -31,10 +32,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
-    const body = await request.json();
+    const body = await readJsonBody(request, 32 * 1024);
     const content = typeof body?.content === "string" ? body.content.trim() : "";
-    if (content.length < 2) {
-      return NextResponse.json({ error: "متن پاسخ خیلی کوتاه است" }, { status: 400 });
+    if (content.length < 2 || content.length > 10000) {
+      return NextResponse.json({ error: "متن پاسخ باید بین ۲ تا ۱۰٬۰۰۰ کاراکتر باشد" }, { status: 400 });
     }
 
     const data = await fetchGraphQL(REPLY_MUTATION, { ticketId: idNum, content }, [], "no-store", token);
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ success: true, ticketStatus: data.replyToSupportTicket.ticketStatus });
   } catch (error) {
+    const bodyError = requestBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error("Ticket reply error:", error);
     return NextResponse.json({ error: "خطا در ارتباط با سرور" }, { status: 500 });
   }

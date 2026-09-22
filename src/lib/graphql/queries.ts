@@ -306,7 +306,7 @@ export async function getCategoryProducts(slug: string, activeRegion: string = "
       );
     },
     ["category-products", slug, activeRegion],
-    { tags: ["products", categoryTag], revalidate: false }
+    { tags: ["products", categoryTag], revalidate: 300 }
   );
 
   return cached();
@@ -628,17 +628,10 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
 
         variationCards {
           databaseId
-          name
-          slug
           price
           regularPrice
-          salePrice
           imageUrl
           regionSlug
-          currency
-          currencySymbol
-          gameDiscountPercent
-          commissionDiscountPercent
           commissionDiscountBadge
 
           giftPrice
@@ -650,9 +643,7 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
 
           attributes {
             name
-            taxonomy
             value
-            slug
             flagUrl
           }
         }
@@ -713,7 +704,7 @@ async function getProductDetailContent(slug: string) {
       };
     },
     ["product-detail-content", slug],
-    { tags: [`product-${slug}`], revalidate: false }
+    { tags: [`product-${slug}`], revalidate: 900 }
   );
 
   return cached();
@@ -760,7 +751,7 @@ async function getProductDetailPricing(
     ["product-detail-pricing", slug, activeRegion],
     {
       tags: [`product-pricing-${slug}`],
-      revalidate: false,
+      revalidate: 60,
     }
   );
 

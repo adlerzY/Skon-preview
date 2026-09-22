@@ -4,7 +4,7 @@ import { getBlogCategoryArchive, getAllBlogPosts } from "@/lib/graphql";
 import BlogCategoryArchiveClient from "@/components/blog/BlogCategoryArchiveClient";
 import FollowCategoryButtonAsync from "@/components/blog/FollowCategoryButtonAsync";
 import FollowCategoryButtonSkeleton from "@/components/blog/FollowCategoryButtonSkeleton";
-import Skeleton from "@/components/ui/Skeleton";
+import { BlogCategoryPostsLoadingShell } from "@/components/ui/BlogLoadingShells";
 
 interface BlogCategoryPageProps {
   params: Promise<{ region: string; categorySlug: string }>;
@@ -19,25 +19,6 @@ interface SubCategoryRef {
   databaseId: number;
   name: string;
   slug: string;
-}
-
-function BlogCategoryPostsSkeleton({ tabCount }: { tabCount: number }) {
-  return (
-    <div className="flex flex-col gap-6">
-      {tabCount > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: Math.min(tabCount + 1, 5) }).map((_, i) => (
-            <Skeleton key={i} className="h-9 w-20" />
-          ))}
-        </div>
-      )}
-      <div className="flex flex-col gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[140px] w-full" />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 async function BlogCategoryPosts({
@@ -104,7 +85,7 @@ export default async function BlogCategoryPage({ params }: BlogCategoryPageProps
         </Suspense>
       </div>
 
-      <Suspense fallback={<BlogCategoryPostsSkeleton tabCount={subCategories.length} />}>
+      <Suspense fallback={<BlogCategoryPostsLoadingShell tabCount={subCategories.length} />}>
         <BlogCategoryPosts
           region={region}
           mainCategory={{ databaseId: mainCategory.databaseId, slug: mainCategory.slug }}
