@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const START_DELAY_MS = 40;
-const TRICKLE_INTERVAL_MS = 120;
-const FINISH_HOLD_MS = 120;
+const START_DELAY_MS = 20;
+const TRICKLE_INTERVAL_MS = 110;
+const FINISH_HOLD_MS = 140;
 
 function getCurrentKey() {
   if (typeof window === "undefined") return "";
@@ -74,7 +74,7 @@ export default function TopLoader() {
   }, [pathname, searchParams]);
 
   useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
@@ -99,8 +99,38 @@ export default function TopLoader() {
       startLoading();
     };
 
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (isNavigatingRef.current) return;
+
+      const target = event.target as Element | null;
+      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+
+      let url: URL;
+      try {
+        url = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin) return;
+      const nextKey = url.pathname + url.search;
+      if (nextKey === lastKeyRef.current) return;
+      startLoading();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, { passive: true });
     document.addEventListener("click", handleDocumentClick);
-    return () => document.removeEventListener("click", handleDocumentClick);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("click", handleDocumentClick);
+    };
   }, []);
 
   useEffect(() => {
@@ -146,7 +176,13 @@ export default function TopLoader() {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-0 right-0 left-0 z-[100001] h-[3px] bg-transparent pointer-events-none" dir="ltr">
+    <div
+      className="fixed top-0 right-0 left-0 z-[100001] h-[3px] bg-transparent pointer-events-none"
+      dir="ltr"
+      role="status"
+      aria-live="polite"
+      aria-label="در حال بارگذاری"
+    >
       <div
         className="h-full bg-brand-blue shadow-[0_0_10px_rgba(0,116,224,0.6)] transition-[width] duration-200 ease-out"
         style={{ width: `${progress}%` }}

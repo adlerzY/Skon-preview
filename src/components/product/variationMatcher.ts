@@ -87,7 +87,7 @@ export function findRegionInfo(variations: VariationCard[], effectiveRegion: str
 
       if (
         regionsMatch(attr.value, effectiveRegion) ||
-        Boolean(attr ? attr.slug && regionsMatch(attr.slug, effectiveRegion) : false)
+        regionsMatch(attr.slug, effectiveRegion)
       ) {
         return { name: attr.name, value: attr.value };
       }
