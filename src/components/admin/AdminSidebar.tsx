@@ -55,7 +55,7 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
           )}
           <UserAvatar src={user.avatarUrl} name={user.name} size="md" ring />
           <div className="min-w-0 pr-1">
-            <span className="block truncate text-sm font-semibold text-white">{user.name}</span>
+            <span className="block truncate text-base font-semibold text-white">{user.name}</span>
           </div>
         </div>
 
@@ -63,10 +63,10 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
           {items.map((item) => <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} />)}
 
           <div className="mt-auto border-t border-brand-surface_hover pt-2">
-            <Link href="/admin/settings" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
+            <Link href="/admin/settings" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
               <UserCog size={17} /> تنظیمات حساب
             </Link>
-            <Link href="/" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
+            <Link href="/" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
               <ArrowRight size={18} /> بازگشت به فروشگاه
             </Link>
             <button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50">
@@ -87,7 +87,7 @@ function NavLink({ item, pathname, isDesktop, onClose }: { item: AdminNavItem; p
       prefetch={false}
       href={item.href}
       onClick={!isDesktop ? onClose : undefined}
-      className={`flex items-center gap-3 mx-2 border-r-2 px-3 py-3 text-sm transition-colors ${active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/[.03]"}`}
+      className={`flex items-center gap-3 mx-2 border-r-2 px-3 py-3 text-[15px] transition-colors ${active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/[.03]"}`}
     >
       <Icon size={19} strokeWidth={2.25} />
       {item.label}

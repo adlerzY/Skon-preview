@@ -89,9 +89,9 @@ export default function StorefrontContextBarClient({
       <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
       <div
         data-stuck={isStuck ? "true" : "false"}
-        className="storefront-context-bar sticky top-0 z-[9000] w-full bg-brand-bg border-y border-brand-surface_hover shadow-[0_8px_24px_rgba(0,0,0,0.16)]"
+        className="storefront-context-bar sticky top-0 z-[9000] w-full bg-brand-bg border-0 shadow-[0_8px_24px_rgba(0,0,0,0.16)]"
       >
-        <div className="w-full max-w-site mx-auto min-h-[52px] flex items-center gap-3 overflow-visible">
+        <div className="w-full max-w-site mx-auto min-h-[72px] md:min-h-[76px] flex items-center gap-3 overflow-visible">
           {isStuck && activeGame ? (
             <div
               className="relative shrink-0 group"

@@ -73,7 +73,7 @@ function AdminShellInner({ children }: { children: ReactNode }) {
             <button type="button" onClick={toggleSidebar} className="text-brand-m_khonsa hover:text-white transition-colors p-2 shrink-0" aria-label="نمایش یا پنهان کردن منو" aria-expanded={isSidebarOpen}>
               <Menu size={20} />
             </button>
-            <span className="text-sm font-semibold text-white hidden sm:block">پنل مدیریت</span>
+            <span className="text-base font-semibold text-white hidden sm:block">پنل مدیریت</span>
           </div>
           <div className="shrink-0">
             <AdminNotificationsBell />

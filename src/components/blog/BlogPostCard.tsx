@@ -43,6 +43,7 @@ function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
             fill
             sizes="(max-width: 640px) 110px, (max-width: 768px) 180px, 220px"
             quality={90}
+            unoptimized
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (

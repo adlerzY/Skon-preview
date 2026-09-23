@@ -77,7 +77,7 @@ function StatRow({ icon, title, desc }: { icon: React.ReactNode; title: string; 
 
 export default function SupportPage({ region }: { region: string }) {
   return (
-    <main className="container mx-auto px-6 max-w-site py-6 md:py-8 text-white flex flex-col gap-8 md:gap-10" dir="rtl">
+    <main className="container mx-auto px-6 max-w-site py-3 md:py-4 text-white flex flex-col gap-5 md:gap-6" dir="rtl">
       <div className="relative w-full h-[190px] sm:h-[220px] md:h-[250px] overflow-hidden border border-brand-surface_hover shadow-[0_25px_60px_-10px_rgba(0,0,0,0.6)]">
         <Image
           src="/images/support-hero.webp"

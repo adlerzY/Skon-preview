@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const START_DELAY_MS = 100;
+const START_DELAY_MS = 40;
 const TRICKLE_INTERVAL_MS = 120;
 const FINISH_HOLD_MS = 120;
 
@@ -72,6 +72,36 @@ export default function TopLoader() {
     lastKeyRef.current = getCurrentKey();
     finishLoading();
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const target = event.target as Element | null;
+      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+
+      let url: URL;
+      try {
+        url = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin) return;
+      const nextKey = url.pathname + url.search;
+      if (nextKey === lastKeyRef.current) return;
+      startLoading();
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
 
   useEffect(() => {
     const originalPushState = window.history.pushState.bind(window.history);

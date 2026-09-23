@@ -3,7 +3,7 @@ import Link from "next/link";
 import { RefreshCw, Search } from "lucide-react";
 
 const buttonBase = "inline-flex min-h-10 items-center justify-center gap-2 rounded-[5px] px-3.5 text-sm font-bold transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue/40";
-const fieldBase = "w-full min-h-10 rounded-[5px] border border-brand-surface_hover bg-brand-bg px-3 text-sm text-white outline-none transition-colors focus:border-brand-blue placeholder:text-brand-m_khonsa";
+const fieldBase = "w-full min-h-10 rounded-[5px] border border-brand-surface_hover bg-brand-bg px-3 text-[15px] text-white outline-none transition-colors focus:border-brand-blue placeholder:text-brand-m_khonsa";
 
 export function AdminPage({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`w-full max-w-none ${className}`}>{children}</div>;
@@ -14,7 +14,7 @@ export function AdminPageIntro({ eyebrow, title, description, action }: { eyebro
     <div className="mb-5 flex flex-col items-start justify-between gap-3 border-b border-brand-surface_hover pb-3 lg:flex-row lg:items-center">
       <div className="min-w-0">
         <h1 className="text-xl font-bold leading-tight text-white sm:text-2xl">{title}</h1>
-        {description && <p className="mt-1.5 max-w-4xl text-xs leading-5 text-brand-m_khonsa sm:text-sm">{description}</p>}
+        {description && <p className="mt-1.5 max-w-4xl text-sm leading-6 text-brand-m_khonsa sm:text-base">{description}</p>}
       </div>
       {action && <div className="flex w-full flex-wrap gap-1.5 lg:w-auto lg:justify-end">{action}</div>}
     </div>
@@ -49,8 +49,8 @@ export function AdminSectionHeader({ icon, title, description, action }: { icon?
       <div className="flex min-w-0 items-center gap-3">
         {icon && <span className="shrink-0 text-brand-m_khonsa">{icon}</span>}
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold text-white">{title}</h2>
-          {description && <p className="mt-1 text-xs leading-5 text-brand-m_khonsa">{description}</p>}
+          <h2 className="truncate text-base font-bold text-white">{title}</h2>
+          {description && <p className="mt-1 text-sm leading-6 text-brand-m_khonsa">{description}</p>}
         </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -66,7 +66,7 @@ export function AdminSearchInput({ value, onChange, onEnter, placeholder }: { va
   return (
     <label className="flex min-h-10 min-w-0 flex-1 items-center gap-2 rounded-[4px] border border-brand-surface_hover bg-brand-bg px-3 transition focus-within:border-brand-blue focus-within:ring-2 focus-within:ring-brand-blue/20">
       <Search size={15} className="shrink-0 text-brand-m_khonsa" />
-      <input value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onEnter?.()} placeholder={placeholder} className="w-full border-0 bg-transparent px-0 text-sm text-white outline-none placeholder:text-brand-m_khonsa" />
+      <input value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onEnter?.()} placeholder={placeholder} className="w-full border-0 bg-transparent px-0 text-[15px] text-white outline-none placeholder:text-brand-m_khonsa" />
     </label>
   );
 }
@@ -86,7 +86,7 @@ export function AdminTextarea({ className = "", ...props }: TextareaHTMLAttribut
 export function AdminTable({ children, minWidth = "1000px", className = "" }: { children: ReactNode; minWidth?: string; className?: string }) {
   return (
     <div className={`hidden overflow-x-auto rounded-[4px] border border-brand-surface_hover bg-brand-surface lg:block ${className}`}>
-      <table style={{ minWidth }} className="w-full border-collapse text-right [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-white/[.06] [&_th]:px-4 [&_th]:py-3 [&_th]:text-xs [&_th]:font-medium [&_th]:text-brand-m_khonsa [&_td]:border-b [&_td]:border-white/[.055] [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_tr:last-child_td]:border-b-0 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-white/[.015]">{children}</table>
+      <table style={{ minWidth }} className="w-full border-collapse text-right [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-white/[.06] [&_th]:px-4 [&_th]:py-3 [&_th]:text-sm [&_th]:font-medium [&_th]:text-brand-m_khonsa [&_td]:border-b [&_td]:border-white/[.055] [&_td]:px-4 [&_td]:py-3.5 [&_td]:align-middle [&_tr:last-child_td]:border-b-0 [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-white/[.015]">{children}</table>
     </div>
   );
 }
@@ -102,18 +102,18 @@ export function AdminListCard({ children, href, className = "" }: { children: Re
 
 export function AdminStatCard({ label, value, helper, tone = "default" }: { label: string; value: string | number; helper?: string; tone?: "default" | "info" | "warning" | "success" }) {
   const toneClass = { default: "border-brand-surface_hover", info: "border-brand-blue/20", warning: "border-brand-zard/20", success: "border-brand-sabz/20" }[tone];
-  return <div className={`min-w-0 rounded-[5px] border bg-brand-surface p-4 ${toneClass}`}><div className="text-xs font-medium text-brand-m_khonsa">{label}</div><div className="mt-2 text-2xl font-bold tracking-[-0.02em] text-white sm:text-[22px]">{typeof value === "number" ? value.toLocaleString("fa-IR") : value}</div>{helper && <div className="mt-1 text-xs text-brand-m_khonsa">{helper}</div>}</div>;
+  return <div className={`min-w-0 rounded-[5px] border bg-brand-surface p-4 ${toneClass}`}><div className="text-sm font-medium text-brand-m_khonsa">{label}</div><div className="mt-2 text-2xl font-bold tracking-[-0.02em] text-white sm:text-[22px]">{typeof value === "number" ? value.toLocaleString("fa-IR") : value}</div>{helper && <div className="mt-1 text-sm text-brand-m_khonsa">{helper}</div>}</div>;
 }
 
 export function AdminEmpty({ title = "موردی پیدا نشد.", description }: { title?: string; description?: string }) {
-  return <div className="border border-dashed border-brand-surface_hover bg-white/[.012] px-4 py-10 text-center rounded-[5px]"><div className="text-sm font-black text-brand-white">{title}</div>{description && <div className="mt-1 text-xs text-brand-m_khonsa">{description}</div>}</div>;
+  return <div className="border border-dashed border-brand-surface_hover bg-white/[.012] px-4 py-10 text-center rounded-[5px]"><div className="text-sm font-black text-brand-white">{title}</div>{description && <div className="mt-1 text-sm text-brand-m_khonsa">{description}</div>}</div>;
 }
 
 export function AdminBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "info" | "success" | "warning" | "danger" }) {
   const toneClass = { neutral: "bg-white/[.06] text-brand-m_khonsa", info: "bg-brand-blue/10 text-blue-200", success: "bg-brand-sabz/10 text-emerald-200", warning: "bg-brand-zard/10 text-amber-200", danger: "bg-red-500/10 text-red-200" }[tone];
-  return <span className={`inline-flex min-h-6 items-center rounded-[4px] px-2.5 text-[11px] font-medium whitespace-nowrap ${toneClass}`}>{children}</span>;
+  return <span className={`inline-flex min-h-6 items-center rounded-[4px] px-2.5 text-xs font-medium whitespace-nowrap ${toneClass}`}>{children}</span>;
 }
 
 export function AdminFieldRow({ label, value, ltr = true }: { label: string; value: ReactNode; ltr?: boolean }) {
-  return <div className="flex items-start justify-between gap-3 border-b border-brand-surface_hover py-3 last:border-0"><span className="shrink-0 text-xs text-brand-m_khonsa">{label}</span><span className="text-left text-sm font-bold text-white break-all" dir={ltr ? "ltr" : undefined}>{value}</span></div>;
+  return <div className="flex items-start justify-between gap-3 border-b border-brand-surface_hover py-3 last:border-0"><span className="shrink-0 text-sm text-brand-m_khonsa">{label}</span><span className="text-left text-base font-bold text-white break-all" dir={ltr ? "ltr" : undefined}>{value}</span></div>;
 }
