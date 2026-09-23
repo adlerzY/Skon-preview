@@ -40,27 +40,48 @@ async function loadProductIndex() {
             nodes {
               slug
               ... on Product {
+<<<<<<< HEAD
                 productCategories(first: 20) {
                   nodes { slug name }
                 }
               }
               ... on SimpleProduct {
                 productCategories(first: 20) {
+=======
+                productCategories(first: 100) {
+>>>>>>> a84a401 (fix: resolve production typecheck and seo graphql issues)
                   nodes { slug name }
                 }
               }
               ... on VariableProduct {
+<<<<<<< HEAD
                 productCategories(first: 20) {
+=======
+                productCategories(first: 100) {
+>>>>>>> a84a401 (fix: resolve production typecheck and seo graphql issues)
                   nodes { slug name }
                 }
               }
               ... on ExternalProduct {
+<<<<<<< HEAD
                 productCategories(first: 20) {
+=======
+                productCategories(first: 100) {
+>>>>>>> a84a401 (fix: resolve production typecheck and seo graphql issues)
                   nodes { slug name }
                 }
               }
               ... on GroupProduct {
+<<<<<<< HEAD
                 productCategories(first: 20) {
+=======
+                productCategories(first: 100) {
+                  nodes { slug name }
+                }
+              }
+              ... on SimpleProduct {
+                productCategories(first: 100) {
+>>>>>>> a84a401 (fix: resolve production typecheck and seo graphql issues)
                   nodes { slug name }
                 }
               }
