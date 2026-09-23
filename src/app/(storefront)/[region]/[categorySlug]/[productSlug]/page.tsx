@@ -153,7 +153,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   const [{ region, categorySlug, productSlug }, { edition }] = await Promise.all([params, searchParams]);
   const productPromise = getProductDetail(productSlug, region);
   return (
-    <main className="container mx-auto px-6 max-w-site py-8">
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-8">
       <ProductDetailStream
         productPromise={productPromise}
         initialEdition={edition}

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Skeleton from "@/components/ui/Skeleton";
 import { Plus } from "lucide-react";
 import { useActiveRegion, buildRegionHref } from "@/lib/hooks/useActiveRegion";
@@ -27,7 +26,6 @@ function normalizePath(path?: string | null): string {
 }
 
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(games?.length ?? 0);
   const { region: currentRegion, pathnameWithoutRegion } = useActiveRegion();
@@ -135,8 +133,6 @@ function GameIcon({
               key={game.link}
               href={href}
               prefetch={false}
-              onMouseEnter={() => router.prefetch(href)}
-              onFocus={() => router.prefetch(href)}
               className={`flex items-center justify-center w-[60px] h-full transition-all group border-b-[3px] ${
                 active
                   ? "bg-white/10 border-[#0074E1] opacity-100"
@@ -169,7 +165,6 @@ function GameIcon({
                       key={game.link}
                       href={href}
                       prefetch={false}
-                      onMouseEnter={() => router.prefetch(href)}
                       aria-label={game.title}
                       aria-current={active ? "page" : undefined}
                       className={`flex items-center justify-center p-2 rounded transition-colors group/game ${

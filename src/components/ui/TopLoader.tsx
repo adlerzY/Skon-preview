@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const START_DELAY_MS = 20;
-const TRICKLE_INTERVAL_MS = 110;
-const FINISH_HOLD_MS = 140;
+const START_DELAY_MS = 90;
+const FINISH_HOLD_MS = 80;
+const FAILSAFE_MS = 5000;
 
 function getCurrentKey() {
   if (typeof window === "undefined") return "";
@@ -15,159 +15,87 @@ function getCurrentKey() {
 export default function TopLoader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
-
-  const isNavigatingRef = useRef(false);
-  const visibleRef = useRef(false);
+  const navigatingRef = useRef(false);
   const lastKeyRef = useRef(getCurrentKey());
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    visibleRef.current = visible;
-  }, [visible]);
+  const failsafeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimers = () => {
     if (startTimerRef.current) clearTimeout(startTimerRef.current);
-    if (trickleRef.current) clearInterval(trickleRef.current);
     if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
+    if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
     startTimerRef.current = null;
-    trickleRef.current = null;
     finishTimerRef.current = null;
-  };
-
-  const startLoading = () => {
-    if (isNavigatingRef.current) return;
-    isNavigatingRef.current = true;
-
-    startTimerRef.current = setTimeout(() => {
-      setVisible(true);
-      setProgress(30);
-      trickleRef.current = setInterval(() => {
-        setProgress((p) => (p >= 92 ? p : p + Math.max(1, (92 - p) * 0.12)));
-      }, TRICKLE_INTERVAL_MS);
-    }, START_DELAY_MS);
+    failsafeTimerRef.current = null;
   };
 
   const finishLoading = () => {
-    if (!isNavigatingRef.current) return;
-    isNavigatingRef.current = false;
+    navigatingRef.current = false;
     clearTimers();
+    finishTimerRef.current = setTimeout(() => setVisible(false), FINISH_HOLD_MS);
+  };
 
-    if (!visibleRef.current) {
-      setProgress(0);
-      return;
-    }
-
-    setProgress(100);
-    finishTimerRef.current = setTimeout(() => {
-      setVisible(false);
-      setProgress(0);
-    }, FINISH_HOLD_MS);
+  const startLoading = () => {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    clearTimers();
+    startTimerRef.current = setTimeout(() => setVisible(true), START_DELAY_MS);
+    failsafeTimerRef.current = setTimeout(finishLoading, FAILSAFE_MS);
   };
 
   useEffect(() => {
     lastKeyRef.current = getCurrentKey();
-    finishLoading();
+    if (navigatingRef.current) finishLoading();
   }, [pathname, searchParams]);
 
   useEffect(() => {
+    const startFromTarget = (target: EventTarget | null) => {
+      const element = target as Element | null;
+      const anchor = element?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+
+      let url: URL;
+      try {
+        url = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin) return;
+      const nextKey = url.pathname + url.search;
+      if (nextKey === lastKeyRef.current) return;
+      startLoading();
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-      const target = event.target as Element | null;
-      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!anchor) return;
-      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-      const href = anchor.getAttribute("href");
-      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
-
-      let url: URL;
-      try {
-        url = new URL(href, window.location.href);
-      } catch {
-        return;
-      }
-
-      if (url.origin !== window.location.origin) return;
-      const nextKey = url.pathname + url.search;
-      if (nextKey === lastKeyRef.current) return;
-      startLoading();
+      startFromTarget(event.target);
     };
 
-    const handleDocumentClick = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.key !== "Enter") return;
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      if (isNavigatingRef.current) return;
-
-      const target = event.target as Element | null;
-      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!anchor) return;
-      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-      const href = anchor.getAttribute("href");
-      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
-
-      let url: URL;
-      try {
-        url = new URL(href, window.location.href);
-      } catch {
-        return;
-      }
-
-      if (url.origin !== window.location.origin) return;
-      const nextKey = url.pathname + url.search;
-      if (nextKey === lastKeyRef.current) return;
-      startLoading();
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown, { passive: true });
-    document.addEventListener("click", handleDocumentClick);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("click", handleDocumentClick);
-    };
-  }, []);
-
-  useEffect(() => {
-    const originalPushState = window.history.pushState.bind(window.history);
-    const originalReplaceState = window.history.replaceState.bind(window.history);
-
-    const resolveKey = (url?: string | URL | null): string | null => {
-      if (!url) return null;
-      try {
-        const target = new URL(url, window.location.href);
-        return target.pathname + target.search;
-      } catch {
-        return null;
-      }
-    };
-
-    window.history.pushState = function (state, title, url) {
-      const nextKey = resolveKey(url ?? undefined);
-      if (nextKey === null || nextKey !== lastKeyRef.current) startLoading();
-      return originalPushState(state, title, url as any);
-    };
-
-    window.history.replaceState = function (state, title, url) {
-      const nextKey = resolveKey(url ?? undefined);
-      if (nextKey === null || nextKey !== lastKeyRef.current) startLoading();
-      return originalReplaceState(state, title, url as any);
+      startFromTarget(event.target);
     };
 
     const handlePopState = () => {
       if (getCurrentKey() === lastKeyRef.current) return;
       startLoading();
     };
+
+    document.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("popstate", handlePopState);
 
     return () => {
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("popstate", handlePopState);
       clearTimers();
     };
@@ -177,16 +105,13 @@ export default function TopLoader() {
 
   return (
     <div
-      className="fixed top-0 right-0 left-0 z-[100001] h-[3px] bg-transparent pointer-events-none"
+      className="fixed inset-x-0 top-0 z-[100001] h-[2px] overflow-hidden bg-transparent pointer-events-none"
       dir="ltr"
       role="status"
       aria-live="polite"
       aria-label="در حال بارگذاری"
     >
-      <div
-        className="h-full bg-brand-blue shadow-[0_0_10px_rgba(0,116,224,0.6)] transition-[width] duration-200 ease-out"
-        style={{ width: `${progress}%` }}
-      />
+      <div className="h-full w-1/3 animate-[navigation-shimmer_900ms_ease-in-out_infinite] bg-brand-blue shadow-[0_0_8px_rgba(0,116,224,0.55)]" />
     </div>
   );
 }

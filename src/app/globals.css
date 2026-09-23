@@ -34,17 +34,6 @@
     background-color: #15171e;
     color: #c2c2c4;
   }
-  body:has(.storefront-context-bar) [data-storefront-header] {
-    transition: transform 180ms ease;
-    will-change: transform;
-  }
-  body:has(.storefront-context-bar[data-stuck="true"]) [data-storefront-header] {
-    transform: translateY(-100%);
-    z-index: 8000 !important;
-  }
-  body:has(.storefront-context-bar[data-stuck="true"]) .storefront-context-bar {
-    z-index: 11000;
-  }
   * {
     border-radius: 5px;
     border-color: #313339;

@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { ProductNode } from "@/lib/graphql";
 import ProductCardImage from "@/components/ProductCardImage";
-import LinkPendingIndicator from "@/components/ui/LinkPendingIndicator";
 
 const formatToPersianDigits = (num: number) => num.toLocaleString("fa-IR");
 
@@ -43,9 +42,9 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
     <Link
       href={href}
       prefetch={false}
+      data-product-prefetch="true"
       className="group flex flex-col bg-brand-surface duration-200 hover:bg-brand-surface_hover overflow-hidden relative h-full min-h-[300px] md:min-h-[380px]"
     >
-      <LinkPendingIndicator />
       {badges.length > 0 && (
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1 items-end">
           {badges.map((badge, index) => (

@@ -106,7 +106,7 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
   const canonicalPath = `/${SEO_REGION}/${category.slug}`;
 
   return (
-    <main className="container mx-auto px-6 max-w-site pb-12">
+    <main className="mx-auto w-full max-w-[1600px] px-6 pb-12">
       {region === SEO_REGION && (
         <JsonLd data={breadcrumbSchema([
           { name: "فروشگاه", url: `/${SEO_REGION}` },
@@ -125,8 +125,7 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
       />
 
       <StorefrontContextBar
-        region={region}
-        activeGame={category.image?.sourceUrl ? { title: category.name, img: category.image.sourceUrl, link: `/${category.slug}` } : null}
+        categoryLabel={category.name}
         subcategories={category.children?.nodes ?? []}
       />
 

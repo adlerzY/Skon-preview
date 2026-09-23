@@ -32,7 +32,6 @@ function BlogFeaturedCard({ post, region }: BlogFeaturedCardProps) {
             alt={post.title}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
-            quality={90}
             unoptimized
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
