@@ -34,9 +34,8 @@ export interface MobileMenuDrawerData {
 
 interface MobileMenuProps {
   activeRegion: string;
-  siteNotice: { title: string; message: string } | null;
+  siteNoticePromise: Promise<{ title: string; message: string } | null>;
   regionsPromise: Promise<Region[]>;
-  drawerDataPromise: Promise<MobileMenuDrawerData>;
 }
 
 function RegionFlagSlot({
@@ -48,6 +47,16 @@ function RegionFlagSlot({
 }) {
   const regions = use(regionsPromise);
   return <MobileRegionSwitcher regions={regions} initialRegion={activeRegion} />;
+}
+
+function MobileSiteNotice({
+  siteNoticePromise,
+}: {
+  siteNoticePromise: Promise<{ title: string; message: string } | null>;
+}) {
+  const notice = use(siteNoticePromise);
+  if (!notice) return null;
+  return <SiteNotice title={notice.title} message={notice.message} />;
 }
 
 function DrawerUserRow({
@@ -105,19 +114,19 @@ function DrawerUserRowSkeleton() {
 }
 
 function DrawerGamesGrid({
-  dataPromise,
+  data,
   isBlogSection,
   buildHref,
   onNavigate,
   onPrefetch,
 }: {
-  dataPromise: Promise<MobileMenuDrawerData>;
+  data: MobileMenuDrawerData;
   isBlogSection: boolean;
   buildHref: (link: string) => string;
   onNavigate: () => void;
   onPrefetch: (href: string) => void;
 }) {
-  const { shopItems, blogItems } = use(dataPromise);
+  const { shopItems, blogItems } = data;
   const activeData = isBlogSection ? blogItems : shopItems;
 
   return (
@@ -159,7 +168,7 @@ function DrawerGamesGridSkeleton() {
   );
 }
 
-export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, drawerDataPromise }: MobileMenuProps) {
+export default function MobileMenu({ activeRegion, siteNoticePromise, regionsPromise }: MobileMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { region: currentRegion } = useActiveRegion();
@@ -170,6 +179,8 @@ export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, d
   const [hasOpened, setHasOpened] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [drawerData, setDrawerData] = useState<MobileMenuDrawerData | null>(null);
+  const [drawerDataLoading, setDrawerDataLoading] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { searchQuery, setSearchQuery, searchResults, isPending } =
@@ -188,6 +199,45 @@ export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, d
     }
   }, [isSearchActive]);
 
+  useEffect(() => {
+    if (!shopOpen || drawerData || drawerDataLoading) return;
+
+    let cancelled = false;
+    setDrawerDataLoading(true);
+
+    fetch("/api/header/navigation", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "force-cache",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("header navigation request failed");
+        return (await response.json()) as {
+          shopItems?: MobileMenuItem[];
+          blogItems?: MobileMenuItem[];
+        };
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setDrawerData({
+          shopItems: Array.isArray(data.shopItems) ? data.shopItems : [],
+          blogItems: Array.isArray(data.blogItems) ? data.blogItems : [],
+          user: null,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDrawerData({ shopItems: [], blogItems: [], user: null });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDrawerDataLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shopOpen, drawerData, drawerDataLoading]);
 
   const isBlogSection = Boolean(pathname?.startsWith("/blog") || pathname?.includes("/blog/"));
 
@@ -247,7 +297,9 @@ export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, d
             <Search size={20} strokeWidth={2.5} />
           </button>
 
-          {siteNotice && <SiteNotice title={siteNotice.title} message={siteNotice.message} />}
+          <Suspense fallback={null}>
+            <MobileSiteNotice siteNoticePromise={siteNoticePromise} />
+          </Suspense>
         </div>
       </div>
 
@@ -416,15 +468,17 @@ export default function MobileMenu({ activeRegion, siteNotice, regionsPromise, d
                     }`}
                   >
                     {shopOpen && (
-                      <Suspense fallback={<DrawerGamesGridSkeleton />}>
+                      drawerDataLoading || !drawerData ? (
+                        <DrawerGamesGridSkeleton />
+                      ) : (
                         <DrawerGamesGrid
-                          dataPromise={drawerDataPromise}
+                          data={drawerData}
                           isBlogSection={isBlogSection}
                           buildHref={buildHref}
                           onNavigate={closeMenu}
                           onPrefetch={(href) => router.prefetch(href)}
                         />
-                      </Suspense>
+                      )
                     )}
                   </div>
                 </div>

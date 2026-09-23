@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { fetchGraphQL } from "@/lib/graphql";
 import { SITE_MAINTENANCE_QUERY, SITE_NOTICE_QUERY } from "@/lib/graphql/admin";
 
@@ -12,14 +13,27 @@ export interface MaintenanceSettings {
   description: string;
 }
 
+const loadMaintenanceSettings = unstable_cache(
+  async (): Promise<MaintenanceSettings> => {
+    const data = await fetchGraphQL(
+      SITE_MAINTENANCE_QUERY,
+      {},
+      [MAINTENANCE_CACHE_TAG],
+      { type: "revalidate", seconds: 60 },
+    );
+    const settings = data?.siteMaintenanceSettings;
+    return {
+      enabled: settings?.enabled === true,
+      title: settings?.title || "سایت در حال به‌روزرسانی است",
+      description: settings?.description || "در حال اعمال تغییرات و بهبودهای سایت هستیم. لطفاً چند دقیقه بعد دوباره مراجعه کنید.",
+    };
+  },
+  ["site-maintenance-settings"],
+  { tags: [MAINTENANCE_CACHE_TAG], revalidate: 60 },
+);
+
 export async function getMaintenanceSettings(): Promise<MaintenanceSettings> {
-  const data = await fetchGraphQL(SITE_MAINTENANCE_QUERY, {}, [], "no-store");
-  const settings = data?.siteMaintenanceSettings;
-  return {
-    enabled: settings?.enabled === true,
-    title: settings?.title || "سایت در حال به‌روزرسانی است",
-    description: settings?.description || "در حال اعمال تغییرات و بهبودهای سایت هستیم. لطفاً چند دقیقه بعد دوباره مراجعه کنید.",
-  };
+  return loadMaintenanceSettings();
 }
 
 export interface SiteNoticeSettings {
@@ -33,7 +47,7 @@ export async function getSiteNotice(): Promise<SiteNoticeSettings> {
     SITE_NOTICE_QUERY,
     {},
     [SITE_NOTICE_CACHE_TAG],
-    { type: "revalidate", seconds: 60 },
+    { type: "revalidate", seconds: 300 },
   );
   const notice = data?.siteNotice;
   return {

@@ -4,9 +4,7 @@ export const PRODUCT_CARD_FIELDS = `
     databaseId
     name
     slug
-    featured
     date
-    shortDescription
     shortNotify
 
     image {

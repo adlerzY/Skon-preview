@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
 import { IS_STAFF_COOKIE } from "@/lib/auth/constants";
+import {
+  getFreshProxyMaintenanceState,
+  getLastKnownProxyMaintenanceState,
+  setProxyMaintenanceState,
+  type ProxyMaintenanceState,
+} from "@/lib/maintenanceProxyState";
 
 const REGION_COOKIE = "store_region";
 const AUTH_TOKEN_COOKIE = "a2b_auth_token";
@@ -15,8 +21,8 @@ const FALLBACK_PROD_URL = "https://api.arena2battle.com/graphql";
 const REFRESH_TIMEOUT_MS = 6_000;
 const REFRESH_SUCCESS_COOLDOWN_SECONDS = 90;
 const REFRESH_FAILURE_COOLDOWN_SECONDS = 45;
-const MAINTENANCE_REQUEST_TIMEOUT_MS = 2_500;
-const MAINTENANCE_CACHE_TTL_MS = 1_500;
+const MAINTENANCE_REQUEST_TIMEOUT_MS = 800;
+const MAINTENANCE_CACHE_TTL_MS = 60_000;
 const STAFF_STATUS_CACHE_TTL_MS = 5_000;
 
 const SITE_MAINTENANCE_QUERY = `
@@ -31,10 +37,7 @@ const STAFF_STATUS_QUERY = `
   }
 `;
 
-type MaintenanceState = { enabled: boolean; title: string; description: string };
-
-let maintenanceCache: { expiresAt: number; state: MaintenanceState } | null = null;
-let maintenanceRequest: Promise<MaintenanceState> | null = null;
+let maintenanceRequest: Promise<ProxyMaintenanceState> | null = null;
 const staffStatusCache = new Map<string, { expiresAt: number; isStaff: boolean }>();
 
 const PUBLIC_GRAPHQL_HOST = (() => {
@@ -47,8 +50,12 @@ const PUBLIC_GRAPHQL_HOST = (() => {
 
 const refreshInFlight = new Map<string, Promise<string | null>>();
 
-async function getStaffStatus(request: NextRequest): Promise<boolean> {
-  const token = request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
+function safeInternalHeader(value: string, maxLength = 2000): string {
+  return String(value).replace(/[\r\n]/g, " ").slice(0, maxLength);
+}
+
+async function getStaffStatus(request: NextRequest, tokenOverride?: string): Promise<boolean> {
+  const token = tokenOverride || request.cookies.get(AUTH_TOKEN_COOKIE)?.value;
   if (!token) return false;
 
   const now = Date.now();
@@ -90,9 +97,9 @@ async function getStaffStatus(request: NextRequest): Promise<boolean> {
   }
 }
 
-async function getMaintenanceState(): Promise<MaintenanceState> {
-  const now = Date.now();
-  if (maintenanceCache && maintenanceCache.expiresAt > now) return maintenanceCache.state;
+async function getMaintenanceState(): Promise<ProxyMaintenanceState> {
+  const fresh = getFreshProxyMaintenanceState();
+  if (fresh) return fresh;
   if (maintenanceRequest) return maintenanceRequest;
 
   maintenanceRequest = (async () => {
@@ -110,18 +117,20 @@ async function getMaintenanceState(): Promise<MaintenanceState> {
         cache: "no-store",
         signal: controller.signal,
       });
-      if (!res.ok) return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
+      if (!res.ok) {
+        return getLastKnownProxyMaintenanceState() ?? { enabled: false, title: "", description: "" };
+      }
       const json = await res.json().catch(() => null);
       const settings = json?.data?.siteMaintenanceSettings;
-      const state = {
+      const state: ProxyMaintenanceState = {
         enabled: settings?.enabled === true,
         title: typeof settings?.title === "string" ? settings.title : "",
         description: typeof settings?.description === "string" ? settings.description : "",
       };
-      maintenanceCache = { expiresAt: Date.now() + MAINTENANCE_CACHE_TTL_MS, state };
+      setProxyMaintenanceState(state, MAINTENANCE_CACHE_TTL_MS);
       return state;
     } catch {
-      return maintenanceCache?.state ?? { enabled: false, title: "", description: "" };
+      return getLastKnownProxyMaintenanceState() ?? { enabled: false, title: "", description: "" };
     } finally {
       clearTimeout(timeoutId);
       maintenanceRequest = null;
@@ -321,7 +330,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const refreshed = hasAuthToken ? await applyAuthRefresh(request) : { token: null, cooldownSeconds: 0, failed: false };
+  const isMaintenanceRoute = pathname === "/maintenance" || pathname.startsWith("/maintenance/");
+  const isAdminLoginRoute = pathname === "/admin-login" || pathname.startsWith("/admin-login/");
+  const isPublicHeaderNavigationApi = pathname === "/api/header/navigation";
+  const shouldCheckMaintenance = !pathname.startsWith("/api") && !isMaintenanceRoute && !isAdminRoute && !isAdminLoginRoute;
+  const maintenancePromise = shouldCheckMaintenance ? getMaintenanceState() : null;
+  const refreshed = hasAuthToken && !isPublicHeaderNavigationApi
+    ? await applyAuthRefresh(request)
+    : { token: null, cooldownSeconds: 0, failed: false };
 
   if (pathname.startsWith("/api")) {
     const forwardedHeaders = new Headers(request.headers);
@@ -332,30 +348,28 @@ export async function proxy(request: NextRequest) {
     return finalizeAuthCookie(response, refreshed);
   }
 
-  const isMaintenanceRoute = pathname === "/maintenance" || pathname.startsWith("/maintenance/");
-  const isAdminLoginRoute = pathname === "/admin-login" || pathname.startsWith("/admin-login/");
-
-  if (!isMaintenanceRoute && !isAdminRoute && !isAdminLoginRoute) {
-    const maintenance = await getMaintenanceState();
+  if (maintenancePromise) {
+    const maintenance = await maintenancePromise;
     if (maintenance.enabled) {
-      const hasStaffCookie = request.cookies.get(IS_STAFF_COOKIE)?.value === "1";
-      const isStaff = hasStaffCookie || await getStaffStatus(request);
+      const staffCookie = request.cookies.get(IS_STAFF_COOKIE)?.value;
+      const isStaff = staffCookie === "1" || (staffCookie !== "0" && await getStaffStatus(request, refreshed.token ?? undefined));
       if (!isStaff) {
         const url = request.nextUrl.clone();
         url.pathname = "/maintenance";
         url.search = "";
-        const response = NextResponse.rewrite(url);
+        const requestHeaders = new Headers(request.headers);
+        requestHeaders.set("x-a2b-maintenance-enabled", "1");
+        requestHeaders.set("x-a2b-maintenance-title", safeInternalHeader(maintenance.title, 500));
+        requestHeaders.set("x-a2b-maintenance-description", safeInternalHeader(maintenance.description, 2000));
+        const response = NextResponse.rewrite(url, {
+          request: { headers: requestHeaders },
+        });
+        response.headers.set("Cache-Control", "no-store, max-age=0");
+        response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
         return finalizeAuthCookie(response, refreshed);
       }
 
       const response = NextResponse.next({ request });
-      response.cookies.set(IS_STAFF_COOKIE, "1", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: AUTH_TOKEN_MAX_AGE,
-      });
       return finalizeAuthCookie(response, refreshed);
     }
   }

@@ -5,6 +5,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { ADMIN_SET_MAINTENANCE_MUTATION, SITE_MAINTENANCE_QUERY } from "@/lib/graphql/admin";
 import { getAdminGraphQLHeaders } from "@/lib/admin/headers";
 import { getAuthToken } from "@/lib/auth/session";
+import { setProxyMaintenanceState } from "@/lib/maintenanceProxyState";
 
 export async function GET() {
   await requireAdmin();
@@ -30,6 +31,11 @@ export async function POST(request: NextRequest) {
   const result = data?.setSiteMaintenanceMode;
   if (!result?.success) return NextResponse.json({ error: "تغییر وضعیت تعمیرات انجام نشد" }, { status: 500 });
 
+  setProxyMaintenanceState({
+    enabled: Boolean(result.enabled),
+    title: result.title || title,
+    description: result.description || description,
+  });
   revalidateTag("site-maintenance", { expire: 0 });
   revalidatePath("/", "layout");
   return NextResponse.json({

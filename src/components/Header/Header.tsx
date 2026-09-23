@@ -12,8 +12,8 @@ import MobileMenuAsync from "./MobileMenuAsync";
 import MobileBottomNavAsync from "./MobileBottomNavAsync";
 import { HeaderViewerProvider } from "./HeaderViewerProvider";
 import { Download, HelpCircle } from "lucide-react";
+import SiteNoticeAsync from "./SiteNoticeAsync";
 import { getSiteNotice } from "@/lib/maintenance";
-import SiteNotice from "./SiteNotice";
 
 const ACTION_BUTTON_CLASSES =
   "flex items-center gap-2.5 px-3 py-4 cursor-pointer text-brand-m_khonsa text-[14px] font-semibold transition-colors duration-150 hover:bg-brand-surface hover:text-white";
@@ -21,7 +21,13 @@ const ICON_WRAPPER_CLASSES =
   "flex items-center justify-center rounded-full w-5 h-5 text-brand-surface_m shrink-0";
 
 export default async function Header({ activeRegion }: { activeRegion: string }) {
-  const siteNotice = await getSiteNotice();
+  const siteNoticePromise = getSiteNotice()
+    .then((notice) =>
+      notice.enabled && notice.title && notice.message
+        ? { title: notice.title, message: notice.message }
+        : null
+    )
+    .catch(() => null);
 
   return (
     <HeaderViewerProvider>
@@ -41,21 +47,21 @@ export default async function Header({ activeRegion }: { activeRegion: string })
             <DesktopNavLinks activeRegion={activeRegion} />
           </div>
 
-          {siteNotice.enabled ? (
-            <div className="relative shrink-0">
-              <SiteNotice title={siteNotice.title} message={siteNotice.message} desktop />
-            </div>
-          ) : null}
+          <div className="relative shrink-0">
+            <Suspense fallback={null}>
+              <SiteNoticeAsync noticePromise={siteNoticePromise} desktop />
+            </Suspense>
+          </div>
 
           <div className="flex items-center">
-            <Link href={`/${activeRegion}/download`} prefetch={false} className={ACTION_BUTTON_CLASSES}>
+            <Link href={`/${activeRegion}/download`} className={ACTION_BUTTON_CLASSES}>
               <span className={ICON_WRAPPER_CLASSES}>
                 <Download size={18} strokeWidth={2.5} />
               </span>
               <span>دانلود بازی</span>
             </Link>
 
-            <Link href={`/${activeRegion}/support`} prefetch={false} className={ACTION_BUTTON_CLASSES}>
+            <Link href={`/${activeRegion}/support`} className={ACTION_BUTTON_CLASSES}>
               <span className={ICON_WRAPPER_CLASSES}>
                 <HelpCircle size={18} strokeWidth={2.5} />
               </span>
@@ -86,10 +92,7 @@ export default async function Header({ activeRegion }: { activeRegion: string })
         </div>
 
         <div className="lg:hidden">
-          <MobileMenuAsync
-            activeRegion={activeRegion}
-            siteNotice={siteNotice.enabled ? { title: siteNotice.title, message: siteNotice.message } : null}
-          />
+          <MobileMenuAsync activeRegion={activeRegion} siteNoticePromise={siteNoticePromise} />
         </div>
       </header>
 

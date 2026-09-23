@@ -39,8 +39,30 @@ async function loadProductIndex() {
             pageInfo { hasNextPage endCursor }
             nodes {
               slug
-              productCategories(first: 1) {
-                nodes { slug name }
+              ... on Product {
+                productCategories(first: 20) {
+                  nodes { slug name }
+                }
+              }
+              ... on SimpleProduct {
+                productCategories(first: 20) {
+                  nodes { slug name }
+                }
+              }
+              ... on VariableProduct {
+                productCategories(first: 20) {
+                  nodes { slug name }
+                }
+              }
+              ... on ExternalProduct {
+                productCategories(first: 20) {
+                  nodes { slug name }
+                }
+              }
+              ... on GroupProduct {
+                productCategories(first: 20) {
+                  nodes { slug name }
+                }
               }
             }
           }

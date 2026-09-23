@@ -1,5 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { fetchGraphQL } from "./client";
 import { formatProducts, sanitizeHtml } from "./utils";
@@ -306,7 +307,7 @@ export async function getCategoryProducts(slug: string, activeRegion: string = "
       );
     },
     ["category-products", slug, activeRegion],
-    { tags: ["products", categoryTag], revalidate: 300 }
+    { tags: ["products", categoryTag], revalidate: 1800 }
   );
 
   return cached();
@@ -572,8 +573,8 @@ export async function getRelatedPosts(params: {
   return cached();
 }
 
-const PRODUCT_DETAIL_CONTENT_QUERY = `
-  query GetProductDetailContent($id: ID!) {
+const PRODUCT_DETAIL_QUERY = `
+  query GetProductDetail($id: ID!) {
     product(id: $id, idType: SLUG) {
       id
       databaseId
@@ -607,14 +608,6 @@ const PRODUCT_DETAIL_CONTENT_QUERY = `
         items { name includedIn }
         image
       }
-    }
-  }
-`;
-
-const PRODUCT_DETAIL_PRICING_QUERY = `
-  query GetProductDetailPricing($id: ID!) {
-    product(id: $id, idType: SLUG) {
-      databaseId
 
       ... on SimpleProduct {
         price
@@ -626,7 +619,6 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
         price
         regularPrice
         salePrice
-
         variationCards {
           databaseId
           price
@@ -634,14 +626,11 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
           imageUrl
           regionSlug
           commissionDiscountBadge
-
           giftPrice
           giftRegularPrice
-
           codePrice
           codeRegularPrice
           codeStockCount
-
           attributes {
             name
             value
@@ -653,130 +642,42 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
   }
 `;
 
-interface ProductPricingSlice {
-  price?: string;
-  regularPrice?: string;
-  salePrice?: string;
-  parsedPrice: number | null;
-  parsedRegularPrice: number | null;
-  variationCards: ProductNode["variationCards"];
-  isVariation: boolean;
-  isAvailableInRegion: boolean;
-}
+const getRawProductDetail = cache(async (slug: string): Promise<ProductNode | null> => {
+  if (!slug) return null;
 
-const EMPTY_PRICING_SLICE: ProductPricingSlice = {
-  parsedPrice: null,
-  parsedRegularPrice: null,
-  variationCards: [],
-  isVariation: false,
-  isAvailableInRegion: false,
-};
-
-async function getProductDetailContent(slug: string) {
   const cached = unstable_cache(
     async () => {
       const data = await fetchGraphQL(
-        PRODUCT_DETAIL_CONTENT_QUERY,
+        PRODUCT_DETAIL_QUERY,
         { id: slug },
-        [`product-${slug}`]
+        [`product-${slug}`, `product-pricing-${slug}`],
+        { type: "revalidate", seconds: 1800 },
       );
 
       if (data === null) {
         throw new Error(`دریافت اطلاعات محصول «${slug}» با خطا مواجه شد`);
       }
 
-      if (!data.product) return null;
-
-      const product = data.product;
-
-      return {
-        ...product,
-        shortDescription: sanitizeHtml(product.shortDescription),
-        description: sanitizeHtml(product.description),
-        secondaryGallery: product.secondaryGallery
-          ? product.secondaryGallery.map(
-              (item: { description?: string; imageUrl?: string }) => ({
-                ...item,
-                description:
-                  sanitizeHtml(item.description) ?? item.description,
-              })
-            )
-          : product.secondaryGallery,
-      };
+      return data.product ? (data.product as ProductNode) : null;
     },
-    ["product-detail-content", slug],
-    { tags: [`product-${slug}`], revalidate: 900 }
-  );
-
-  return cached();
-}
-
-async function getProductDetailPricing(
-  slug: string,
-  activeRegion: string
-): Promise<ProductPricingSlice | null> {
-  const cached = unstable_cache(
-    async (): Promise<ProductPricingSlice | null> => {
-      const data = await fetchGraphQL(
-        PRODUCT_DETAIL_PRICING_QUERY,
-        { id: slug },
-        [`product-pricing-${slug}`]
-      );
-
-      if (data === null) {
-        throw new Error(`دریافت قیمت محصول «${slug}» با خطا مواجه شد`);
-      }
-
-      if (!data.product) return null;
-
-      const formatted = formatProducts(
-        [data.product],
-        false,
-        activeRegion
-      )[0];
-
-      if (!formatted) return null;
-
-      return {
-        price: formatted.price,
-        regularPrice: formatted.regularPrice,
-        salePrice: formatted.salePrice,
-        parsedPrice: formatted.parsedPrice ?? null,
-        parsedRegularPrice: formatted.parsedRegularPrice ?? null,
-        variationCards: formatted.variationCards ?? [],
-        isVariation: Boolean(formatted.isVariation),
-        isAvailableInRegion:
-          formatted.isAvailableInRegion !== false,
-      };
-    },
-    ["product-detail-pricing", slug, activeRegion],
+    ["product-raw", slug],
     {
-      tags: [`product-pricing-${slug}`],
-      revalidate: 60,
-    }
+      tags: [`product-${slug}`, `product-pricing-${slug}`],
+      revalidate: 1800,
+    },
   );
 
   return cached();
-}
+});
 
-export async function getProductDetail(
-  slug: string,
-  activeRegion: string = "eu"
-): Promise<ProductNode | null> {
-  if (!slug) return null;
+export const getProductDetail = cache(
+  async (slug: string, activeRegion: string = "eu"): Promise<ProductNode | null> => {
+    const rawProduct = await getRawProductDetail(slug);
+    if (!rawProduct) return null;
 
-  const [content, pricing] = await Promise.all([
-    getProductDetailContent(slug),
-    getProductDetailPricing(slug, activeRegion),
-  ]);
-
-  if (!content) return null;
-
-  return {
-    ...content,
-    ...(pricing ?? EMPTY_PRICING_SLICE),
-  } as ProductNode;
-}
+    return formatProducts([rawProduct], false, activeRegion)[0] ?? null;
+  },
+);
 
 export async function getRegions() {
   const cached = unstable_cache(

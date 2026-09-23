@@ -16,31 +16,42 @@ interface CategoryPageProps {
 }
 
 async function CategoryProductGroups({
-  categorySlug,
   region,
   category,
+  productsPromise,
 }: {
-  categorySlug: string;
   region: string;
   category: any;
+  productsPromise: Promise<any[]>;
 }) {
-  const allProducts = await getCategoryProducts(categorySlug, region);
+  const allProducts = await productsPromise;
   const subcategories = category.children?.nodes ?? [];
 
-  const groupedProducts = subcategories
-    .map((subcat: any) => {
-      const productsInSubcat = allProducts.filter((product: any) =>
-        product.productCategories?.nodes?.some((cat: any) => cat.slug === subcat.slug)
-      );
-      return { ...subcat, products: productsInSubcat };
-    })
-    .filter((group: any) => group.products.length > 0);
+  const groupedMap = new Map<string, any[]>();
+  for (const subcategory of subcategories) {
+    groupedMap.set(subcategory.slug, []);
+  }
 
-  const standaloneProducts = allProducts.filter((product: any) =>
-    !subcategories.some((subcat: any) =>
-      product.productCategories?.nodes?.some((cat: any) => cat.slug === subcat.slug)
-    )
-  );
+  const standaloneProducts: any[] = [];
+
+  for (const product of allProducts) {
+    const productCategorySlugs = new Set(
+      (product.productCategories?.nodes ?? []).map((cat: any) => cat.slug).filter(Boolean),
+    );
+    let matchedSubcategory = false;
+
+    for (const subcategory of subcategories) {
+      if (!productCategorySlugs.has(subcategory.slug)) continue;
+      groupedMap.get(subcategory.slug)?.push(product);
+      matchedSubcategory = true;
+    }
+
+    if (!matchedSubcategory) standaloneProducts.push(product);
+  }
+
+  const groupedProducts = subcategories
+    .map((subcat: any) => ({ ...subcat, products: groupedMap.get(subcat.slug) ?? [] }))
+    .filter((group: any) => group.products.length > 0);
 
   if (standaloneProducts.length > 0) {
     groupedProducts.unshift({
@@ -86,7 +97,9 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryArchivePage({ params }: CategoryPageProps) {
   const { categorySlug, region } = await params;
-  const category = await getCategoryShell(categorySlug);
+  const categoryPromise = getCategoryShell(categorySlug);
+  const productsPromise = getCategoryProducts(categorySlug, region);
+  const category = await categoryPromise;
 
   if (!category) notFound();
 
@@ -113,7 +126,7 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
       />
 
       <Suspense fallback={<div className="mt-8"><ProductGridSkeleton /></div>}>
-        <CategoryProductGroups categorySlug={categorySlug} region={region} category={category} />
+        <CategoryProductGroups region={region} category={category} productsPromise={productsPromise} />
       </Suspense>
     </main>
   );
