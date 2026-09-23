@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { KNOWN_REGIONS, DEFAULT_REGION } from "@/lib/regions";
-import { IS_STAFF_COOKIE } from "@/lib/auth/constants";
 import {
   getFreshProxyMaintenanceState,
   getLastKnownProxyMaintenanceState,
@@ -351,8 +350,7 @@ export async function proxy(request: NextRequest) {
   if (maintenancePromise) {
     const maintenance = await maintenancePromise;
     if (maintenance.enabled) {
-      const staffCookie = request.cookies.get(IS_STAFF_COOKIE)?.value;
-      const isStaff = staffCookie === "1" || (staffCookie !== "0" && await getStaffStatus(request, refreshed.token ?? undefined));
+      const isStaff = await getStaffStatus(request, refreshed.token ?? undefined);
       if (!isStaff) {
         const url = request.nextUrl.clone();
         url.pathname = "/maintenance";

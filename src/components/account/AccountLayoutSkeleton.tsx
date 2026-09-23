@@ -27,8 +27,8 @@ export default function AccountLayoutSkeleton() {
             <div className="lg:col-span-2 h-[110px] bg-white/[.03] rounded" />
             <div className="h-[110px] bg-white/[.03] rounded" />
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-[92px] bg-white/[.03] rounded" />
             ))}
           </div>

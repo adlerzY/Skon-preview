@@ -7,6 +7,7 @@ import ProductContentMatrix from "@/components/product/ProductContentMatrix";
 import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import StorefrontContextBar from "@/components/ui/StorefrontContextBar";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema, productSchema } from "@/lib/seo/jsonld";
 import { makeMetadata, SEO_REGION, stripHtml, selectSeoCategory } from "@/lib/seo/site";
@@ -126,6 +127,16 @@ async function ProductDetailStream({
           { label: product.name },
         ]}
       />
+      <StorefrontContextBar
+        region={region}
+        activeGame={(() => {
+          const category = product.productCategories?.nodes?.find((item) => item.slug === canonicalCategorySlug);
+          return category?.image?.sourceUrl
+            ? { title: category.name, img: category.image.sourceUrl, link: `/${category.slug}` }
+            : null;
+        })()}
+        categoryLabel={categoryName}
+      />
       <ProductPageClient
         product={clientProduct}
         initialEdition={initialEdition}
@@ -152,7 +163,6 @@ async function ProductDetailStream({
 export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
   const [{ region, categorySlug, productSlug }, { edition }] = await Promise.all([params, searchParams]);
   const productPromise = getProductDetail(productSlug, region);
-
   return (
     <main className="container mx-auto px-6 max-w-site py-8">
       <ProductDetailStream

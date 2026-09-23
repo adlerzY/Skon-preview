@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getCategoryShell, getCategoryProducts } from "@/lib/graphql";
 import CategoryHero from "@/components/Hero";
-import SubcategoryMenu from "@/components/ui/SubcategoryMenu";
+import StorefrontContextBar from "@/components/ui/StorefrontContextBar";
 import DynamicProductGrid from "@/components/ProductGrid";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
@@ -65,10 +65,9 @@ async function CategoryProductGroups({
 
   return (
     <>
-      {groupedProducts.length > 1 && <SubcategoryMenu subcategories={groupedProducts} />}
       <div className="mt-8">
         {groupedProducts.map((group: any) => (
-          <div key={group.id} id={`subcat-${group.slug}`} className="scroll-mt-36 my-12">
+          <div key={group.id} id={`subcat-${group.slug}`} className="scroll-mt-16 my-12">
             <DynamicProductGrid title={group.name} products={group.products} activeRegion={region} />
           </div>
         ))}
@@ -123,6 +122,12 @@ export default async function CategoryArchivePage({ params }: CategoryPageProps)
       <CategoryHero
         heading={name}
         banners={banners && banners.length > 0 ? banners : [{ title: name, subtitle: `محصولات و خدمات ${name}` }]}
+      />
+
+      <StorefrontContextBar
+        region={region}
+        activeGame={category.image?.sourceUrl ? { title: category.name, img: category.image.sourceUrl, link: `/${category.slug}` } : null}
+        subcategories={category.children?.nodes ?? []}
       />
 
       <Suspense fallback={<div className="mt-8"><ProductGridSkeleton /></div>}>

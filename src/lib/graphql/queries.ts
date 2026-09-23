@@ -99,7 +99,7 @@ async function loadHeaderPublicNavigationData() {
   };
 }
 
-export async function getHeaderPublicNavigationData() {
+export const getHeaderPublicNavigationData = cache(async () => {
   const cached = unstable_cache(
     loadHeaderPublicNavigationData,
     ["header-public-navigation-data"],
@@ -107,7 +107,41 @@ export async function getHeaderPublicNavigationData() {
   );
 
   return cached();
+});
+
+async function loadHeaderGameNavigationData() {
+  const data = await fetchGraphQL(
+    `
+      ${CATEGORY_BASIC_FIELDS}
+      query GetHeaderGameNavigationData {
+        productCategories(where: { hideEmpty: true, parent: 0 }, first: 15) {
+          nodes { ...CategoryBasicFields }
+        }
+      }
+    `,
+    {},
+    ["header-data"]
+  );
+
+  const nodes: HeaderCategoryNode[] = data?.productCategories?.nodes ?? [];
+  return nodes
+    .filter((cat) => !["home", "uncategorized"].includes(cat.slug) && cat.image?.sourceUrl)
+    .map((cat) => ({
+      title: cat.name,
+      img: cat.image!.sourceUrl,
+      link: `/${cat.slug}`,
+    }));
 }
+
+export const getHeaderGameNavigationData = cache(async () => {
+  const cached = unstable_cache(
+    loadHeaderGameNavigationData,
+    ["header-game-navigation-data"],
+    { tags: ["header-data"], revalidate: false }
+  );
+
+  return cached();
+});
 
 async function loadHeaderRegionsData() {
   const data = await fetchGraphQL(

@@ -110,7 +110,7 @@ async function BlogPostStream({ region, requestedCategorySlug, postPromise }: Bl
             alt={post.title}
             fill
             sizes="(max-width: 1200px) 100vw, 1200px"
-            quality={88}
+            quality={90}
             className="object-cover"
             preload
           />

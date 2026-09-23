@@ -31,7 +31,7 @@ export default async function Header({ activeRegion }: { activeRegion: string })
 
   return (
     <HeaderViewerProvider>
-      <header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-brand-bg" dir="rtl">
+      <header data-storefront-header className="w-full sticky top-0 lg:top-[-60px] z-[10000] bg-brand-bg" dir="rtl">
         <div className="hidden lg:flex relative w-full justify-between items-center h-[60px] px-6 max-w-[1600px] mx-auto">
           <div className="flex items-center h-full gap-8">
             <Link href={`/${activeRegion}`} className="flex items-center shrink-0" aria-label="صفحه اصلی">

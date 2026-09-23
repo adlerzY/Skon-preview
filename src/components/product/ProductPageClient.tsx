@@ -397,7 +397,7 @@ export default function ProductPageClient({
                   alt={product.name}
                   fill
                   preload={shouldPreloadImage}
-                  quality={80}
+                  quality={88}
                   className="object-cover transition-opacity duration-300"
                   onLoad={() => setShouldPreloadImage(false)}
                   onError={() => setShouldPreloadImage(false)}

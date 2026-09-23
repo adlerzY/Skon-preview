@@ -77,19 +77,20 @@ function StatRow({ icon, title, desc }: { icon: React.ReactNode; title: string; 
 
 export default function SupportPage({ region }: { region: string }) {
   return (
-    <main className="container mx-auto px-6 max-w-site py-10 md:py-14 text-white flex flex-col gap-10 md:gap-14" dir="rtl">
-      <div className="relative w-full h-[240px] sm:h-[280px] md:h-[340px] overflow-hidden border border-brand-surface_hover shadow-[0_25px_60px_-10px_rgba(0,0,0,0.6)]">
+    <main className="container mx-auto px-6 max-w-site py-6 md:py-8 text-white flex flex-col gap-8 md:gap-10" dir="rtl">
+      <div className="relative w-full h-[190px] sm:h-[220px] md:h-[250px] overflow-hidden border border-brand-surface_hover shadow-[0_25px_60px_-10px_rgba(0,0,0,0.6)]">
         <Image
           src="/images/support-hero.webp"
           alt="پشتیبانی Arena2Battle"
           fill
           priority
           sizes="(max-width: 1600px) 100vw, 1600px"
+          quality={86}
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111215] via-[#111215]/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-l from-[#111215]/95 via-[#111215]/30 to-transparent w-full md:w-2/3" />
-        <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 gap-3 max-w-xl">
+        <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 gap-2.5 max-w-xl">
           <span className="inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-brand-sabz bg-brand-sabz/10 border border-brand-sabz/20 px-2.5 py-1">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inline-flex w-full h-full rounded-full bg-brand-sabz opacity-75 animate-ping" />
@@ -97,8 +98,8 @@ export default function SupportPage({ region }: { region: string }) {
             </span>
             پشتیبانی هم‌اکنون پاسخگوست
           </span>
-          <h1 className="text-2xl md:text-4xl font-black leading-tight">پشتیبانی Arena2Battle</h1>
-          <p className="text-brand-m_khonsa text-sm md:text-base leading-7">
+          <h1 className="text-2xl md:text-3xl font-black leading-tight">پشتیبانی Arena2Battle</h1>
+          <p className="text-brand-m_khonsa text-xs md:text-sm leading-6">
             هر سوالی درباره سفارش، روش‌های تحویل یا مشکلات فنی دارید، تیم پشتیبانی ما در کنار شماست.
           </p>
         </div>

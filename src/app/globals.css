@@ -34,6 +34,10 @@
     background-color: #15171e;
     color: #c2c2c4;
   }
+  body:has(.storefront-context-bar) [data-storefront-header] {
+    position: relative !important;
+    top: auto !important;
+  }
   * {
     border-radius: 5px;
     border-color: #313339;

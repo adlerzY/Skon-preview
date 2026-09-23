@@ -87,7 +87,7 @@ export default function CategoryHero({ banners, heading }: Props) {
                 fill
                 preload={index === 0}
                 loading={index === 0 ? undefined : "lazy"}
-                quality={78}
+                quality={82}
                 sizes="(max-width: 1600px) 100vw, 1600px"
                 className={`object-cover object-center transition-opacity duration-300 ${
                   index === activeIndex && activeImageLoaded ? "opacity-100" : "opacity-0"
