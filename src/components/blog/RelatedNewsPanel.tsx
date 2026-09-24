@@ -68,7 +68,13 @@ export default function RelatedNewsPanel({
                 >
                   <div className="relative w-8 h-8 shrink-0 bg-brand-bg overflow-hidden rounded">
                     {post.featuredImage?.node?.sourceUrl && (
-                      <Image src={post.featuredImage.node.sourceUrl} alt={post.title} fill sizes="32px" className="object-cover" unoptimized />
+                      <img
+                        src={post.featuredImage.node.sourceUrl}
+                        alt={post.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                     )}
                   </div>
                   <span className="text-xs text-brand-m_khonsa group-hover:text-brand-blue transition-colors line-clamp-2">{post.title}</span>

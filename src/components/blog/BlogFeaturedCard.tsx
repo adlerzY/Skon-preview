@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { memo } from "react";
 
@@ -9,14 +8,14 @@ interface BlogFeaturedCardProps {
     slug: string;
     date?: string;
     featuredImage?: { node?: { sourceUrl?: string } };
-    categories?: { nodes?: { slug?: string; name?: string; parent?: { node?: { slug?: string; name?: string } } }[] };
+    categories?: { nodes?: { slug?: string; name?: string }[] };
   };
   region: string;
 }
 
 function BlogFeaturedCard({ post, region }: BlogFeaturedCardProps) {
   const category = post.categories?.nodes?.[0];
-  const categorySlug = category?.parent?.node?.slug || category?.slug || "uncategorized";
+  const categorySlug = category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
 
   return (
@@ -27,13 +26,12 @@ function BlogFeaturedCard({ post, region }: BlogFeaturedCardProps) {
     >
       <div className="relative w-full aspect-[16/10] bg-white/5 overflow-hidden shrink-0">
         {imageUrl ? (
-          <Image
+          <img
             src={imageUrl}
             alt={post.title}
-            fill
-            sizes="(max-width: 768px) 50vw, 25vw"
-            unoptimized
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">بدون تصویر</div>

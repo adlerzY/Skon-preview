@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { memo } from "react";
 import { MessageCircle } from "lucide-react";
@@ -13,7 +12,7 @@ interface BlogPostCardProps {
     commentsCount?: number;
     featuredImage?: { node?: { sourceUrl?: string } };
     author?: { node?: { name?: string } };
-    categories?: { nodes?: { slug?: string; name?: string; parent?: { node?: { slug?: string; name?: string } } }[] };
+    categories?: { nodes?: { slug?: string; name?: string }[] };
   };
   region: string;
   categorySlug?: string;
@@ -25,7 +24,7 @@ function stripHtml(html?: string) {
 
 function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
   const category = post.categories?.nodes?.[0];
-  const resolvedCategorySlug = categorySlug || category?.parent?.node?.slug || category?.slug || "uncategorized";
+  const resolvedCategorySlug = categorySlug || category?.slug || "uncategorized";
   const imageUrl = post.featuredImage?.node?.sourceUrl;
   const excerpt = stripHtml(post.excerpt);
 
@@ -37,13 +36,12 @@ function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
     >
       <div className="relative w-[110px] sm:w-[180px] md:w-[220px] shrink-0 aspect-[4/3] bg-white/5 overflow-hidden">
         {imageUrl ? (
-          <Image
+          <img
             src={imageUrl}
             alt={post.title}
-            fill
-            sizes="(max-width: 640px) 110px, (max-width: 768px) 180px, 220px"
-            unoptimized
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">بدون تصویر</div>
