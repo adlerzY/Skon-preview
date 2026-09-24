@@ -1,15 +1,13 @@
 import ProductCard from "./ProductCard";
-import ProductGridPrefetch from "./ProductGridPrefetch";
 import { ProductNode } from "@/lib/graphql";
 
 interface ProductGridProps {
   products: ProductNode[];
-  title: string;
+  title?: string;
   activeRegion?: string;
-  showTitle?: boolean;
 }
 
-export default function ProductGrid({ products, title, activeRegion, showTitle = true }: ProductGridProps) {
+export default function ProductGrid({ products, title, activeRegion }: ProductGridProps) {
   if (!products || products.length === 0) {
     return (
       <div className="w-full my-4 bg-brand-surface backdrop-blur-xl border border-white/5 p-10 flex flex-col items-center justify-center gap-1.5 text-center">
@@ -20,28 +18,24 @@ export default function ProductGrid({ products, title, activeRegion, showTitle =
   }
 
   return (
-    <section
-      className={showTitle ? "w-full my-4 overflow-hidden" : "w-full overflow-hidden"}
-    >
-      {showTitle && (
+    <section className="cv-auto w-full my-4 overflow-hidden" style={{ contain: "layout paint" }}>
+      {title ? (
         <div className="flex items-center justify-between mt-5 mb-5">
           <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
             {title}
           </h2>
         </div>
-      )}
+      ) : null}
 
-      <ProductGridPrefetch>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              activeRegion={activeRegion}
-            />
-          ))}
-        </div>
-      </ProductGridPrefetch>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+        {products.map((product) => (
+          <ProductCard 
+            key={product.id} 
+            product={product} 
+            activeRegion={activeRegion}
+          />
+        ))}
+      </div>
     </section>
   );
 }
