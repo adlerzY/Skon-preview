@@ -361,7 +361,7 @@ export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
         `,
         { regionSlug: activeRegion },
         ["products", "home", "home-featured"],
-        { type: "revalidate", seconds: 1800 }
+        "force-cache"
       );
 
       if (!data) return [] as ProductNode[];
@@ -373,7 +373,7 @@ export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
       ).filter((p) => p.isAvailableInRegion !== false);
     },
     ["home-featured-products", activeRegion],
-    { tags: ["products", "home", "home-featured"], revalidate: 1800 }
+    { tags: ["products", "home", "home-featured"], revalidate: false }
   );
 
   return cached();
@@ -393,7 +393,7 @@ export async function getHomeLatestProducts(activeRegion: string = "eu") {
         `,
         { regionSlug: activeRegion },
         ["products", "home", "home-latest"],
-        { type: "revalidate", seconds: 1800 }
+        "force-cache"
       );
 
       if (!data) return [] as ProductNode[];
@@ -405,7 +405,7 @@ export async function getHomeLatestProducts(activeRegion: string = "eu") {
       ).filter((p) => p.isAvailableInRegion !== false);
     },
     ["home-latest-products", activeRegion],
-    { tags: ["products", "home", "home-latest"], revalidate: 1800 }
+    { tags: ["products", "home", "home-latest"], revalidate: false }
   );
 
   return cached();

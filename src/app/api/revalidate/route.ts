@@ -72,12 +72,24 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        revalidateTag(t, { expire: 1800 });
+        // Pricing-bearing catalog tags must expire immediately. They are also
+        // used by Home/Archive caches that contain the rendered price, so a
+        // 30-minute stale window would reintroduce exactly the mismatch this
+        // invalidation path is meant to prevent.
+        const immediate =
+          t.startsWith("product-pricing-") ||
+          t === "home-featured" ||
+          t === "home-latest" ||
+          t === "products" ||
+          t.startsWith("category-");
+        const expire = immediate ? 0 : 1800;
+
+        revalidateTag(t, { expire });
 
         const encoded = encodeURIComponent(t);
 
         if (encoded !== t) {
-          revalidateTag(encoded, { expire: 1800 });
+          revalidateTag(encoded, { expire });
         }
 
         if (
