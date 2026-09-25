@@ -636,11 +636,11 @@ const PRODUCT_DETAIL_PRICING_QUERY = `
           imageUrl
           regionSlug
 
-          giftPriceToman
-          giftRegularPriceToman
+          giftPrice
+          giftRegularPrice
 
-          codePriceToman
-          codeRegularPriceToman
+          codePrice
+          codeRegularPrice
           codeStockCount
 
           attributes {

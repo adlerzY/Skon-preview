@@ -5,33 +5,49 @@ interface ProductGridProps {
   products: ProductNode[];
   title?: string;
   activeRegion?: string;
+  showTitle?: boolean;
 }
 
-export default function ProductGrid({ products, title, activeRegion }: ProductGridProps) {
+export default function ProductGrid({
+  products,
+  title,
+  activeRegion,
+  showTitle = true,
+}: ProductGridProps) {
   if (!products || products.length === 0) {
     return (
       <div className="w-full my-4 bg-brand-surface backdrop-blur-xl border border-white/5 p-10 flex flex-col items-center justify-center gap-1.5 text-center">
-        <p className="text-brand-m_khonsa font-semibold text-lg">به نظر می‌رسه تو این ریجن چیزی نداریم</p>
-        <p className="text-brand-surface_m text-sm">یه ریجن دیگه رو از بالا سمت چپ سایت انتخاب کن</p>
+        <p className="text-brand-m_khonsa font-semibold text-lg">
+          به نظر می‌رسه تو این ریجن چیزی نداریم
+        </p>
+        <p className="text-brand-surface_m text-sm">
+          یه ریجن دیگه رو از بالا سمت چپ سایت انتخاب کن
+        </p>
       </div>
     );
   }
 
   return (
-    <section className="cv-auto w-full my-4 overflow-hidden" style={{ contain: "layout paint" }}>
-      {title ? (
+    <section
+      className={
+        showTitle
+          ? "w-full my-4 overflow-hidden"
+          : "w-full overflow-hidden"
+      }
+    >
+      {showTitle && (
         <div className="flex items-center justify-between mt-5 mb-5">
           <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3">
             {title}
           </h2>
         </div>
-      ) : null}
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
         {products.map((product) => (
-          <ProductCard 
-            key={product.id} 
-            product={product} 
+          <ProductCard
+            key={product.id}
+            product={product}
             activeRegion={activeRegion}
           />
         ))}

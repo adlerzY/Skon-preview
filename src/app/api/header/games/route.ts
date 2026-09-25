@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getHeaderGameNavigationData } from "@/lib/graphql";
+import { getHeaderPublicNavigationData } from "@/lib/graphql";
 
 export async function GET() {
   try {
-    const games = await getHeaderGameNavigationData();
+    const { shopItems: games } = await getHeaderPublicNavigationData();
     return NextResponse.json(
       { games },
       {
