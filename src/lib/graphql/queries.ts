@@ -1,4 +1,4 @@
-import "server-only";
+
 import crypto from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { fetchGraphQL } from "./client";
@@ -53,6 +53,28 @@ function buildSlugTag(prefix: string, slug: string): string {
   const hash = crypto.createHash("sha1").update(normalized).digest("hex").slice(0, 16);
 
   return asciiPart ? `${prefix}-${asciiPart}-${hash}` : `${prefix}-${hash}`;
+}
+
+const MAX_TAG_LENGTH = 256;
+const PRODUCT_PRICING_TTL_SECONDS = 120;
+
+function productTagVariants(prefix: string, slug: string): string[] {
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    decoded = slug;
+  }
+
+  const encoded = encodeURIComponent(decoded);
+  const lowerHex = encoded.replace(/%[0-9A-F]{2}/g, (m) => m.toLowerCase());
+
+  const tags = [
+    ...[slug, decoded, encoded, lowerHex].map((v) => `${prefix}-${v}`),
+    buildSlugTag(prefix, slug),
+  ];
+
+  return Array.from(new Set(tags)).filter((t) => t.length <= MAX_TAG_LENGTH);
 }
 
 
@@ -718,12 +740,15 @@ async function getProductDetailPricing(
   slug: string,
   activeRegion: string
 ): Promise<ProductPricingSlice | null> {
+  const tags = productTagVariants("product-pricing", slug);
+
   const cached = unstable_cache(
     async (): Promise<ProductPricingSlice | null> => {
       const data = await fetchGraphQL(
         PRODUCT_DETAIL_PRICING_QUERY,
         { id: slug },
-        [`product-pricing-${slug}`]
+        [],
+        "no-store"
       );
 
       if (data === null) {
@@ -748,14 +773,13 @@ async function getProductDetailPricing(
         parsedRegularPrice: formatted.parsedRegularPrice ?? null,
         variationCards: formatted.variationCards ?? [],
         isVariation: Boolean(formatted.isVariation),
-        isAvailableInRegion:
-          formatted.isAvailableInRegion !== false,
+        isAvailableInRegion: formatted.isAvailableInRegion !== false,
       };
     },
     ["product-detail-pricing", slug, activeRegion],
     {
-      tags: [`product-pricing-${slug}`],
-      revalidate: false,
+      tags,
+      revalidate: PRODUCT_PRICING_TTL_SECONDS,
     }
   );
 

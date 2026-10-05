@@ -1,15 +1,25 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_TAGS_PER_REQUEST = 1000;
 
+function timingSafeSecretEquals(actual: string, expected: string): boolean {
+  if (!actual || !expected) return false;
+
+  const actualHash = crypto.createHash("sha256").update(actual).digest();
+  const expectedHash = crypto.createHash("sha256").update(expected).digest();
+
+  return crypto.timingSafeEqual(actualHash, expectedHash);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const secret = request.headers.get("x-revalidate-secret");
     const expected = process.env.REVALIDATION_SECRET;
 
-    if (!expected || secret !== expected) {
+    if (!expected || !secret || !timingSafeSecretEquals(secret, expected)) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -72,10 +82,6 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Pricing-bearing catalog tags must expire immediately. They are also
-        // used by Home/Archive caches that contain the rendered price, so a
-        // 30-minute stale window would reintroduce exactly the mismatch this
-        // invalidation path is meant to prevent.
         const immediate =
           t.startsWith("product-pricing-") ||
           t === "home-featured" ||
