@@ -50,7 +50,7 @@ export default function ProductStickyBar({
     <div
       dir="rtl"
       aria-hidden={!visible}
-      className={`fixed top-[60px] lg:top-[80px] inset-x-0 z-[9500] bg-[#15171e] border-b border-brand-surface_hover shadow-[0_8px_20px_rgba(0,0,0,0.6)] transition-transform duration-200 ease-out ${
+      className={`fixed top-0 inset-x-0 z-[9500] bg-[#15171e] border-b border-brand-surface_hover shadow-[0_8px_20px_rgba(0,0,0,0.6)] transition-transform duration-200 ease-out ${
         visible ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >

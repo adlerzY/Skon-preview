@@ -14,7 +14,7 @@ export default function ProductLoading() {
 
       <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10" aria-hidden="true">
         <div className="order-2 w-full lg:order-1 lg:col-span-4">
-          <div className="flex flex-col gap-6 lg:sticky lg:top-[96px]">
+          <div className="flex flex-col gap-6 lg:sticky lg:top-[84px]">
             <div>
               <Block className="h-9 w-64 max-w-full" />
               <Block className="mt-3 h-11 w-full" />

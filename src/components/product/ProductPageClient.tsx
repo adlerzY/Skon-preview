@@ -382,6 +382,7 @@ export default function ProductPageClient({
               onAttributeSelect={handleAttrSelect}
               variations={variations}
               regionInfo={regionInfo}
+              deliveryType={purchase.deliveryType}
             />
 
             <DeliveryAndPrice selectedVariation={combinedAggregateVar} purchase={purchase} />
@@ -389,7 +390,7 @@ export default function ProductPageClient({
         </div>
 
         <div className="lg:col-span-8 w-full">
-          <div className="flex flex-col gap-6 lg:sticky lg:top-[96px]">
+          <div className="flex flex-col gap-6 lg:sticky lg:top-[84px]">
             <div className="flex flex-col sm:flex-row sm:items-stretch gap-3 w-full">
               <div className="relative w-full sm:flex-1 aspect-[16/9] bg-brand-surface overflow-hidden border border-brand-surface_hover shadow-lg group">
                 <Image
