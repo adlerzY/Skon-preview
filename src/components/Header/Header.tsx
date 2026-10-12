@@ -31,62 +31,70 @@ export default async function Header({ activeRegion }: { activeRegion: string })
 
   return (
     <HeaderViewerProvider>
-      <header data-storefront-header className="relative z-[10000] w-full bg-brand-bg" dir="rtl">
-        <div className="hidden lg:flex relative w-full justify-between items-center h-[60px] px-6 max-w-[1600px] mx-auto">
-          <div className="flex items-center h-full gap-8">
-            <Link href={`/${activeRegion}`} className="flex items-center shrink-0" aria-label="صفحه اصلی">
-              <Image
-                src="/images/arena2battleLogo.webp"
-                alt="Arena2Battle"
-                width={100}
-                height={40}
-                className="h-10 w-auto object-contain"
-                style={{ width: "auto" }}
-              />
-            </Link>
-            <DesktopNavLinks activeRegion={activeRegion} />
-          </div>
+      <>
+        <header data-storefront-header className="relative z-[10000] w-full bg-brand-bg" dir="rtl">
+          <div className="hidden lg:flex relative w-full justify-between items-center h-[60px] px-6 max-w-[1600px] mx-auto">
+            <div className="flex items-center h-full gap-8">
+              <Link href={`/${activeRegion}`} className="flex items-center shrink-0" aria-label="صفحه اصلی">
+                <Image
+                  src="/images/arena2battleLogo.webp"
+                  alt="Arena2Battle"
+                  width={100}
+                  height={40}
+                  className="h-10 w-auto object-contain"
+                  style={{ width: "auto" }}
+                />
+              </Link>
+              <DesktopNavLinks activeRegion={activeRegion} />
+            </div>
 
-          <div className="relative shrink-0">
-            <Suspense fallback={null}>
-              <SiteNoticeAsync noticePromise={siteNoticePromise} desktop />
-            </Suspense>
-          </div>
-
-          <div className="flex items-center">
-            <Link href={`/${activeRegion}/download`} className={ACTION_BUTTON_CLASSES}>
-              <span className={ICON_WRAPPER_CLASSES}>
-                <Download size={18} strokeWidth={2.5} />
-              </span>
-              <span>دانلود بازی</span>
-            </Link>
-
-            <Link href={`/${activeRegion}/support`} className={ACTION_BUTTON_CLASSES}>
-              <span className={ICON_WRAPPER_CLASSES}>
-                <HelpCircle size={18} strokeWidth={2.5} />
-              </span>
-              <span>پشتیبانی</span>
-            </Link>
-
-            <UserActionsAsync />
-          </div>
-        </div>
-
-        <div className="hidden lg:flex w-full justify-center bg-brand-bg">
-          <div className="flex w-full container mx-auto px-6 max-w-[1600px] py-[10px] gap-[8px] h-[80px]">
-            <div className="flex items-center justify-between flex-1 bg-brand-surface h-full pl-2 rounded-[5px]">
-              <HeaderCart />
-              <Suspense fallback={<GamesNavSkeleton />}>
-                <HeaderMenuSwitcherAsync />
+            <div className="relative shrink-0">
+              <Suspense fallback={null}>
+                <SiteNoticeAsync noticePromise={siteNoticePromise} desktop />
               </Suspense>
             </div>
 
-            <HeaderSearch />
+            <div className="flex items-center">
+              <Link href={`/${activeRegion}/download`} className={ACTION_BUTTON_CLASSES}>
+                <span className={ICON_WRAPPER_CLASSES}>
+                  <Download size={18} strokeWidth={2.5} />
+                </span>
+                <span>دانلود بازی</span>
+              </Link>
 
-            <div className="flex items-center justify-center h-full">
-              <Suspense fallback={<RegionSwitcherImmediateFallback region={activeRegion} />}>
-                <RegionSwitcherAsync initialRegion={activeRegion} />
-              </Suspense>
+              <Link href={`/${activeRegion}/support`} className={ACTION_BUTTON_CLASSES}>
+                <span className={ICON_WRAPPER_CLASSES}>
+                  <HelpCircle size={18} strokeWidth={2.5} />
+                </span>
+                <span>پشتیبانی</span>
+              </Link>
+
+              <UserActionsAsync />
+            </div>
+          </div>
+        </header>
+
+        <div
+          data-storefront-sticky-nav
+          className="hidden lg:block sticky top-0 z-[10000] w-full bg-brand-bg"
+          dir="rtl"
+        >
+          <div className="flex w-full justify-center bg-brand-bg">
+            <div className="flex w-full container mx-auto px-6 max-w-[1600px] py-[10px] gap-[8px] h-[80px]">
+              <div className="flex items-center justify-between flex-1 bg-brand-surface h-full pl-2 rounded-[5px]">
+                <HeaderCart />
+                <Suspense fallback={<GamesNavSkeleton />}>
+                  <HeaderMenuSwitcherAsync />
+                </Suspense>
+              </div>
+
+              <HeaderSearch />
+
+              <div className="flex items-center justify-center h-full">
+                <Suspense fallback={<RegionSwitcherImmediateFallback region={activeRegion} />}>
+                  <RegionSwitcherAsync initialRegion={activeRegion} />
+                </Suspense>
+              </div>
             </div>
           </div>
         </div>
@@ -94,9 +102,9 @@ export default async function Header({ activeRegion }: { activeRegion: string })
         <div className="lg:hidden">
           <MobileMenuAsync activeRegion={activeRegion} siteNoticePromise={siteNoticePromise} />
         </div>
-      </header>
 
-      <MobileBottomNavAsync />
+        <MobileBottomNavAsync />
+      </>
     </HeaderViewerProvider>
   );
 }
@@ -119,4 +127,3 @@ function RegionSwitcherImmediateFallback({ region }: { region: string }) {
     </div>
   );
 }
-
