@@ -8,6 +8,15 @@ const USERS_DIR = path.join(AVATARS_ROOT, "users");
 const ADMIN_DIR = path.join(AVATARS_ROOT, "admin");
 const ALLOWED_EXT = [".webp", ".png", ".jpg", ".jpeg"];
 
+const SAFE_AVATAR_ID = /^[A-Za-z0-9_-]+$/;
+
+const AVATAR_EXT_PRIORITY: Record<string, number> = {
+  ".webp": 0,
+  ".png": 1,
+  ".jpg": 2,
+  ".jpeg": 3,
+};
+
 export interface AvatarEntry {
   id: string;
   url: string;
@@ -23,13 +32,48 @@ interface AvatarManifest {
 async function scanDir(dir: string, urlPrefix: string): Promise<AvatarEntry[]> {
   try {
     const files = await fs.readdir(dir);
-    return files
-      .filter((f) => ALLOWED_EXT.includes(path.extname(f).toLowerCase()))
-      .sort()
-      .map((f) => ({
-        id: path.basename(f, path.extname(f)),
-        url: `${urlPrefix}/${f}`,
-      }));
+
+    const candidates = files
+      .filter((file) => ALLOWED_EXT.includes(path.extname(file).toLowerCase()))
+      .filter((file) => {
+        const id = path.basename(file, path.extname(file));
+        return SAFE_AVATAR_ID.test(id);
+      })
+      .sort((a, b) => {
+        const aId = path.basename(a, path.extname(a));
+        const bId = path.basename(b, path.extname(b));
+
+        if (aId !== bId) {
+          return aId < bId ? -1 : 1;
+        }
+
+        const aExt = path.extname(a).toLowerCase();
+        const bExt = path.extname(b).toLowerCase();
+        const extOrder =
+          (AVATAR_EXT_PRIORITY[aExt] ?? 99) -
+          (AVATAR_EXT_PRIORITY[bExt] ?? 99);
+
+        if (extOrder !== 0) return extOrder;
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
+
+    const seenIds = new Set<string>();
+    const avatars: AvatarEntry[] = [];
+
+    for (const file of candidates) {
+      const extension = path.extname(file);
+      const id = path.basename(file, extension);
+
+      if (seenIds.has(id)) continue;
+      seenIds.add(id);
+
+      avatars.push({
+        id,
+        url: `${urlPrefix}/${file}`,
+      });
+    }
+
+    return avatars;
   } catch {
     return [];
   }
@@ -90,7 +134,7 @@ export async function isValidAvatarId(value: string, allowAdmin: boolean): Promi
 
   const manifest = await loadManifest();
   const map = parsed.scope === "admin" ? manifest.adminById : manifest.usersById;
-  return Boolean(map[parsed.id]);
+  return Object.prototype.hasOwnProperty.call(map, parsed.id);
 }
 
 export async function resolveAvatarUrl(stored?: string | null): Promise<string | null> {
@@ -98,8 +142,10 @@ export async function resolveAvatarUrl(stored?: string | null): Promise<string |
   if (parsed) {
     const manifest = await loadManifest();
     const map = parsed.scope === "admin" ? manifest.adminById : manifest.usersById;
-    const url = map[parsed.id];
-    if (url) return url;
+    if (Object.prototype.hasOwnProperty.call(map, parsed.id)) {
+      const url = map[parsed.id];
+      if (typeof url === "string" && url.length > 0) return url;
+    }
   }
   return getDefaultAvatarUrl();
 }
