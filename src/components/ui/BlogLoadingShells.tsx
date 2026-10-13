@@ -54,7 +54,7 @@ export function BlogCategoryLoadingShell() {
 export function BlogPostLoadingShell() {
   return (
     <div className="w-full" aria-hidden="true">
-      <div className="w-full h-[220px] sm:h-[300px] md:h-[420px] rounded-none bg-brand-surface" />
+    <div className="mx-auto h-[220px] w-full max-w-[1600px] bg-brand-surface sm:h-[300px] md:h-[420px]" />
       <div className="container mx-auto max-w-site px-4 md:px-6 pt-6 md:pt-8 pb-8 md:pb-12">
         <div className="mb-6 md:mb-8 flex flex-col gap-3">
           <SurfaceLine className="h-8 w-3/4" />
