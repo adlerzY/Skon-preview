@@ -18,13 +18,12 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
   ];
 
   const SOCIAL_LINKS = [
-    { icon: Send, label: "تلگرام", href: "https://t.me/Arena2BattleSupport" },
-    { icon: MessageCircle, label: "واتساپ", href: "https://wa.me/989120000000" },
-    { icon: Mail, label: "ایمیل", href: "mailto:support@arena2battle.com" },
+    { icon: Send, label: "تلگرام", href: "https://t.me/Arena2Battle_support" },
+    { icon: MessageCircle, label: "واتساپ", href: "https://wa.me/989174956653" },
   ];
 
   return (
-    <footer className="cv-auto w-full bg-brand-menu border-t border-brand-surface_hover mt-16" dir="rtl">
+    <footer className="w-full shrink-0 bg-brand-menu border-t border-brand-surface_hover mt-16" dir="rtl">
       <div className="container mx-auto px-6 max-w-site py-10 md:py-14 flex flex-col gap-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
           <div className="lg:col-span-5 flex flex-col items-start gap-4">

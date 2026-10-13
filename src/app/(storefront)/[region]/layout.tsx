@@ -52,7 +52,7 @@ export default async function RegionLayout({
   return (
     <>
       <Header activeRegion={activeRegion} />
-      {children}
+      <div className="flex-1">{children}</div>
       <Footer activeRegion={activeRegion} />
     </>
   );

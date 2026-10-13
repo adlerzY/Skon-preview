@@ -5,7 +5,7 @@ import ScrollToTopButton from "@/components/ui/ScrollToTopButton";
 export default function StorefrontLayout({ children }: { children: ReactNode }) {
   return (
     <CommerceProviders>
-      <div className="pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-0">
+      <div className="flex min-h-[100dvh] flex-col pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-0">
         {children}
       </div>
       <ScrollToTopButton />

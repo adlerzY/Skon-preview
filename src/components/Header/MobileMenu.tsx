@@ -239,7 +239,7 @@ export default function MobileMenu({ activeRegion, siteNoticePromise, regionsPro
     };
   }, [shopOpen, drawerData, drawerDataLoading]);
 
-  const isBlogSection = Boolean(pathname?.startsWith("/blog") || pathname?.includes("/blog/"));
+  const isBlogSection = pathname ? /\/blog(\/|$)/.test(pathname) : false;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

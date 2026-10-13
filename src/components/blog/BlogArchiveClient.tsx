@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Search, Loader2 } from "lucide-react";
 import BlogPostCard from "./BlogPostCard";
 import BlogFeaturedCard from "./BlogFeaturedCard";
-import { useBlogPosts } from "./hooks/seBlogPosts";
+import { useBlogPosts } from "./hooks/useBlogPosts";
 
 interface PageInfo { hasNextPage: boolean; endCursor: string | null; }
 

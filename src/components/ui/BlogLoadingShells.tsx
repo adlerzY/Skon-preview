@@ -54,24 +54,26 @@ export function BlogCategoryLoadingShell() {
 export function BlogPostLoadingShell() {
   return (
     <div className="w-full" aria-hidden="true">
-      <div className="w-full h-[220px] sm:h-[300px] md:h-[420px] bg-brand-surface border border-brand-surface_hover/60 mb-6 md:mb-8" />
-      <div className="mb-6 md:mb-8 flex flex-col gap-3">
-        <SurfaceLine className="h-8 w-3/4" />
-        <div className="flex gap-3">
-          <SurfaceLine className="h-4 w-24" />
-          <SurfaceLine className="h-4 w-24" />
+      <div className="w-full h-[220px] sm:h-[300px] md:h-[420px] rounded-none bg-brand-surface" />
+      <div className="container mx-auto max-w-site px-4 md:px-6 pt-6 md:pt-8 pb-8 md:pb-12">
+        <div className="mb-6 md:mb-8 flex flex-col gap-3">
+          <SurfaceLine className="h-8 w-3/4" />
+          <div className="flex gap-3">
+            <SurfaceLine className="h-4 w-24" />
+            <SurfaceLine className="h-4 w-24" />
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        <div className="order-2 lg:order-1 lg:col-span-3 h-48 bg-brand-surface border border-brand-surface_hover/60" />
-        <div className="order-1 lg:order-2 lg:col-span-6 bg-brand-menu border border-brand-surface_hover/60 p-6 min-h-[420px]">
-          <SurfaceLine className="h-6 w-40" />
-          <SurfaceLine className="h-4 w-full mt-6" />
-          <SurfaceLine className="h-4 w-full mt-3" />
-          <SurfaceLine className="h-4 w-5/6 mt-3" />
-          <SurfaceLine className="h-4 w-full mt-3" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="order-2 lg:order-1 lg:col-span-3 h-48 bg-brand-surface border border-brand-surface_hover/60" />
+          <div className="order-1 lg:order-2 lg:col-span-6 bg-brand-menu border border-brand-surface_hover/60 p-6 min-h-[420px]">
+            <SurfaceLine className="h-6 w-40" />
+            <SurfaceLine className="h-4 w-full mt-6" />
+            <SurfaceLine className="h-4 w-full mt-3" />
+            <SurfaceLine className="h-4 w-5/6 mt-3" />
+            <SurfaceLine className="h-4 w-full mt-3" />
+          </div>
+          <div className="order-3 lg:col-span-3 h-40 bg-brand-surface border border-brand-surface_hover/60" />
         </div>
-        <div className="order-3 lg:col-span-3 h-40 bg-brand-surface border border-brand-surface_hover/60" />
       </div>
     </div>
   );

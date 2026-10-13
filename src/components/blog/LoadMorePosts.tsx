@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import BlogPostCard from "./BlogPostCard";
-import { useBlogPosts } from "./hooks/seBlogPosts";
+import { useBlogPosts } from "./hooks/useBlogPosts";
 
 interface PageInfo { hasNextPage: boolean; endCursor: string | null; }
 

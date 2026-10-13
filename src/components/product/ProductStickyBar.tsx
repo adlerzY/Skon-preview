@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { PriceDisplay } from "./PriceDisplay";
 
 interface GroupedAttribute {
@@ -46,11 +47,18 @@ export default function ProductStickyBar({
   ctaDisabled = false,
   onCtaClick,
 }: ProductStickyBarProps) {
+  useEffect(() => {
+    const root = document.documentElement;
+    if (visible) root.setAttribute("data-product-sticky", "1");
+    else root.removeAttribute("data-product-sticky");
+    return () => root.removeAttribute("data-product-sticky");
+  }, [visible]);
+
   return (
     <div
       dir="rtl"
       aria-hidden={!visible}
-      className={`fixed top-0 inset-x-0 z-[9500] bg-[#15171e] border-b border-brand-surface_hover shadow-[0_8px_20px_rgba(0,0,0,0.6)] transition-transform duration-200 ease-out ${
+      className={`fixed top-0 inset-x-0 z-[10001] bg-[#15171e] border-b border-brand-surface_hover shadow-[0_8px_20px_rgba(0,0,0,0.6)] transition-transform duration-200 ease-out ${
         visible ? "translate-y-0 opacity-100 pointer-events-auto" : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
