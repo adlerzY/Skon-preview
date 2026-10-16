@@ -7,6 +7,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
 import OrdersPaginated from "@/components/account/OrdersPaginated";
 import { AccountOrdersLoadingShell } from "@/components/account/AccountPageLoadingShell";
+import PaymentResultBanner from "@/components/account/PaymentResultBanner";
 
 type OrdersData = Awaited<ReturnType<typeof fetchGraphQL>>;
 
@@ -49,6 +50,9 @@ export default async function OrdersView() {
         <ChevronRight size={16} />
         بازگشت به حساب کاربری
       </Link>
+      <Suspense fallback={null}>
+  <PaymentResultBanner />
+</Suspense>
       <h1 className="text-2xl font-black mb-6">سفارش‌های من</h1>
       <Suspense fallback={<AccountOrdersLoadingShell />}>
         <OrdersDataStream dataPromise={dataPromise} />
