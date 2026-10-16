@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
-import { getClientCookie } from "@/lib/cookies";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
@@ -26,32 +24,8 @@ type Step =
 
 export default function UnifiedLoginFlow() {
   const searchParams = useSearchParams();
-  const returnTo = useMemo(() => {
-    const value = searchParams.get("returnTo");
-    return value && value.startsWith("/") && !value.startsWith("//") ? value : null;
-  }, [searchParams]);
-  const shouldResumeCheckout = searchParams.get("resumeCheckout") === "1";
+  const fromCart = searchParams.get("returnTo") === "/cart" && searchParams.get("resumeCheckout") === "1";
   const [step, setStep] = useState<Step>({ name: "phone" });
-
-  useEffect(() => {
-    if (!returnTo) return;
-    const target = returnTo;
-    const startedAt = Date.now();
-    let timer: number | null = null;
-    const check = () => {
-      if (getClientCookie(LOGGED_IN_COOKIE) === "1") {
-        const resumeUrl = target === "/cart" ? target + (target.includes("?") ? "&" : "?") + "resumeCheckout=1" : target;
-        window.location.assign(resumeUrl);
-        return;
-      }
-      if (Date.now() - startedAt >= 30_000) return;
-      timer = window.setTimeout(check, 350);
-    };
-    timer = window.setTimeout(check, 350);
-    return () => {
-      if (timer !== null) window.clearTimeout(timer);
-    };
-  }, [returnTo]);
 
   const handleAdminTotp = (pendingTicket: string, requiresSetup: boolean) => {
     setStep({ name: "admin-totp", pendingTicket, requiresSetup });
@@ -93,11 +67,11 @@ export default function UnifiedLoginFlow() {
           />
         </Link>
         <Link
-          href="/"
+          href={fromCart ? "/cart" : "/"}
           className="flex items-center gap-1 text-xs text-brand-m_khonsa hover:text-white transition-colors"
         >
           <ChevronRight size={14} />
-          بازگشت به فروشگاه
+          {fromCart ? "بازگشت به سبد خرید" : "بازگشت به فروشگاه"}
         </Link>
       </div>
 
@@ -108,7 +82,7 @@ export default function UnifiedLoginFlow() {
         </div>
       )}
 
-      {shouldResumeCheckout && returnTo === "/cart" && (
+      {fromCart && (
         <div className="border border-brand-blue/20 bg-brand-blue/5 p-3 text-center text-xs leading-5 text-brand-active">
           بعد از ورود، مستقیم به سبد خرید برمی‌گردید و می‌توانید پرداخت را ادامه دهید.
         </div>

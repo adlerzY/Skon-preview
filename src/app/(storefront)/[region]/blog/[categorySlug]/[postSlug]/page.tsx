@@ -82,24 +82,24 @@ export default async function BlogPostPage({ params }: PostPageProps) {
         />
       )}
 
-      {featuredImageUrl && (
-        <div className="relative mx-auto m-0 h-[220px] w-full max-w-[1600px] overflow-hidden rounded-none bg-white/5 p-0 sm:h-[300px] md:h-[420px]">
-          <img
-            src={featuredImageUrl}
-            alt={post.title}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="absolute inset-0 h-full w-full rounded-none object-cover"
-          />
-        </div>
-      )}
-
       <div
         className={`container mx-auto max-w-site px-4 pb-8 md:px-6 md:pb-12 ${
-          featuredImageUrl ? "pt-6 md:pt-8" : "pt-8 md:pt-12"
+          featuredImageUrl ? "pt-3" : "pt-8 md:pt-12"
         }`}
       >
+        {featuredImageUrl && (
+          <div className="relative mb-6 aspect-[16/9] max-h-[360px] w-full overflow-hidden bg-white/5 sm:max-h-[440px] md:mb-8 lg:max-h-[520px]">
+            <img
+              src={featuredImageUrl}
+              alt={post.title}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+        )}
+
         <div className="mb-6 md:mb-8 flex flex-col gap-3">
           <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-brand-blue leading-tight">{post.title}</h1>
           <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-brand-m_khonsa">

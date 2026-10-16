@@ -69,7 +69,6 @@ export default function OtpStep({ phone, initialCooldown, onBack, onNeedsProfile
       if (data.success) {
         setIsCompletingLogin(true);
         notifyAuthStateChanged();
-        router.replace("/my-account");
         router.refresh();
         return;
       }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Trash2, Globe, Sliders, Loader2, Minus, Plus, ShoppingCart, RefreshCw, AlertTriangle, CheckCircle2,
@@ -11,6 +11,7 @@ import { useCart, itemNeedsCredentials } from "@/context/CartContext";
 import Button from "@/components/ui/Button";
 import { getClientCookie } from "@/lib/cookies";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
+import { consumeLoginHandoff, stashCredentialsForLogin } from "@/lib/secureCartStorage";
 import MissingCredentialsForm from "@/components/cart/MissingCredentialsForm";
 import { useToast } from "@/context/ToastContext";
 
@@ -24,7 +25,7 @@ interface RevalidatedItem {
 }
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, clearCart, updateItemSnapshot, totalQuantity } = useCart();
+  const { cart, removeFromCart, updateQuantity, clearCart, updateItemSnapshot, updateCredentials, totalQuantity } = useCart();
   const { showToast } = useToast();
   const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -32,11 +33,23 @@ export default function CartPage() {
   const [isRevalidating, setIsRevalidating] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [revalidationNotice, setRevalidationNotice] = useState<{ type: "warning" | "success"; text: string } | null>(null);
+  const handoffConsumedRef = useRef(false);
   const resumeCheckout = searchParams.get("resumeCheckout") === "1";
 
   useEffect(() => {
     setIsLoggedIn(getClientCookie(LOGGED_IN_COOKIE) === "1");
   }, []);
+
+  useEffect(() => {
+    if (handoffConsumedRef.current || cart.length === 0) return;
+    handoffConsumedRef.current = true;
+    const handoff = consumeLoginHandoff();
+    for (const item of cart) {
+      const saved = handoff[item.id];
+      if (!saved || !itemNeedsCredentials(item)) continue;
+      updateCredentials(item.id, { ...item.customFields, ...saved });
+    }
+  }, [cart, updateCredentials]);
 
   useEffect(() => {
     if (!resumeCheckout || !cart.length) return;
@@ -56,6 +69,11 @@ export default function CartPage() {
     const current = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
     return { totalOriginalPrice: original, totalPrice: current, totalDiscount: Math.max(0, original - current) };
   }, [cart]);
+
+  const goToLogin = () => {
+    stashCredentialsForLogin(cart);
+    window.location.href = "/my-account?returnTo=/cart&resumeCheckout=1";
+  };
 
   const getDeliveryLabel = (method: string) => {
     switch (method) {
@@ -126,6 +144,10 @@ export default function CartPage() {
   };
 
   const revalidateCart = async () => {
+    if (itemsNeedingCredentials.length > 0) {
+      setCheckoutError("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید");
+      return false;
+    }
     setIsRevalidating(true);
     setCheckoutError("");
     try {
@@ -140,7 +162,7 @@ export default function CartPage() {
 
       if (response.status === 401 && ["AUTH_REQUIRED", "SESSION_INVALID", "SESSION_REFRESH_FAILED"].includes(String(data?.code))) {
         setIsLoggedIn(false);
-        window.location.href = "/my-account?returnTo=/cart&resumeCheckout=1";
+        goToLogin();
         return false;
       }
 
@@ -164,7 +186,7 @@ export default function CartPage() {
     setRevalidationNotice(null);
 
     if (!isLoggedIn) {
-      window.location.href = "/my-account?returnTo=/cart&resumeCheckout=1";
+      goToLogin();
       return;
     }
 
@@ -212,7 +234,7 @@ export default function CartPage() {
 
       if (res.status === 401 && ["AUTH_REQUIRED", "SESSION_INVALID", "SESSION_REFRESH_FAILED"].includes(String(data?.code))) {
         setIsLoggedIn(false);
-        window.location.href = "/my-account?returnTo=/cart&resumeCheckout=1";
+        goToLogin();
         return;
       }
       if (!res.ok) {

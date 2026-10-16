@@ -3,19 +3,32 @@
 import { useState } from "react";
 import { useCart, type CartItem } from "@/context/CartContext";
 import { AlertTriangle } from "lucide-react";
+import { BATTLETAG_REGEX, EMAIL_REGEX } from "@/components/product/validation";
 
 export default function MissingCredentialsForm({ item }: { item: CartItem }) {
   const { updateCredentials } = useCart();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(item.customFields?.email ?? "");
   const [password, setPassword] = useState("");
-  const [battleTag, setBattleTag] = useState("");
+  const [battleTag, setBattleTag] = useState(item.customFields?.battleTag ?? "");
+  const [error, setError] = useState("");
 
   const handleSave = () => {
+    setError("");
     if (item.deliveryMethod === "direct") {
-      if (!email.trim() || !password.trim()) return;
+      if (!EMAIL_REGEX.test(email.trim())) {
+        setError("ایمیل اکانت معتبر نیست");
+        return;
+      }
+      if (!password.trim()) {
+        setError("پسورد اکانت را وارد کنید");
+        return;
+      }
       updateCredentials(item.id, { email: email.trim(), password });
     } else if (item.deliveryMethod === "gift") {
-      if (!battleTag.trim()) return;
+      if (!BATTLETAG_REGEX.test(battleTag.trim())) {
+        setError("فرمت بتل‌تگ نامعتبر است. مثال: Name#1234");
+        return;
+      }
       updateCredentials(item.id, { battleTag: battleTag.trim() });
     }
   };
@@ -24,8 +37,9 @@ export default function MissingCredentialsForm({ item }: { item: CartItem }) {
     <div className="mt-3 bg-brand-zard/10 border border-brand-zard/30 p-3 flex flex-col gap-2">
       <div className="flex items-center gap-1.5 text-brand-zard text-xs font-bold">
         <AlertTriangle size={14} />
-        اطلاعات این آیتم پاک شده — لطفاً دوباره وارد کنید
+        اطلاعات ورود این آیتم کامل نیست — لطفاً تکمیل کنید
       </div>
+      {error && <span className="text-[11px] text-red-500 font-medium">{error}</span>}
       {item.deliveryMethod === "direct" ? (
         <div className="flex flex-col gap-2">
           <input
@@ -42,6 +56,7 @@ export default function MissingCredentialsForm({ item }: { item: CartItem }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="پسورد اکانت"
             dir="ltr"
+            autoComplete="new-password"
             className="bg-brand-bg border border-brand-surface_hover p-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue text-left"
           />
         </div>

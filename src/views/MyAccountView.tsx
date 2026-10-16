@@ -50,13 +50,8 @@ async function AccountDashboardStream({
   );
 }
 
-export default async function MyAccountView() {
+export default async function MyAccountView({ resumeCart = false }: { resumeCart?: boolean }) {
   const userPromise = getCurrentUser();
-  const tokenPromise = getAuthToken();
-  const dataPromise = tokenPromise
-    .then((token) => fetchGraphQL(DASHBOARD_SUMMARY_QUERY, {}, [], "no-store", token || undefined))
-    .catch(() => null);
-
   const user = await userPromise;
 
   if (!user) {
@@ -66,6 +61,14 @@ export default async function MyAccountView() {
   if (user.isStaff) {
     redirect("/admin");
   }
+
+  if (resumeCart) {
+    redirect("/cart?resumeCheckout=1");
+  }
+
+  const dataPromise = getAuthToken()
+    .then((token) => fetchGraphQL(DASHBOARD_SUMMARY_QUERY, {}, [], "no-store", token || undefined))
+    .catch(() => null);
 
   return (
     <div className="mx-auto h-full">
