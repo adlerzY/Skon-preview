@@ -1,5 +1,7 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { createHmac } from "crypto";
 import { SESSION_ID_COOKIE } from "@/lib/auth/constants";
+import { getClientIp } from "@/lib/rateLimit";
 import "server-only";
 
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL;
@@ -25,6 +27,22 @@ function resolveEndpoint(): { url: string; hostHeader?: string } {
   return { url: INTERNAL_WP_GRAPHQL_URL, hostHeader };
 }
 
+async function resolveClientIpHeaders(): Promise<Record<string, string>> {
+  const secret = process.env.SESSION_BINDING_SECRET;
+  if (!secret) return {};
+
+  try {
+    const incoming = await headers();
+    const ip = getClientIp({ headers: incoming } as unknown as Request);
+    if (!ip || ip === "unknown") return {};
+
+    const proof = createHmac("sha256", secret).update(`client-ip.${ip}`).digest("hex");
+    return { "X-BTL-Client-IP": ip, "X-BTL-Client-IP-Proof": proof };
+  } catch {
+    return {};
+  }
+}
+
 export async function fetchGraphQLWithErrors(
   query: string,
   variables: Record<string, unknown> = {},
@@ -42,6 +60,7 @@ export async function fetchGraphQLWithErrors(
       if (!boundSessionId) boundSessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
     } catch {}
   }
+  const clientIpHeaders = await resolveClientIpHeaders();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -57,6 +76,7 @@ export async function fetchGraphQLWithErrors(
         ...(bootstrapProof ? { "X-BTL-Session-Bootstrap": bootstrapProof } : {}),
         ...(previousAuthToken ? { "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}` } : {}),
         ...(hostHeader ? { Host: hostHeader } : {}),
+        ...clientIpHeaders,
       },
       body: JSON.stringify({ query, variables }),
     });

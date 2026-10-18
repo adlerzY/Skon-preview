@@ -129,7 +129,7 @@ export default function ProfileEditForm({ name, email }: ProfileEditFormProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-brand-m_khonsa">ایمیل</span>
-            <span className="text-white font-medium" dir="ltr">{email}</span>
+            <span className="text-white font-medium" dir="ltr">{email || "—"}</span>
           </div>
         </div>
       )}

@@ -8,7 +8,8 @@ import DashboardShell from "@/components/account/DashboardShell";
 import MobileBottomNav from "@/components/Header/MobileBottomNav";
 import AccountLayoutSkeleton from "@/components/account/AccountLayoutSkeleton";
 import LoginPageSkeleton from "@/components/account/LoginPageSkeleton";
-import { getCurrentUser } from "@/lib/auth/session";
+import SessionUnavailable from "@/components/account/SessionUnavailable";
+import { getSessionState } from "@/lib/auth/session";
 import { LOGGED_IN_COOKIE } from "@/lib/auth/constants";
 import AccountProviders from "@/components/providers/AccountProviders";
 
@@ -18,9 +19,9 @@ export const metadata: Metadata = {
 };
 
 async function AccountLayoutContent({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const state = await getSessionState();
 
-  if (!user) {
+  if (state.status !== "authenticated") {
     return (
       <div className="h-[100dvh] w-full bg-brand-bg flex flex-col overflow-hidden" dir="rtl">
         <header className="w-full flex items-center justify-between px-5 py-4 md:px-8 shrink-0">
@@ -44,13 +45,15 @@ async function AccountLayoutContent({ children }: { children: React.ReactNode })
         </header>
 
         <main className="flex-1 min-h-0 w-full flex items-center justify-center p-4 md:p-5 overflow-y-auto pb-[calc(58px+env(safe-area-inset-bottom)+12px)] lg:pb-4">
-          {children}
+          {state.status === "unavailable" ? <SessionUnavailable /> : children}
         </main>
 
         <MobileBottomNav user={null} />
       </div>
     );
   }
+
+  const { user } = state;
 
   return (
     <DashboardShell user={{ avatarUrl: user.avatarUrl, name: user.name, isStaff: user.isStaff }}>

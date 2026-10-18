@@ -88,7 +88,6 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
             <span className="font-black tracking-wide bg-gradient-to-l from-brand-blue via-brand-zard to-brand-sabz bg-clip-text text-transparent group-hover:tracking-widest transition-all duration-300">
               ⚗️✨ جادوی adlerz 🪄
             </span>
-            <span className="text-brand-m_khonsa">(خودمم نمیدونم چطوری)</span>
           </Link>
         </div>
       </div>

@@ -24,7 +24,7 @@ async function SettingsDataStream({
 }) {
   const [currentSessionId, data] = await Promise.all([currentSessionIdPromise, dataPromise]);
   const sessions = data?.viewer?.sessions ?? [];
-
+  const hasRealEmail = Boolean(user.email) && !user.email.toLowerCase().endsWith("@phone.arena2battle.local");
   return (
     <>
       <div className="bg-brand-surface border border-brand-surface_hover p-6 flex flex-col gap-6">
@@ -35,7 +35,7 @@ async function SettingsDataStream({
           isStaff={user.isStaff}
         />
         <div className="border-t border-brand-surface_hover pt-6">
-          <ProfileEditForm name={user.name} email={user.email} />
+          <ProfileEditForm name={user.name} email={hasRealEmail ? user.email : ""} />
         </div>
       </div>
 

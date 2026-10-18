@@ -99,6 +99,10 @@ async function loadHeaderPublicNavigationData() {
     ["header-data"]
   );
 
+  if (data === null) {
+    throw new Error("دریافت منوی هدر با خطا مواجه شد");
+  }
+
   const shopNodes: HeaderCategoryNode[] = data?.productCategories?.nodes ?? [];
   const blogNodes: HeaderCategoryNode[] = data?.categories?.nodes ?? [];
 
@@ -120,16 +124,6 @@ async function loadHeaderPublicNavigationData() {
   };
 }
 
-export async function getHeaderPublicNavigationData() {
-  const cached = unstable_cache(
-    loadHeaderPublicNavigationData,
-    ["header-public-navigation-data"],
-    { tags: ["header-data"], revalidate: false }
-  );
-
-  return cached();
-}
-
 async function loadHeaderRegionsData() {
   const data = await fetchGraphQL(
     `
@@ -143,6 +137,10 @@ async function loadHeaderRegionsData() {
     ["regions"]
   );
 
+  if (data === null) {
+    throw new Error("دریافت ریجن‌ها با خطا مواجه شد");
+  }
+
   const regions = Array.isArray(data?.allPaRegionShop?.nodes)
     ? data.allPaRegionShop.nodes.map((r: Record<string, string>) => ({
         name: r.name || r.title,
@@ -152,186 +150,6 @@ async function loadHeaderRegionsData() {
     : [];
 
   return { regions };
-}
-
-export async function getHeaderRegionsData() {
-  const cached = unstable_cache(
-    loadHeaderRegionsData,
-    ["header-regions-data"],
-    { tags: ["regions"], revalidate: false }
-  );
-
-  return cached();
-}
-
-/**
- * Backwards-compatible combined accessor for callers outside the Header.
- * The Header itself deliberately uses the split accessors so public navigation
- * and region data can stream independently.
- */
-export async function getHeaderNavigationData() {
-  const [navigation, regionData] = await Promise.all([
-    getHeaderPublicNavigationData(),
-    getHeaderRegionsData(),
-  ]);
-
-  return { ...navigation, ...regionData };
-}
-
-export async function getHeaderCategories() {
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${CATEGORY_BASIC_FIELDS}
-          query GetHeaderCategories {
-            productCategories(where: { hideEmpty: true, parent: 0 }, first: 15) {
-              nodes { ...CategoryBasicFields }
-            }
-          }
-        `,
-        {},
-        ["header-data"]
-      );
-
-      const nodes: HeaderCategoryNode[] = data?.productCategories?.nodes ?? [];
-      return nodes
-        .filter((cat) => !["home", "uncategorized"].includes(cat.slug) && cat.image?.sourceUrl)
-        .map((cat) => ({
-          title: cat.name,
-          img: cat.image!.sourceUrl,
-          link: `/${cat.slug}`,
-        }));
-    },
-    ["header-categories"],
-    { tags: ["header-data"], revalidate: false }
-  );
-
-  return cached();
-}
-
-export async function getProducts(categorySlug?: string, activeRegion: string = "eu") {
-  const tags = categorySlug
-    ? ["products", buildSlugTag("category", categorySlug)]
-    : ["products"];
-
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${PRODUCT_CARD_FIELDS}
-          query GetProducts($categoryIn: [String], $regionSlug: String) {
-            products(first: 12, where: { categoryIn: $categoryIn, status: "PUBLISH", regionSlug: $regionSlug }) {
-              nodes { ...ProductCardFields }
-            }
-          }
-        `,
-        categorySlug ? { categoryIn: [categorySlug], regionSlug: activeRegion } : { regionSlug: activeRegion },
-        tags
-      );
-
-      return formatProducts(data?.products?.nodes ?? [], true, activeRegion).filter(
-        (p) => p.isAvailableInRegion !== false
-      );
-    },
-    ["get-products", categorySlug ?? "all", activeRegion],
-    { tags, revalidate: false }
-  );
-
-  return cached();
-}
-
-export async function getCategoryShell(slug: string) {
-  if (!slug) return null;
-
-  const categoryTag = buildSlugTag("category", slug);
-  const bannersTag = buildSlugTag("banners", slug);
-
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${CATEGORY_BASIC_FIELDS}
-          ${BANNER_FIELDS}
-          query GetCategoryShell($id: ID!) {
-            productCategory(id: $id, idType: SLUG) {
-              ...CategoryBasicFields
-              children(where: { hideEmpty: true }) {
-                nodes { id databaseId name slug }
-              }
-              banners { ...BannerFields }
-            }
-          }
-        `,
-        { id: slug },
-        ["banners", bannersTag, "header-data"]
-      );
-
-      if (data === null) {
-        throw new Error(`دریافت اطلاعات دسته‌بندی «${slug}» با خطا مواجه شد`);
-      }
-
-      if (!data?.productCategory) return null;
-
-      return {
-        ...data.productCategory,
-        banners: safeBannerUrls(data.productCategory.banners ?? []),
-      };
-    },
-    ["category-shell", slug],
-    { tags: ["banners", bannersTag, "header-data", categoryTag], revalidate: false }
-  );
-
-  return cached();
-}
-
-export async function getCategoryProducts(slug: string, activeRegion: string = "eu") {
-  if (!slug) return [] as ProductNode[];
-
-  const categoryTag = buildSlugTag("category", slug);
-
-  const cached = unstable_cache(
-    async () => {
-      const collected: ProductNode[] = [];
-      let after: string | null = null;
-      let page = 0;
-
-      do {
-        const data = await fetchGraphQL(
-          `
-            ${PRODUCT_CARD_FIELDS}
-            query GetCategoryProducts($categoryIn: [String], $regionSlug: String, $after: String) {
-              products(first: 100, after: $after, where: { categoryIn: $categoryIn, status: "PUBLISH", regionSlug: $regionSlug }) {
-                pageInfo { hasNextPage endCursor }
-                nodes { ...ProductCardFields }
-              }
-            }
-          `,
-          { categoryIn: [slug], regionSlug: activeRegion, after },
-          ["products", categoryTag],
-          "no-store"
-        );
-
-        if (data === null) {
-          throw new Error(`دریافت محصولات دسته‌بندی «${slug}» با خطا مواجه شد`);
-        }
-
-        collected.push(...(data.products?.nodes ?? []));
-        const pageInfo = data.products?.pageInfo;
-        if (!pageInfo?.hasNextPage || !pageInfo.endCursor) break;
-        after = pageInfo.endCursor;
-        page += 1;
-      } while (page < 50);
-
-      return formatProducts(collected, true, activeRegion).filter(
-        (p) => p.isAvailableInRegion !== false
-      );
-    },
-    ["category-products", slug, activeRegion],
-    { tags: ["products", categoryTag], revalidate: false }
-  );
-
-  return cached();
 }
 
 export async function getHomeHeroData() {
@@ -354,7 +172,7 @@ export async function getHomeHeroData() {
       );
 
       if (!data) {
-        return { banners: [], heroTabs: [] as HeroTabItem[] };
+        throw new Error("دریافت بنرهای صفحه اصلی با خطا مواجه شد");
       }
 
       return {
@@ -366,10 +184,15 @@ export async function getHomeHeroData() {
     { tags: ["banners", "home"], revalidate: false }
   );
 
-  return cached();
+  try {
+    return await cached();
+  } catch (error) {
+    console.error("getHomeHeroData failed:", error);
+    return { banners: [] as Banner[], heroTabs: [] as HeroTabItem[] };
+  }
 }
 
-export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
+export async function getHomeFeaturedProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
   const cached = unstable_cache(
     async () => {
       const data = await fetchGraphQL(
@@ -386,7 +209,9 @@ export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
         "force-cache"
       );
 
-      if (!data) return [] as ProductNode[];
+      if (!data) {
+        throw new Error("دریافت محصولات ویژه با خطا مواجه شد");
+      }
 
       return formatProducts(
         data.featuredProducts?.nodes ?? [],
@@ -398,10 +223,15 @@ export async function getHomeFeaturedProducts(activeRegion: string = "eu") {
     { tags: ["products", "home", "home-featured"], revalidate: false }
   );
 
-  return cached();
+  try {
+    return await cached();
+  } catch (error) {
+    console.error("getHomeFeaturedProducts failed:", error);
+    return null;
+  }
 }
 
-export async function getHomeLatestProducts(activeRegion: string = "eu") {
+export async function getHomeLatestProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
   const cached = unstable_cache(
     async () => {
       const data = await fetchGraphQL(
@@ -418,7 +248,9 @@ export async function getHomeLatestProducts(activeRegion: string = "eu") {
         "force-cache"
       );
 
-      if (!data) return [] as ProductNode[];
+      if (!data) {
+        throw new Error("دریافت جدیدترین محصولات با خطا مواجه شد");
+      }
 
       return formatProducts(
         data.latestProducts?.nodes ?? [],
@@ -430,7 +262,12 @@ export async function getHomeLatestProducts(activeRegion: string = "eu") {
     { tags: ["products", "home", "home-latest"], revalidate: false }
   );
 
-  return cached();
+  try {
+    return await cached();
+  } catch (error) {
+    console.error("getHomeLatestProducts failed:", error);
+    return null;
+  }
 }
 
 export async function getHeaderBlogCategories() {

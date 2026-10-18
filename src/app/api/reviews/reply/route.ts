@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { fetchGraphQL } from "@/lib/graphql";
-import { REPLY_TO_REVIEW_MUTATION } from "@/lib/graphql/auth";
-import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
+import { adminMutation, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { ADMIN_PERMISSIONS } from "@/lib/admin/permissions";
+import { getAuthToken, getCurrentAdminUser } from "@/lib/auth/session";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
 
@@ -12,9 +11,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "تعداد درخواست بیش از حد مجاز است" }, { status: 429 });
   }
 
-  const token = (await cookies()).get(AUTH_TOKEN_COOKIE)?.value;
+  const token = await getAuthToken();
   if (!token) {
     return NextResponse.json({ error: "ابتدا وارد حساب کاربری شوید" }, { status: 401 });
+  }
+
+  const admin = await getCurrentAdminUser();
+  if (!admin || !admin.adminPermissions.includes(ADMIN_PERMISSIONS.REVIEWS_MODERATE)) {
+    return NextResponse.json({ error: "فقط پشتیبانی مجاز به پاسخ‌دهی است" }, { status: 403 });
   }
 
   try {
@@ -29,10 +33,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "متن پاسخ باید بین ۲ تا ۵٬۰۰۰ کاراکتر باشد" }, { status: 400 });
     }
 
-    const data = await fetchGraphQL(REPLY_TO_REVIEW_MUTATION, { reviewId, content }, [], "no-store", token);
+    const data = await adminMutation(
+      ADMIN_MUTATIONS.replyReview,
+      { reviewId, content },
+      ADMIN_PERMISSIONS.REVIEWS_MODERATE,
+    );
 
-    if (!data?.replyToProductReview?.success) {
-      return NextResponse.json({ error: "ثبت پاسخ با خطا مواجه شد (فقط پشتیبانی مجاز است)" }, { status: 500 });
+    if (!data?.adminReplyToReview?.success) {
+      return NextResponse.json({ error: "ثبت پاسخ با خطا مواجه شد" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

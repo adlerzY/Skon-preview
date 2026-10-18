@@ -68,7 +68,9 @@ export default function AccountDashboard({
 
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
             <span className="font-black text-lg text-white truncate">{user.name}</span>
-            <span className="text-xs text-brand-m_khonsa truncate" dir="ltr">{user.email}</span>
+            <span className="text-xs text-brand-m_khonsa truncate" dir={hasRealEmail ? "ltr" : undefined}>
+              {hasRealEmail ? user.email : "ایمیل ثبت نشده"}
+            </span>
 
             <div className="flex flex-wrap gap-2 mt-1.5">
               <Link href="/my-account/settings" className="text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-1.5 transition-colors">
