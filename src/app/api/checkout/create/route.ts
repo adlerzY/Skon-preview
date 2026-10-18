@@ -102,8 +102,11 @@ export async function POST(request: NextRequest) {
     const order = data?.submitCustomerOrder?.order;
 
     if (!order?.databaseId || !order?.orderKey) {
-      const raw = String(errorMessage || "");
+      const raw = String(errorMessage || "").trim();
       const lowered = raw.toLowerCase();
+
+      console.error("Checkout order creation failed:", raw || "(empty GraphQL error — wp-content/debug.log را ببین)");
+
       if (lowered.includes("btl_session_denied") || lowered.includes("session")) {
         return errorResponse("SESSION_INVALID", "نشست شما معتبر نیست؛ دوباره وارد شوید", 401);
       }
@@ -112,6 +115,9 @@ export async function POST(request: NextRequest) {
       }
       if (lowered.includes("قیمت") || lowered.includes("price")) {
         return errorResponse("PRICE_CHANGED", "قیمت یکی از اقلام تغییر کرده است؛ سبد را دوباره بررسی کنید", 409);
+      }
+      if (raw && raw.length <= 200 && /[\u0600-\u06FF]/.test(raw)) {
+        return errorResponse("ORDER_REJECTED", raw, 409);
       }
       return errorResponse("INTERNAL_ERROR", "ایجاد سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید", 500);
     }

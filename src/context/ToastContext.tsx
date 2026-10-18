@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 
-export type ToastType = "success" | "error";
+export type ToastType = "success" | "error" | "warning";
 
 interface ToastItem {
   id: number;
@@ -15,7 +15,15 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
-const TOAST_DURATION_MS = 3000;
+
+const MIN_TOAST_DURATION_MS = 3000;
+const MAX_TOAST_DURATION_MS = 7000;
+
+const TYPE_CLASSES: Record<ToastType, string> = {
+  success: "border-brand-sabz/40 text-brand-sabz",
+  error: "border-red-500/40 text-red-500",
+  warning: "border-brand-zard/40 text-brand-zard",
+};
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -23,10 +31,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showToast = useCallback((message: string, type: ToastType = "success") => {
     const id = ++idRef.current;
+    const duration = Math.min(MAX_TOAST_DURATION_MS, Math.max(MIN_TOAST_DURATION_MS, message.length * 70));
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, TOAST_DURATION_MS);
+    }, duration);
   }, []);
 
   return (
@@ -39,9 +48,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto w-fit max-w-sm flex items-center gap-2 px-5 py-3 text-sm font-bold border bg-brand-menu shadow-[0_15px_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-200 ${
-              t.type === "success" ? "border-brand-sabz/40 text-brand-sabz" : "border-red-500/40 text-red-500"
-            }`}
+            className={`pointer-events-auto w-fit max-w-sm flex items-center gap-2 px-5 py-3 text-sm font-bold leading-6 border bg-brand-menu shadow-[0_15px_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-200 ${TYPE_CLASSES[t.type]}`}
           >
             {t.message}
           </div>

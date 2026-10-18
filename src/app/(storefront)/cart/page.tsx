@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Trash2, Globe, Sliders, Loader2, Minus, Plus, ShoppingCart, RefreshCw, AlertTriangle, CheckCircle2,
+  Trash2, Globe, Sliders, Loader2, Minus, Plus, ShoppingCart, RefreshCw,
 } from "lucide-react";
 import { useCart, itemNeedsCredentials } from "@/context/CartContext";
 import Button from "@/components/ui/Button";
@@ -31,9 +31,8 @@ export default function CartPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isRevalidating, setIsRevalidating] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
-  const [revalidationNotice, setRevalidationNotice] = useState<{ type: "warning" | "success"; text: string } | null>(null);
   const handoffConsumedRef = useRef(false);
+  const resumeToastShownRef = useRef(false);
   const resumeCheckout = searchParams.get("resumeCheckout") === "1";
 
   useEffect(() => {
@@ -58,6 +57,12 @@ export default function CartPage() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [resumeCheckout, cart.length]);
+
+  useEffect(() => {
+    if (!resumeCheckout || !isLoggedIn || resumeToastShownRef.current) return;
+    resumeToastShownRef.current = true;
+    showToast("ورود با موفقیت انجام شد؛ می‌توانید پرداخت را ادامه دهید.", "success");
+  }, [resumeCheckout, isLoggedIn, showToast]);
 
   const itemsNeedingCredentials = useMemo(() => cart.filter(itemNeedsCredentials), [cart]);
 
@@ -100,7 +105,7 @@ export default function CartPage() {
     customFields: item.customFields,
   }));
 
-  const applyRevalidation = (items: RevalidatedItem[]) => {
+  const applyRevalidation = (items: RevalidatedItem[], { silent = false }: { silent?: boolean } = {}) => {
     let priceChanged = false;
     let stockProblem = false;
     let unavailable = false;
@@ -124,32 +129,32 @@ export default function CartPage() {
     }
 
     if (priceChanged) {
-      const text = firstNewPrice != null
-        ? `قیمت یک یا چند آیتم به‌روزرسانی شد؛ مبلغ جدید ${firstNewPrice.toLocaleString("fa-IR")} تومان است.`
-        : "قیمت یک یا چند آیتم به‌روزرسانی شد؛ مبلغ جدید را بررسی کنید.";
-      setRevalidationNotice({ type: "warning", text });
-      setCheckoutError("");
+      showToast(
+        firstNewPrice != null
+          ? `قیمت یک یا چند آیتم به‌روزرسانی شد؛ مبلغ جدید ${firstNewPrice.toLocaleString("fa-IR")} تومان است.`
+          : "قیمت یک یا چند آیتم به‌روزرسانی شد؛ مبلغ جدید را بررسی کنید.",
+        "warning"
+      );
       return false;
     }
     if (stockProblem) {
-      setCheckoutError("موجودی یک یا چند آیتم کافی نیست. مقدار سبد را بررسی کنید.");
+      showToast("موجودی یک یا چند آیتم کافی نیست. مقدار سبد را بررسی کنید.", "error");
       return false;
     }
     if (unavailable) {
-      setCheckoutError("یک یا چند آیتم دیگر برای خرید در دسترس نیست.");
+      showToast("یک یا چند آیتم دیگر برای خرید در دسترس نیست.", "error");
       return false;
     }
-    setRevalidationNotice({ type: "success", text: "قیمت و موجودی سبد خرید به‌روز است." });
+    if (!silent) showToast("قیمت و موجودی سبد خرید به‌روز است.", "success");
     return true;
   };
 
-  const revalidateCart = async () => {
+  const revalidateCart = async ({ silent = false }: { silent?: boolean } = {}) => {
     if (itemsNeedingCredentials.length > 0) {
-      setCheckoutError("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید");
+      showToast("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید", "error");
       return false;
     }
     setIsRevalidating(true);
-    setCheckoutError("");
     try {
       const response = await fetch("/api/cart/revalidate", {
         method: "POST",
@@ -167,14 +172,15 @@ export default function CartPage() {
       }
 
       if (!response.ok) {
-        if (Array.isArray(data?.items)) applyRevalidation(data.items);
-        setCheckoutError(data?.error || "بررسی سبد خرید انجام نشد");
+        const handled =
+          Array.isArray(data?.items) && data.items.length > 0 && !applyRevalidation(data.items, { silent: true });
+        if (!handled) showToast(data?.error || "بررسی سبد خرید انجام نشد", "error");
         return false;
       }
 
-      return applyRevalidation(Array.isArray(data?.items) ? data.items : []);
+      return applyRevalidation(Array.isArray(data?.items) ? data.items : [], { silent });
     } catch {
-      setCheckoutError("خطا در ارتباط با سرور هنگام بررسی سبد خرید");
+      showToast("خطا در ارتباط با سرور هنگام بررسی سبد خرید", "error");
       return false;
     } finally {
       setIsRevalidating(false);
@@ -182,22 +188,19 @@ export default function CartPage() {
   };
 
   const handleCheckout = async () => {
-    setCheckoutError("");
-    setRevalidationNotice(null);
-
     if (!isLoggedIn) {
       goToLogin();
       return;
     }
 
     if (itemsNeedingCredentials.length > 0) {
-      setCheckoutError("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید");
+      showToast("لطفاً اطلاعات ناقص آیتم‌های مشخص‌شده را قبل از پرداخت تکمیل کنید", "error");
       return;
     }
 
     setIsCheckingOut(true);
     try {
-      const isValid = await revalidateCart();
+      const isValid = await revalidateCart({ silent: true });
       if (!isValid) return;
 
       const checkoutItems = cart.map((item) => ({
@@ -238,11 +241,11 @@ export default function CartPage() {
         return;
       }
       if (!res.ok) {
-        setCheckoutError(data?.error || "خطا در ثبت سفارش");
+        showToast(data?.error || "خطا در ثبت سفارش", "error");
         return;
       }
       if (typeof data?.redirectUrl !== "string" || !data.redirectUrl) {
-        setCheckoutError("لینک پرداخت از سرور دریافت نشد");
+        showToast("لینک پرداخت از سرور دریافت نشد", "error");
         return;
       }
 
@@ -250,7 +253,7 @@ export default function CartPage() {
       clearCart();
       window.location.href = data.redirectUrl;
     } catch {
-      setCheckoutError("خطا در ارتباط با سرور");
+      showToast("خطا در ارتباط با سرور", "error");
     } finally {
       setIsCheckingOut(false);
     }
@@ -281,19 +284,6 @@ export default function CartPage() {
           </button>
         </div>
       </div>
-
-      {resumeCheckout && isLoggedIn && (
-        <div className="mb-4 flex items-center gap-2 border border-brand-blue/20 bg-brand-blue/5 p-3 text-xs text-brand-active">
-          <CheckCircle2 size={15} className="text-brand-sabz shrink-0" /> ورود با موفقیت انجام شد؛ می‌توانید پرداخت را ادامه دهید.
-        </div>
-      )}
-
-      {revalidationNotice && (
-        <div className={`mb-4 flex items-start gap-2 border p-3 text-xs leading-5 ${revalidationNotice.type === "warning" ? "border-brand-zard/20 bg-brand-zard/5 text-brand-active" : "border-brand-sabz/20 bg-brand-sabz/5 text-brand-active"}`}>
-          {revalidationNotice.type === "warning" ? <AlertTriangle size={15} className="text-brand-zard shrink-0 mt-0.5" /> : <CheckCircle2 size={15} className="text-brand-sabz shrink-0 mt-0.5" />}
-          {revalidationNotice.text}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 xl:gap-6 items-start">
         <div className="lg:col-span-2 flex flex-col gap-3">
@@ -353,7 +343,6 @@ export default function CartPage() {
 
           {!isLoggedIn && <p className="text-[11px] text-brand-zard bg-brand-zard/10 border border-brand-zard/20 p-2.5">برای پرداخت و ایجاد سفارش باید وارد حساب کاربری شوید. سبد خرید مهمان شما حفظ می‌شود.</p>}
           {itemsNeedingCredentials.length > 0 && <p className="text-[11px] text-brand-zard bg-brand-zard/10 border border-brand-zard/20 p-2.5">{itemsNeedingCredentials.length.toLocaleString("fa-IR")} آیتم نیازمند تکمیل اطلاعات است.</p>}
-          {checkoutError && <p className="text-xs text-red-400 font-medium bg-red-500/10 border border-red-500/20 p-3">{checkoutError}</p>}
 
           <Button variant="primary" onClick={handleCheckout} disabled={isCheckingOut || isRevalidating} className="w-full py-4 mt-1 disabled:opacity-60">
             {isRevalidating || isCheckingOut ? <span className="flex items-center justify-center gap-2"><Loader2 size={16} className="animate-spin" /> {isRevalidating ? "در حال بررسی سبد..." : "در حال ساخت سفارش..."}</span> : isLoggedIn ? "بررسی و ادامه پرداخت" : "ورود و ادامه پرداخت"}

@@ -13,6 +13,11 @@ const INTERNAL_WP_GRAPHQL_URL = process.env.INTERNAL_WORDPRESS_API_URL;
 const FALLBACK_PROD_URL = "https://api.arena2battle.com/graphql";
 const REFRESH_TIMEOUT_MS = 6_000;
 const REFRESH_SUCCESS_COOLDOWN_SECONDS = 90;
+const RECENT_REFRESH_TTL_MS = 60_000;
+const REFRESH_QUERY =
+  "mutation RefreshToken($refreshToken: String!) { refreshJwtAuthToken(input: { jwtRefreshToken: $refreshToken }) { authToken } }";
+const TOUCH_SESSION_QUERY =
+  "mutation TouchSession($sessionId: String!) { touchSession(input: { sessionId: $sessionId }) { success } }";
 
 const PUBLIC_GRAPHQL_HOST = (() => {
   try {
@@ -23,6 +28,7 @@ const PUBLIC_GRAPHQL_HOST = (() => {
 })();
 
 const refreshInFlight = new Map<string, Promise<string | null>>();
+const recentRefreshes = new Map<string, { previous: string; token: string; until: number }>();
 
 function resolveEndpoint(): { url: string; hostHeader?: string } {
   const publicUrl = WP_GRAPHQL_URL || FALLBACK_PROD_URL;
@@ -58,53 +64,92 @@ function cooldownActive(value: string | undefined): boolean {
   return Number.isFinite(until) && until > Math.floor(Date.now() / 1000);
 }
 
+async function postGraphQL(
+  query: string,
+  variables: Record<string, unknown>,
+  headers: Record<string, string>
+): Promise<{ data?: any } | null> {
+  const { url, hostHeader } = resolveEndpoint();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(hostHeader ? { Host: hostHeader } : {}),
+        ...headers,
+      },
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    return await res.json().catch(() => null);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function rememberRefresh(sessionId: string, previous: string, token: string) {
+  const now = Date.now();
+  if (recentRefreshes.size > 500) {
+    for (const [key, entry] of recentRefreshes) {
+      if (entry.until <= now) recentRefreshes.delete(key);
+    }
+  }
+  recentRefreshes.set(sessionId, { previous, token, until: now + RECENT_REFRESH_TTL_MS });
+}
+
 async function refreshAuthToken(
   refreshToken: string,
   sessionId: string,
   previousAuthToken: string
 ): Promise<string | null> {
-  const lockKey = sessionId;
-  const existing = refreshInFlight.get(lockKey);
+  const recent = recentRefreshes.get(sessionId);
+  if (recent && recent.previous === previousAuthToken && recent.until > Date.now()) {
+    return recent.token;
+  }
+
+  const existing = refreshInFlight.get(sessionId);
   if (existing) return existing;
 
   const operation = (async () => {
-    const { url, hostHeader } = resolveEndpoint();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-BTL-Session-ID": sessionId,
-          "X-BTL-Session-Refresh": "1",
-          "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
-          ...(hostHeader ? { Host: hostHeader } : {}),
-        },
-        body: JSON.stringify({
-          query:
-            "mutation RefreshToken($refreshToken: String!) { refreshJwtAuthToken(input: { jwtRefreshToken: $refreshToken }) { authToken } }",
-          variables: { refreshToken },
-        }),
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      if (!res.ok) return null;
-      const json = await res.json().catch(() => null);
-      const token = json?.data?.refreshJwtAuthToken?.authToken;
-      return typeof token === "string" && token ? token : null;
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const refreshJson = await postGraphQL(
+      REFRESH_QUERY,
+      { refreshToken },
+      {
+        "X-BTL-Session-ID": sessionId,
+        "X-BTL-Session-Refresh": "1",
+        "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
+      }
+    );
+    const newToken = refreshJson?.data?.refreshJwtAuthToken?.authToken;
+    if (typeof newToken !== "string" || !newToken) return null;
+
+    const touchJson = await postGraphQL(
+      TOUCH_SESSION_QUERY,
+      { sessionId },
+      {
+        Authorization: `Bearer ${newToken}`,
+        "X-BTL-Session-ID": sessionId,
+        "X-BTL-Session-Refresh": "1",
+        "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}`,
+      }
+    );
+    if (touchJson?.data?.touchSession?.success !== true) return null;
+
+    rememberRefresh(sessionId, previousAuthToken, newToken);
+    return newToken;
   })();
 
-  refreshInFlight.set(lockKey, operation);
+  refreshInFlight.set(sessionId, operation);
   try {
     return await operation;
   } finally {
-    refreshInFlight.delete(lockKey);
+    refreshInFlight.delete(sessionId);
   }
 }
 
