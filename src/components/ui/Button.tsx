@@ -22,7 +22,7 @@ export default function Button({
 
   const variants = {
     primary: "bg-brand-blue border border-transparent hover:border-brand-white text-brand-white px-8 py-2 text-sm",
-    icon: "bg-brand-bg hover:border-brand-surface_m text-m_khonsa hover:text-brand-white p-2 opacity-0 group-hover:opacity-100 border border-brand-surface disabled:bg-opacity-50 disabled:pointer-events-none",
+    icon: "bg-brand-bg hover:border-brand-surface_m text-brand-m_khonsa hover:text-brand-white p-2 opacity-0 group-hover:opacity-100 border border-brand-surface disabled:bg-opacity-50 disabled:pointer-events-none",
     ghost: "text-gray-500 hover:text-brand-blue",
   };
 

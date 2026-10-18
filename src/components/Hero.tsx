@@ -105,12 +105,12 @@ export default function CategoryHero({ banners, heading }: Props) {
           <div className="absolute inset-0 bg-gradient-to-l from-[#111215] via-[#111215]/80 to-transparent w-full z-20 block lg:hidden"></div>
         </div>
 
-        <div key={activeIndex} className="relative h-full flex flex-col justify-center px-[5.5rem] md:px-[5.5rem] w-full max-w-2xl z-30">
+        <div key={activeIndex} className="relative h-full flex flex-col justify-center px-6 md:px-[5.5rem] w-full max-w-2xl z-30">
           {heading && (
             <h1 className="text-2xl md:text-4xl font-black text-white leading-tight mb-3">{heading}</h1>
           )}
           {currentBanner.secondimage && (
-            <div className="relative w-48 h-16 md:w-64 md:h-24 mb-2">
+            <div className="relative w-48 h-16 md:w-64 md:h-24 mb-2 max-w-full">
               <Image
                 src={currentBanner.secondimage}
                 alt="Banner Logo"

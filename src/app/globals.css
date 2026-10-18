@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -22,6 +21,8 @@
   html {
     scroll-behavior: smooth;
     overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -33,6 +34,7 @@
   body {
     background-color: #15171e;
     color: #c2c2c4;
+    overflow-x: clip;
   }
   * {
     border-radius: 5px;
@@ -45,6 +47,8 @@
     color: #c2c2c4;
     line-height: 1.9;
     font-size: 0.95rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .prose > * + * { margin-top: 1.25em; }
   .prose h1, .prose h2, .prose h3, .prose h4 {
@@ -74,6 +78,8 @@
     font-size: 0.85em;
     direction: ltr;
     display: inline-block;
+    max-width: 100%;
+    overflow-x: auto;
   }
   .prose pre {
     background: #1a1c23;
@@ -116,15 +122,31 @@
     width: 100%;
     height: auto;
   }
+  .prose figure {
+    max-width: 100%;
+  }
   .prose figcaption {
     text-align: center;
     font-size: 0.75em;
     color: #88898c;
     margin-top: 0.5em;
   }
+  .prose iframe,
+  .prose video,
+  .prose embed,
+  .prose object {
+    max-width: 100%;
+  }
   .prose .wp-block-embed {
     position: relative;
     margin-top: 1.5em;
+    max-width: 100%;
+  }
+  .prose .wp-block-embed iframe,
+  .prose .wp-block-embed__wrapper iframe {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
   .prose .has-text-align-center { text-align: center; }
   .prose .has-text-align-left { text-align: left; direction: ltr; }
@@ -168,7 +190,7 @@
       opacity: 0;
     }
   }
-    .cv-auto {
+  .cv-auto {
     content-visibility: auto;
     contain-intrinsic-size: auto 720px;
   }
@@ -182,8 +204,6 @@
     }
   }
 }
-
-
 
 @keyframes navigation-shimmer {
   0% { transform: translateX(-140%); }

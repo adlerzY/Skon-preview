@@ -1,4 +1,3 @@
-
 import crypto from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { fetchGraphQL } from "./client";
@@ -57,6 +56,7 @@ function buildSlugTag(prefix: string, slug: string): string {
 
 const MAX_TAG_LENGTH = 256;
 const PRODUCT_PRICING_TTL_SECONDS = 120;
+const MAX_CATEGORY_PRODUCT_PAGES = 20;
 
 function productTagVariants(prefix: string, slug: string): string[] {
   let decoded = slug;
@@ -76,7 +76,6 @@ function productTagVariants(prefix: string, slug: string): string[] {
 
   return Array.from(new Set(tags)).filter((t) => t.length <= MAX_TAG_LENGTH);
 }
-
 
 async function loadHeaderPublicNavigationData() {
   const data = await fetchGraphQL(
@@ -150,6 +149,26 @@ async function loadHeaderRegionsData() {
     : [];
 
   return { regions };
+}
+
+export async function getHeaderPublicNavigationData() {
+  const cached = unstable_cache(
+    loadHeaderPublicNavigationData,
+    ["header-public-navigation-data"],
+    { tags: ["header-data"], revalidate: false }
+  );
+
+  return cached();
+}
+
+export async function getHeaderRegionsData() {
+  const cached = unstable_cache(
+    loadHeaderRegionsData,
+    ["header-regions-data"],
+    { tags: ["regions"], revalidate: false }
+  );
+
+  return cached();
 }
 
 export async function getHomeHeroData() {
@@ -270,6 +289,118 @@ export async function getHomeLatestProducts(activeRegion: string = "eu"): Promis
   }
 }
 
+const CATEGORY_SHELL_QUERY = `
+  ${BANNER_FIELDS}
+  query GetCategoryShell($id: ID!) {
+    productCategory(id: $id, idType: SLUG) {
+      id
+      databaseId
+      name
+      slug
+      count
+      banners { ...BannerFields }
+      children(where: { hideEmpty: true }, first: 50) {
+        nodes { id databaseId name slug count }
+      }
+    }
+  }
+`;
+
+const CATEGORY_PRODUCTS_QUERY = `
+  ${PRODUCT_CARD_FIELDS}
+  query GetCategoryProducts($category: String, $regionSlug: String, $after: String) {
+    products(
+      first: 100
+      after: $after
+      where: { category: $category, status: "PUBLISH", regionSlug: $regionSlug, orderby: { field: DATE, order: DESC } }
+    ) {
+      pageInfo { hasNextPage endCursor }
+      nodes { ...ProductCardFields }
+    }
+  }
+`;
+
+export async function getCategoryShell(slug: string) {
+  if (!slug) return null;
+
+  const categoryTag = buildSlugTag("category", slug);
+
+  const cached = unstable_cache(
+    async () => {
+      const data = await fetchGraphQL(
+        CATEGORY_SHELL_QUERY,
+        { id: slug },
+        [categoryTag, "banners", buildSlugTag("banners", slug)]
+      );
+
+      if (data === null) {
+        throw new Error(`دریافت اطلاعات دسته‌بندی «${slug}» با خطا مواجه شد`);
+      }
+
+      const category = data.productCategory;
+      if (!category) return null;
+
+      return {
+        ...category,
+        banners: safeBannerUrls(category.banners ?? []),
+      };
+    },
+    ["category-shell", slug],
+    { tags: [categoryTag, "banners", buildSlugTag("banners", slug)], revalidate: false }
+  );
+
+  return cached();
+}
+
+export async function getCategoryProducts(slug: string, activeRegion: string = "eu"): Promise<ProductNode[]> {
+  if (!slug) return [];
+
+  const categoryTag = buildSlugTag("category", slug);
+
+  const cached = unstable_cache(
+    async (): Promise<ProductNode[]> => {
+      const collected: ProductNode[] = [];
+      let after: string | null = null;
+
+      for (let page = 0; page < MAX_CATEGORY_PRODUCT_PAGES; page += 1) {
+        const data: any = await fetchGraphQL(
+          CATEGORY_PRODUCTS_QUERY,
+          { category: slug, regionSlug: activeRegion, after },
+          ["products", categoryTag],
+          "force-cache"
+        );
+
+        if (data === null) {
+          throw new Error(`دریافت محصولات دسته‌بندی «${slug}» با خطا مواجه شد`);
+        }
+
+        const connection = data.products;
+        collected.push(...(connection?.nodes ?? []));
+
+        if (!connection?.pageInfo?.hasNextPage || !connection.pageInfo.endCursor) break;
+        after = connection.pageInfo.endCursor;
+      }
+
+      return formatProducts(collected, true, activeRegion).filter(
+        (p) => p.isAvailableInRegion !== false
+      );
+    },
+    ["category-products", slug, activeRegion],
+    { tags: ["products", categoryTag], revalidate: false }
+  );
+
+  try {
+    return await cached();
+  } catch (error) {
+    console.error("getCategoryProducts failed:", error);
+    return [];
+  }
+}
+
+export async function getProducts(categorySlug: string, activeRegion: string = "eu"): Promise<ProductNode[]> {
+  return getCategoryProducts(categorySlug, activeRegion);
+}
+
 export async function getHeaderBlogCategories() {
   const cached = unstable_cache(
     async () => {
@@ -315,6 +446,7 @@ export async function getPostDetail(slug: string) {
           query GetPostDetail($id: ID!) {
             post(id: $id, idType: SLUG) {
               databaseId
+              slug
               title
               content
               excerpt

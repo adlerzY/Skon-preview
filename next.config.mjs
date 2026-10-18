@@ -43,7 +43,7 @@ const nextConfig = {
       384,
     ],
 
-    qualities: [60, 65, 70, 75, 80, 85, 90],
+    qualities: [60, 65, 70, 75, 80, 82, 85, 86, 90],
 
     minimumCacheTTL: 60 * 60 * 24 * 30,
 

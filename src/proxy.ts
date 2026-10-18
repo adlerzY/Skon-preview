@@ -19,6 +19,8 @@ const REFRESH_QUERY =
 const TOUCH_SESSION_QUERY =
   "mutation TouchSession($sessionId: String!) { touchSession(input: { sessionId: $sessionId }) { success } }";
 
+const LEGACY_ROUTE_PREFIXES = ["/shop", "/product"];
+
 const PUBLIC_GRAPHQL_HOST = (() => {
   try {
     return new URL(WP_GRAPHQL_URL || FALLBACK_PROD_URL).host;
@@ -29,6 +31,10 @@ const PUBLIC_GRAPHQL_HOST = (() => {
 
 const refreshInFlight = new Map<string, Promise<string | null>>();
 const recentRefreshes = new Map<string, { previous: string; token: string; until: number }>();
+
+function isLegacyRoute(pathname: string): boolean {
+  return LEGACY_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
 
 function resolveEndpoint(): { url: string; hostHeader?: string } {
   const publicUrl = WP_GRAPHQL_URL || FALLBACK_PROD_URL;
@@ -237,7 +243,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/my-account") ||
     pathname.startsWith("/cart") ||
     pathname.startsWith("/admin-login") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    isLegacyRoute(pathname);
 
   if (isNonRegionRoute) {
     const response = NextResponse.next({ request });
