@@ -1,44 +1,25 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProductDetail } from "@/lib/graphql";
-import type { ProductNode, VariationCard } from "@/lib/graphql";
-import ProductPageClient from "@/components/product/ProductPageClient";
-import ProductContentMatrix from "@/components/product/ProductContentMatrix";
-import ProductDescriptionSections from "@/components/product/ProductDescriptionSections";
+import { getProductHero, getProductPricing } from "@/lib/graphql";
+import ProductHero from "@/components/product/ProductHero";
+import ProductJsonLd from "@/components/product/ProductJsonLd";
+import ProductBodySection from "@/components/product/ProductBodySection";
+import { ProductBodySkeleton } from "@/components/product/ProductSkeletons";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
-import { breadcrumbSchema, productSchema } from "@/lib/seo/jsonld";
+import { breadcrumbSchema } from "@/lib/seo/jsonld";
 import { makeMetadata, SEO_REGION, stripHtml, selectSeoCategory } from "@/lib/seo/site";
 
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
-  searchParams: Promise<{ edition?: string }>;
-}
-
-function toClientVariations(cards: VariationCard[] | undefined): VariationCard[] {
-  if (!cards?.length) return [];
-
-  return cards.map((v) => ({
-    databaseId: v.databaseId,
-    imageUrl: v.imageUrl,
-    attributes: v.attributes,
-    codeStockCount: v.codeStockCount,
-    parsedPrice: v.parsedPrice,
-    parsedRegularPrice: v.parsedRegularPrice,
-    parsedGiftPrice: v.parsedGiftPrice,
-    parsedGiftRegularPrice: v.parsedGiftRegularPrice,
-    parsedCodePrice: v.parsedCodePrice,
-    parsedCodeRegularPrice: v.parsedCodeRegularPrice,
-    regionSlug: v.regionSlug,
-    commissionDiscountBadge: v.commissionDiscountBadge,
-    variationIdsByDelivery: v.variationIdsByDelivery,
-  } as VariationCard));
+  searchParams: Promise<{ edition?: string | string[] }>;
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { region, categorySlug, productSlug } = await params;
-  const product = await getProductDetail(productSlug, SEO_REGION);
+  const product = await getProductHero(productSlug);
 
   if (!product) {
     return {
@@ -53,72 +34,57 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   return makeMetadata({
     title: product.name,
-    description: stripHtml(product.shortDescription || product.description || `خرید ${product.name} از Arena2Battle.`),
+    description: stripHtml(product.shortDescription) || `خرید ${product.name} از Arena2Battle.`,
     path: region === SEO_REGION ? canonicalPath : undefined,
     image: product.imageLarge?.sourceUrl || product.image?.sourceUrl,
     noIndex: region !== SEO_REGION,
   });
 }
 
-async function ProductDetailStream({
-  productPromise,
-  initialEdition,
-  region,
-  requestedCategorySlug,
-}: {
-  productPromise: Promise<ProductNode | null>;
-  initialEdition?: string;
-  region: string;
-  requestedCategorySlug: string;
-}) {
-  const product = await productPromise;
+export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
+  const [{ region, categorySlug, productSlug }, { edition: rawEdition }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const edition = Array.isArray(rawEdition) ? rawEdition[0] : rawEdition;
 
-  if (!product) {
-    notFound();
-    return null;
-  }
+  const heroPromise = getProductHero(productSlug);
+  const pricingPromise = getProductPricing(productSlug, region);
+
+  const product = await heroPromise;
+  if (!product) notFound();
 
   const primaryCategory = selectSeoCategory(product.productCategories?.nodes);
-  if (primaryCategory?.slug && primaryCategory.slug !== requestedCategorySlug) {
+  if (primaryCategory?.slug && primaryCategory.slug !== categorySlug) {
     permanentRedirect(`/${region}/${primaryCategory.slug}/${product.slug}`);
   }
 
-  const { secondaryGallery, description, reviewCount, averageRating, contentMatrix } = product;
-  const canonicalCategorySlug = primaryCategory?.slug || requestedCategorySlug;
+  const canonicalCategorySlug = primaryCategory?.slug || categorySlug;
   const canonicalPath = `/${region}/${canonicalCategorySlug}/${product.slug}`;
-  const isSeoRegion = region === SEO_REGION;
   const categoryName = primaryCategory?.name || canonicalCategorySlug;
-
-  const clientProduct = {
-    id: product.id,
-    databaseId: product.databaseId,
-    name: product.name,
-    slug: product.slug,
-    shortNotify: product.shortNotify,
-    shortDescription: product.shortDescription,
-    image: product.image,
-    imageLarge: product.imageLarge,
-    galleryImages: product.galleryImages,
-    parsedPrice: product.parsedPrice,
-    parsedRegularPrice: product.parsedRegularPrice,
-    isVariation: product.isVariation,
-    variationCards: toClientVariations(product.variationCards),
-  } as ProductNode;
+  const isSeoRegion = region === SEO_REGION;
 
   return (
-    <>
+    <main className="mx-auto w-full max-w-[1600px] px-6 py-8">
       {isSeoRegion && (
-        <JsonLd
-          data={[
-            productSchema(product, canonicalPath),
-            breadcrumbSchema([
+        <>
+          <JsonLd
+            data={breadcrumbSchema([
               { name: "فروشگاه", url: `/${SEO_REGION}` },
               { name: categoryName, url: `/${SEO_REGION}/${canonicalCategorySlug}` },
               { name: product.name, url: canonicalPath },
-            ]),
-          ]}
-        />
+            ])}
+          />
+          <Suspense fallback={null}>
+            <ProductJsonLd
+              product={product}
+              pricingPromise={pricingPromise}
+              canonicalPath={canonicalPath}
+            />
+          </Suspense>
+        </>
       )}
+
       <Breadcrumbs
         items={[
           { label: "فروشگاه", href: `/${region}` },
@@ -126,40 +92,27 @@ async function ProductDetailStream({
           { label: product.name },
         ]}
       />
-      <ProductPageClient
-        product={clientProduct}
-        initialEdition={initialEdition}
-        activeRegion={region}
-      >
-        <div className="cv-auto">
-          <ProductContentMatrix contentMatrix={contentMatrix} />
-        </div>
-        <div className="cv-auto">
-          <ProductDescriptionSections secondaryGallery={secondaryGallery} description={description} />
-        </div>
+
+      <div className="flex flex-col gap-12 w-full" dir="rtl">
+        <ProductHero
+          product={product}
+          region={region}
+          edition={edition}
+          pricingPromise={pricingPromise}
+        />
+
+        <Suspense fallback={<ProductBodySkeleton />}>
+          <ProductBodySection slug={productSlug} />
+        </Suspense>
+
         <div className="cv-auto">
           <ProductReviewsSection
             productId={product.databaseId}
-            averageRating={averageRating ?? 0}
-            reviewCount={reviewCount}
+            averageRating={product.averageRating ?? 0}
+            reviewCount={product.reviewCount}
           />
         </div>
-      </ProductPageClient>
-    </>
-  );
-}
-
-export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
-  const [{ region, categorySlug, productSlug }, { edition }] = await Promise.all([params, searchParams]);
-  const productPromise = getProductDetail(productSlug, region);
-  return (
-    <main className="mx-auto w-full max-w-[1600px] px-6 py-8">
-      <ProductDetailStream
-        productPromise={productPromise}
-        initialEdition={edition}
-        region={region}
-        requestedCategorySlug={categorySlug}
-      />
+      </div>
     </main>
   );
 }

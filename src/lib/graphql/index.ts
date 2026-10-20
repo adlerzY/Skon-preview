@@ -6,3 +6,4 @@ export * from "./queries";
 export * from "./auth";
 export * from "./blog";
 export * from "./seo";
+export * from "./product";
