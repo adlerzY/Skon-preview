@@ -81,7 +81,7 @@ export default function MobileRegionSwitcher({ regions, initialRegion }: MobileR
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[100002]" role="dialog" aria-modal="true" aria-label="انتخاب ریجن">
+        <div className="fixed inset-0 z-[9999999]" role="dialog" aria-modal="true" aria-label="انتخاب ریجن">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150"
             onClick={() => setIsOpen(false)}
