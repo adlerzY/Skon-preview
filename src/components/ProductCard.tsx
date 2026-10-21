@@ -59,9 +59,9 @@ export default function ProductCard({ product, activeRegion }: ProductCardProps)
         {product.image?.sourceUrl ? (
           <ProductCardImage src={product.image.sourceUrl} alt={product.name || "تصویر محصول"} />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/20 text-sm">بدون تصویر</div>
+          <div className="w-full h-full rounded-none flex items-center justify-center text-white/20 text-sm">بدون تصویر</div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#23252b] via-transparent to-transparent opacity-20"></div>
+        <div className="absolute inset-0 rounded-none bg-gradient-to-t from-[#23252b] via-transparent to-transparent opacity-20"></div>
       </div>
 
       <div className="p-4 md:p-5 flex flex-col flex-grow">

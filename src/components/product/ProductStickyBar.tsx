@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { PriceDisplay } from "./PriceDisplay";
 
 interface GroupedAttribute {
@@ -47,6 +48,12 @@ export default function ProductStickyBar({
   ctaDisabled = false,
   onCtaClick,
 }: ProductStickyBarProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     if (visible) root.setAttribute("data-product-sticky", "1");
@@ -54,7 +61,9 @@ export default function ProductStickyBar({
     return () => root.removeAttribute("data-product-sticky");
   }, [visible]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       dir="rtl"
       aria-hidden={!visible}
@@ -134,6 +143,7 @@ export default function ProductStickyBar({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

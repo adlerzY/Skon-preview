@@ -8,19 +8,15 @@ import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
 import OrdersPaginated from "@/components/account/OrdersPaginated";
 import { AccountOrdersLoadingShell } from "@/components/account/AccountPageLoadingShell";
 import PaymentResultBanner from "@/components/account/PaymentResultBanner";
+import { keepVisibleOrder } from "@/lib/orderVisibility";
 
 type OrdersData = Awaited<ReturnType<typeof fetchGraphQL>>;
 
 const ALL_STATUSES = ["PENDING", "PROCESSING", "ON_HOLD", "COMPLETED", "CANCELLED", "REFUNDED", "FAILED"];
-const RECENT_CANCELLED_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 async function OrdersDataStream({ dataPromise }: { dataPromise: Promise<OrdersData> }) {
   const data = await dataPromise;
-  const orders = (data?.customer?.orders?.nodes ?? []).filter((order: { status?: string; date?: string; cancelledAt?: string }) => {
-    if (!["CANCELLED", "FAILED"].includes(String(order.status))) return true;
-    const cancelledAt = order.cancelledAt ? new Date(order.cancelledAt).getTime() : 0;
-    return cancelledAt > 0 && Date.now() - cancelledAt <= RECENT_CANCELLED_WINDOW_MS;
-  });
+  const orders = (data?.customer?.orders?.nodes ?? []).filter(keepVisibleOrder);
   const pageInfo = data?.customer?.orders?.pageInfo ?? { hasNextPage: false, endCursor: null };
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
 
@@ -51,8 +47,8 @@ export default async function OrdersView() {
         بازگشت به حساب کاربری
       </Link>
       <Suspense fallback={null}>
-  <PaymentResultBanner />
-</Suspense>
+        <PaymentResultBanner />
+      </Suspense>
       <h1 className="text-2xl font-black mb-6">سفارش‌های من</h1>
       <Suspense fallback={<AccountOrdersLoadingShell />}>
         <OrdersDataStream dataPromise={dataPromise} />

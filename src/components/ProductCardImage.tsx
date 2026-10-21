@@ -11,7 +11,7 @@ export default function ProductCardImage({ src, alt }: { src: string; alt: strin
       fill
       sizes={GRID_SIZES}
       quality={65}
-      className="object-cover brightness-[0.99] group-hover:brightness-110 transition-[filter] duration-200"
+      className="rounded-none object-cover brightness-[0.99] group-hover:brightness-110 transition-[filter] duration-200"
     />
   );
 }
