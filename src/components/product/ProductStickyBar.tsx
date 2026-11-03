@@ -63,6 +63,18 @@ export default function ProductStickyBar({
 
   if (!mounted) return null;
 
+  const awaitingDelivery = Boolean(deliveryOptions && deliveryOptions.length > 0 && !selectedDelivery);
+
+  const priceBlock = awaitingDelivery ? (
+    <span className="hidden sm:inline text-[11px] font-bold text-brand-m_khonsa whitespace-nowrap">
+      روش تحویل را انتخاب کنید
+    </span>
+  ) : typeof price === "number" ? (
+    <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
+  ) : (
+    <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
+  );
+
   return createPortal(
     <div
       dir="rtl"
@@ -103,6 +115,11 @@ export default function ProductStickyBar({
               className="bg-brand-surface border border-brand-surface_hover hover:border-brand-surface_m text-brand-zard text-xs font-bold px-2.5 py-1.5 focus:outline-none focus:border-brand-blue cursor-pointer shrink-0 min-w-[120px]"
               aria-label="روش تحویل"
             >
+              {!selectedDelivery && (
+                <option value="" disabled className="bg-brand-surface text-white">
+                  روش تحویل
+                </option>
+              )}
               {deliveryOptions.map((opt) => (
                 <option
                   key={opt.value}
@@ -118,20 +135,13 @@ export default function ProductStickyBar({
         </div>
 
         <div className="flex items-center gap-2.5 md:gap-3 shrink-0">
-          <div className="hidden md:flex items-center gap-2">
-            {inventoryHint ? <span className="text-[9px] font-black text-brand-zard whitespace-nowrap">{inventoryHint}</span> : null}
-            {typeof price === "number" ? (
-              <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
-            ) : (
-              <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
-            )}
-          </div>
-          <div className="md:hidden">
-            {typeof price === "number" ? (
-              <PriceDisplay price={price} regularPrice={regularPrice ?? undefined} compact />
-            ) : (
-              <span className="text-red-500 font-bold text-xs whitespace-nowrap">ناموجود</span>
-            )}
+          <div className="flex items-center gap-2">
+            {inventoryHint && !awaitingDelivery ? (
+              <span className="hidden md:inline text-[9px] font-black text-brand-zard whitespace-nowrap">
+                {inventoryHint}
+              </span>
+            ) : null}
+            {priceBlock}
           </div>
           <button
             type="button"

@@ -175,6 +175,19 @@
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
     animation: skeleton-shimmer-move 1.6s infinite;
   }
+  .skeleton-delayed {
+    opacity: 0;
+    animation: skeleton-reveal 160ms ease-out 140ms forwards;
+  }
+  .skeleton-delayed .skeleton-delayed {
+    opacity: 1;
+    animation: none;
+  }
+  @keyframes skeleton-reveal {
+    to {
+      opacity: 1;
+    }
+  }
   @keyframes skeleton-shimmer-move {
     100% {
       transform: translateX(100%);
@@ -197,6 +210,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .skeleton-shimmer::after {
+      animation: none;
+    }
+    .skeleton-delayed {
+      opacity: 1;
       animation: none;
     }
     .animate-pulse {

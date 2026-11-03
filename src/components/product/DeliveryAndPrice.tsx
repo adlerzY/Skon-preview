@@ -1,13 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
-import { VariationCard } from "@/lib/graphql";
+import { useState, type ReactNode } from "react";
 import { User, Gift, FileCheck, Eye, EyeOff, ClipboardPaste } from "lucide-react";
+import type { VariationCard } from "@/lib/graphql";
 import { PriceDisplay } from "./PriceDisplay";
 import { useToast } from "@/context/ToastContext";
-import ConfettiBurst from "@/components/ui/ConfettiBurst";
-import type { ProductPurchaseState, DeliveryType } from "./useProductDelivery";
+import {
+  DELIVERY_LABELS,
+  type DeliveryOptionState,
+  type DeliveryType,
+  type ProductPurchaseState,
+} from "./useProductDelivery";
 import { BATTLETAG_REGEX } from "./validation";
+
+interface DeliveryMeta {
+  summary: string;
+  requirement: string;
+  formTitle: string;
+  formHint: string;
+  icon: ReactNode;
+  selected: string;
+  iconWrap: string;
+  radio: string;
+}
+
+const DELIVERY_META: Record<DeliveryType, DeliveryMeta> = {
+  direct: {
+    summary: "سریع‌ترین حالت فعال‌سازی",
+    requirement: "نیازمند ایمیل و رمز عبور اکانت شما",
+    formTitle: "اطلاعات ورود اکانت",
+    formHint:
+      "برای فعال‌سازی مستقیم، ایمیل و رمز عبور اکانت را وارد کنید. اطلاعات رمزنگاری‌شده ذخیره می‌شود و پس از تکمیل سفارش حذف می‌گردد.",
+    icon: <User size={20} strokeWidth={2} />,
+    selected: "border-brand-blue bg-brand-blue/10",
+    iconWrap: "border-brand-blue/30 bg-brand-blue/10 text-brand-blue",
+    radio: "border-brand-blue text-brand-blue",
+  },
+  gift: {
+    summary: "ارسال به دوستان",
+    requirement: "نیازمند BattleTag و گذشت ۳ روز از ادد فرند بودن",
+    formTitle: "اطلاعات دریافت گیفت",
+    formHint: "گیفت به BattleTag شما ارسال می‌شود و نیازمند گذشت ۳ روز از ادد فرند بودن است.",
+    icon: <Gift size={20} strokeWidth={2} />,
+    selected: "border-brand-zard bg-brand-zard/10",
+    iconWrap: "border-brand-zard/30 bg-brand-zard/10 text-brand-zard",
+    radio: "border-brand-zard text-brand-zard",
+  },
+  code: {
+    summary: "تحویل در لحظه",
+    requirement: "بدون نیاز به اطلاعات ورود اکانت؛ کد پس از پرداخت در پنل کاربری نمایش داده می‌شود",
+    formTitle: "دریافت کد اصلی",
+    formHint: "برای این روش نیازی به ثبت اطلاعات اضافی نیست.",
+    icon: <FileCheck size={20} strokeWidth={2} />,
+    selected: "border-brand-sabz bg-brand-sabz/10",
+    iconWrap: "border-brand-sabz/30 bg-brand-sabz/10 text-brand-sabz",
+    radio: "border-brand-sabz text-brand-sabz",
+  },
+};
+
+function discountPercent(price: number | null, regular: number | null): number {
+  if (typeof price !== "number" || typeof regular !== "number" || regular <= 0 || regular <= price) return 0;
+  return Math.round(((regular - price) / regular) * 100);
+}
+
+function stockLabel(count: number | null): { text: string; low: boolean } | null {
+  if (count == null || count <= 0) return null;
+  if (count <= 5) return { text: `فقط ${count.toLocaleString("fa-IR")} عدد باقی مانده`, low: true };
+  return { text: "موجود", low: false };
+}
 
 function DirectForm({
   email,
@@ -147,7 +207,7 @@ function GiftForm({
   );
 }
 
-function CodeInfo() {
+function CodeInfo({ stock }: { stock: { text: string; low: boolean } | null }) {
   return (
     <div className="py-2 text-center flex flex-col items-center gap-2">
       <span className="text-3xl">🚀</span>
@@ -156,183 +216,184 @@ function CodeInfo() {
         <br />
         در پنل کاربری نمایش داده می‌شود.
       </p>
+      {stock && (
+        <span
+          className={`text-[11px] font-bold px-2.5 py-1 border ${
+            stock.low
+              ? "text-brand-zard bg-brand-zard/10 border-brand-zard/20"
+              : "text-brand-sabz bg-brand-sabz/10 border-brand-sabz/20"
+          }`}
+        >
+          {stock.text}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function DeliveryCard({
+  option,
+  selected,
+  onSelect,
+}: {
+  option: DeliveryOptionState;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const meta = DELIVERY_META[option.type];
+  const discount = discountPercent(option.price, option.regularPrice);
+  const stock = option.type === "code" ? stockLabel(option.stockCount) : null;
+  const dim = option.available ? "" : "opacity-50";
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      disabled={!option.available}
+      onClick={onSelect}
+      className={`w-full text-right border p-3.5 flex flex-col gap-2.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue/60 ${
+        !option.available
+          ? "cursor-not-allowed border-brand-surface_hover/50 bg-brand-surface/40"
+          : selected
+          ? `cursor-pointer ${meta.selected}`
+          : "cursor-pointer border-brand-surface_hover bg-brand-surface hover:border-brand-m_khonsa"
+      }`}
+    >
+      <div className={`flex items-center gap-3 ${dim}`}>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center border ${meta.iconWrap}`}>
+          {meta.icon}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm font-bold text-brand-active">{DELIVERY_LABELS[option.type]}</span>
+          <span className="text-[11px] leading-5 text-brand-m_khonsa">{meta.summary}</span>
+        </div>
+        <span
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+            selected ? meta.radio : "border-brand-surface_m text-transparent"
+          }`}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        </span>
+      </div>
+
+      <p className={`text-[11px] leading-5 text-brand-m_khonsa ${dim}`}>{meta.requirement}</p>
+
+      <div className="flex items-center justify-between gap-2 border-t border-brand-surface_hover pt-2.5">
+        {option.available ? (
+          <>
+            <span className="flex flex-wrap items-center gap-1.5">
+              {discount > 0 && (
+                <span className="bg-brand-sabz px-1.5 py-0.5 text-[10px] font-black text-brand-bg">
+                  {discount.toLocaleString("fa-IR")}٪ تخفیف
+                </span>
+              )}
+              {stock && (
+                <span className={`text-[11px] font-bold ${stock.low ? "text-brand-zard" : "text-brand-sabz"}`}>
+                  {stock.text}
+                </span>
+              )}
+            </span>
+            <span className="ml-auto">
+              <PriceDisplay price={option.price} regularPrice={option.regularPrice ?? undefined} compact />
+            </span>
+          </>
+        ) : (
+          <span className="text-[11px] font-bold text-red-500">{option.reason}</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function DeliveryChoice({
+  selectedVariation,
+  purchase,
+}: {
+  selectedVariation: VariationCard;
+  purchase: ProductPurchaseState;
+}) {
+  const { options, deliveryType, setDeliveryType } = purchase;
+  const anyAvailable = options.some((option) => option.available);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <span className="text-brand-surface_m text-[13px] font-bold">مسیر تحویل محصول:</span>
+        <span className="text-[11px] leading-5 text-brand-m_khonsa">
+          قیمت هر روش برای مشخصات انتخاب‌شده نمایش داده شده است؛ یکی را انتخاب کنید.
+        </span>
+      </div>
+
+      {selectedVariation.commissionDiscountBadge && (
+        <div className="self-start bg-brand-sabz/10 border border-brand-sabz/40 text-brand-sabz px-3 py-1 text-xs font-bold">
+          تخفیف ویژه فروشگاه
+        </div>
+      )}
+
+      <div role="radiogroup" aria-label="روش تحویل" className="flex flex-col gap-2">
+        {options.map((option) => (
+          <DeliveryCard
+            key={option.type}
+            option={option}
+            selected={deliveryType === option.type}
+            onSelect={() => setDeliveryType(option.type)}
+          />
+        ))}
+      </div>
+
+      {!anyAvailable && (
+        <p className="bg-brand-zard/10 border border-brand-zard/20 p-3 text-xs leading-6 text-brand-zard">
+          برای مشخصات انتخاب‌شده هیچ روش تحویلی فعال نیست. نسخه دیگری را انتخاب کنید.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function DeliveryDetails({ purchase }: { purchase: ProductPurchaseState }) {
+  const { deliveryType, email, setEmail, password, setPassword, battleTag, setBattleTag, options } = purchase;
+
+  if (!deliveryType) return null;
+
+  const meta = DELIVERY_META[deliveryType];
+  const option = options.find((item) => item.type === deliveryType);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <span className="text-brand-surface_m text-[13px] font-bold">{meta.formTitle}</span>
+        <span className="text-[11px] leading-5 text-brand-m_khonsa">{meta.formHint}</span>
+      </div>
+
+      <div
+        key={deliveryType}
+        className="bg-brand-surface p-2 border border-brand-surface_hover animate-in fade-in slide-in-from-top-2 duration-200 motion-reduce:animate-none"
+      >
+        {deliveryType === "direct" && (
+          <DirectForm
+            email={email}
+            password={password}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+          />
+        )}
+        {deliveryType === "gift" && <GiftForm battleTag={battleTag} onBattleTagChange={setBattleTag} />}
+        {deliveryType === "code" && <CodeInfo stock={option ? stockLabel(option.stockCount) : null} />}
+      </div>
     </div>
   );
 }
 
 interface DeliveryAndPriceProps {
-  selectedVariation: VariationCard | null;
+  step: 2 | 3;
+  selectedVariation: VariationCard;
   purchase: ProductPurchaseState;
 }
 
-export default function DeliveryAndPrice({ selectedVariation, purchase }: DeliveryAndPriceProps) {
-  const {
-    deliveryType,
-    setDeliveryType,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    battleTag,
-    setBattleTag,
-    isAddingToCart,
-    burstKey,
-    isDirectDisabled,
-    isGiftDisabled,
-    isCodeDisabled,
-    currentPrice,
-    regularPrice,
-    isFormValid,
-    handleAddToCart,
-    isCartFull,
-  } = purchase;
-
-  if (!selectedVariation) {
-    return (
-      <div className="text-brand-surface_m text-sm text-center py-4 bg-brand-surface border border-brand-surface_hover">
-        محصول در حال حاضر موجود نمی‌باشد.
-      </div>
-    );
+export default function DeliveryAndPrice({ step, selectedVariation, purchase }: DeliveryAndPriceProps) {
+  if (step === 2) {
+    return <DeliveryChoice selectedVariation={selectedVariation} purchase={purchase} />;
   }
-
-  const deliveryButtons: {
-    type: DeliveryType;
-    disabled: boolean;
-    activeColor: string;
-    label: string;
-    tooltip: { title: string; titleColor: string; body: string };
-    icon: React.ReactNode;
-  }[] = [
-    {
-      type: "direct",
-      disabled: isDirectDisabled,
-      activeColor: "bg-brand-blue/10 border-brand-blue text-brand-blue",
-      label: "مستقیم",
-      tooltip: {
-        title: "فست متد",
-        titleColor: "text-brand-blue",
-        body: "سریع‌ترین حالت فعال‌سازی. نیازمند اطلاعات ورود اکانت شما.",
-      },
-      icon: <User size={22} strokeWidth={2} />,
-    },
-    {
-      type: "gift",
-      disabled: isGiftDisabled,
-      activeColor: "bg-brand-zard/10 border-brand-zard text-brand-zard",
-      label: "گیفت",
-      tooltip: {
-        title: "ارسال به دوستان",
-        titleColor: "text-brand-zard",
-        body: "نیازمند گذشت ۳ روز از ادد فرند بودن.",
-      },
-      icon: <Gift size={22} strokeWidth={2} />,
-    },
-    {
-      type: "code",
-      disabled: isCodeDisabled,
-      activeColor: "bg-brand-sabz/10 border-brand-sabz text-brand-sabz",
-      label: "کد اصلی",
-      tooltip: {
-        title: "تحویل در لحظه",
-        titleColor: "text-brand-sabz",
-        body: "کد فعال‌سازی بلافاصله پس از پرداخت تحویل می‌گردد.",
-      },
-      icon: <FileCheck size={22} strokeWidth={2} />,
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2">
-        <span className="text-brand-surface_m text-[13px] font-bold uppercase tracking-wide">
-          مسیر تحویل محصول:
-        </span>
-        <div className="grid grid-cols-3 gap-2">
-          {deliveryButtons.map(({ type, disabled, activeColor, label, tooltip, icon }) => (
-            <div key={type} className="relative group flex flex-col">
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => !disabled && setDeliveryType(type)}
-                className={`h-[90px] border flex flex-col items-center justify-center gap-1.5 transition-all duration-200 ${
-                  disabled
-                    ? "opacity-30 cursor-not-allowed border-transparent bg-brand-surface"
-                    : deliveryType === type
-                    ? activeColor
-                    : "bg-brand-surface border-brand-surface_hover text-brand-m_khonsa hover:border-brand-m_khonsa"
-                }`}
-              >
-                {icon}
-                <span className="font-bold text-xs">{label}</span>
-              </button>
-              <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-48 bg-brand-menu border border-brand-surface_hover p-3 text-center opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 shadow-xl pointer-events-none">
-                <span className={`block text-[13px] font-bold mb-1 ${tooltip.titleColor}`}>
-                  {tooltip.title}
-                </span>
-                <span className="text-[11px] text-brand-m_khonsa leading-relaxed">
-                  {tooltip.body}
-                </span>
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-brand-surface_hover" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {deliveryType && (
-        <div className="bg-brand-surface p-2 border border-brand-surface_hover animate-in fade-in duration-300">
-          {deliveryType === "direct" && (
-            <DirectForm
-              email={email}
-              password={password}
-              onEmailChange={setEmail}
-              onPasswordChange={setPassword}
-            />
-          )}
-          {deliveryType === "gift" && (
-            <GiftForm battleTag={battleTag} onBattleTagChange={setBattleTag} />
-          )}
-          {deliveryType === "code" && <CodeInfo />}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2 mt-2">
-        {selectedVariation.commissionDiscountBadge && (
-          <div className="self-start bg-brand-sabz/10 border border-brand-sabz/40 text-brand-sabz px-3 py-1 text-xs font-bold">
-            تخفیف ویژه فروشگاه
-          </div>
-        )}
-        <div className="flex justify-between items-center bg-brand-surface p-4 border border-brand-surface_hover">
-          <span className="text-sm text-brand-surface_m font-medium">مبلغ نهایی:</span>
-          {deliveryType === null ? (
-            <span className="text-sm text-brand-surface_m">ابتدا روش تحویل را انتخاب کنید</span>
-          ) : typeof currentPrice === "number" ? (
-            <PriceDisplay price={currentPrice} regularPrice={regularPrice ?? undefined} />
-          ) : (
-            <span className="text-red-500 font-bold text-lg">ناموجود</span>
-          )}
-        </div>
-
-        <div className="relative">
-          <ConfettiBurst trigger={burstKey} />
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={!isFormValid() || isAddingToCart || isCartFull}
-            className={`w-full py-5 font-bold text-center text-sm transition-all duration-200 ${
-              isFormValid() && !isCartFull
-                ? "bg-brand-blue text-brand-active hover:bg-[#0062d1]"
-                : "bg-brand-surface_hover text-brand-m_khonsa cursor-not-allowed"
-            }`}
-          >
-            {isAddingToCart
-              ? "در حال پردازش..."
-              : isCartFull
-              ? "سبد خرید پر است (حداکثر ۱۰ عدد)"
-              : "افزودن به سبد خرید"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return <DeliveryDetails purchase={purchase} />;
 }

@@ -1,9 +1,12 @@
 import Skeleton from "@/components/ui/Skeleton";
+import PurchaseStepper from "./PurchaseStepper";
 
 export function PurchaseCardSkeleton() {
   return (
-    <div className="flex flex-col gap-6 w-full" aria-hidden="true">
-      <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-4 w-full" aria-busy="true">
+      <PurchaseStepper active={1} />
+
+      <div className="skeleton-delayed flex flex-col gap-2.5">
         <Skeleton className="h-4 w-28" />
         <div className="flex flex-col gap-2">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -18,32 +21,20 @@ export function PurchaseCardSkeleton() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-5 w-32" />
-        <div className="grid grid-cols-3 gap-2">
+      <div className="skeleton-delayed flex flex-col gap-3 border border-brand-surface_hover bg-brand-surface p-4">
+        <div className="hidden lg:flex flex-col gap-2.5">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-[90px] flex flex-col items-center justify-center gap-2 bg-brand-surface border border-brand-surface_hover"
-            >
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <Skeleton className="h-3 w-10" />
+            <div key={index} className="flex items-center justify-between">
+              <Skeleton className="h-3 w-12" />
+              <Skeleton className="h-3 w-24" />
             </div>
           ))}
         </div>
-
-        <div className="flex flex-col gap-2 bg-brand-surface p-2 border border-brand-surface_hover">
-          <Skeleton className="h-[46px] w-full" />
-          <Skeleton className="h-[46px] w-full" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-6 w-32" />
         </div>
-
-        <div className="flex flex-col gap-2 mt-2">
-          <div className="flex items-center justify-between h-[58px] px-4 bg-brand-surface border border-brand-surface_hover">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-6 w-32" />
-          </div>
-          <Skeleton className="h-[60px] w-full" />
-        </div>
+        <Skeleton className="h-[50px] w-full" />
       </div>
     </div>
   );
@@ -51,7 +42,7 @@ export function PurchaseCardSkeleton() {
 
 export function ProductGallerySkeleton() {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-stretch gap-3 w-full" aria-hidden="true">
+    <div className="skeleton-delayed flex flex-col sm:flex-row sm:items-stretch gap-3 w-full" aria-hidden="true">
       <div className="relative w-full sm:flex-1 aspect-[16/9] overflow-hidden bg-brand-surface border border-brand-surface_hover">
         <Skeleton className="absolute inset-0 rounded-none" />
       </div>
@@ -71,7 +62,7 @@ export function ProductHeroSkeleton() {
   return (
     <div
       className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 w-full items-stretch"
-      aria-hidden="true"
+      aria-busy="true"
     >
       <div className="lg:col-span-4 w-full">
         <div className="flex flex-col gap-6 lg:sticky lg:top-[96px]">
@@ -92,7 +83,7 @@ export function ProductHeroSkeleton() {
 export function ProductBodySkeleton() {
   return (
     <div
-      className="cv-auto w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6"
+      className="skeleton-delayed cv-auto w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6"
       aria-hidden="true"
     >
       <Skeleton className="h-7 w-48" />

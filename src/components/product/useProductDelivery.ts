@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import type { VariationCard } from "@/lib/graphql";
@@ -8,18 +8,40 @@ import { BATTLETAG_REGEX, EMAIL_REGEX } from "./validation";
 
 export type DeliveryType = "direct" | "gift" | "code";
 
-function getDefaultDelivery(v: VariationCard): DeliveryType | null {
-  const isDirectAvailable = v.parsedPrice != null;
-  const isGiftAvailable = v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled";
-  const isCodeAvailable =
-    v.parsedCodePrice != null &&
-    v.parsedCodePrice !== "disabled" &&
-    (typeof v.codeStockCount !== "number" || v.codeStockCount > 0);
+export const DELIVERY_TYPES: readonly DeliveryType[] = ["direct", "gift", "code"];
 
-  if (isDirectAvailable) return "direct";
-  if (isGiftAvailable) return "gift";
-  if (isCodeAvailable) return "code";
-  return null;
+export const DELIVERY_LABELS: Record<DeliveryType, string> = {
+  direct: "مستقیم",
+  gift: "گیفت",
+  code: "کد اصلی",
+};
+
+export interface DeliveryOptionState {
+  type: DeliveryType;
+  available: boolean;
+  price: number | null;
+  regularPrice: number | null;
+  stockCount: number | null;
+  reason: string | null;
+}
+
+export function isDeliveryAvailable(v: VariationCard, type: DeliveryType): boolean {
+  switch (type) {
+    case "direct":
+      return v.parsedPrice != null;
+    case "gift":
+      return v.parsedGiftPrice != null && v.parsedGiftPrice !== "disabled";
+    case "code":
+      return (
+        v.parsedCodePrice != null &&
+        v.parsedCodePrice !== "disabled" &&
+        (typeof v.codeStockCount !== "number" || v.codeStockCount > 0)
+      );
+  }
+}
+
+export function hasAnyDelivery(v: VariationCard | null): boolean {
+  return v ? DELIVERY_TYPES.some((type) => isDeliveryAvailable(v, type)) : false;
 }
 
 function getPrice(v: VariationCard, type: DeliveryType): number | null {
@@ -44,6 +66,19 @@ function getRegularPrice(v: VariationCard, type: DeliveryType): number | null {
   }
 }
 
+function unavailableReason(v: VariationCard | null, type: DeliveryType): string {
+  if (
+    type === "code" &&
+    v &&
+    typeof v.parsedCodePrice === "number" &&
+    typeof v.codeStockCount === "number" &&
+    v.codeStockCount <= 0
+  ) {
+    return "موجودی کد این نسخه تمام شده است";
+  }
+  return "این روش برای مشخصات انتخاب‌شده فعال نیست";
+}
+
 interface UseProductDeliveryArgs {
   selectedVariation: VariationCard | null;
   productId: number;
@@ -64,25 +99,23 @@ export function useProductDelivery({
   const { addToCart, isCartFull } = useCart();
   const { showToast } = useToast();
 
-  const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(() =>
-    selectedVariation ? getDefaultDelivery(selectedVariation) : null
-  );
+  const [chosenDelivery, setDeliveryType] = useState<DeliveryType | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [battleTag, setBattleTag] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
 
+  const deliveryType: DeliveryType | null =
+    selectedVariation && chosenDelivery && isDeliveryAvailable(selectedVariation, chosenDelivery)
+      ? chosenDelivery
+      : null;
+
   useEffect(() => {
-    if (!selectedVariation) {
+    if (chosenDelivery && !(selectedVariation && isDeliveryAvailable(selectedVariation, chosenDelivery))) {
       setDeliveryType(null);
-      return;
     }
-    setDeliveryType(getDefaultDelivery(selectedVariation));
-    setEmail("");
-    setPassword("");
-    setBattleTag("");
-  }, [selectedVariation]);
+  }, [selectedVariation, chosenDelivery]);
 
   const isDirectDisabled = !selectedVariation || selectedVariation.parsedPrice == null;
   const isGiftDisabled =
@@ -97,6 +130,25 @@ export function useProductDelivery({
 
   const currentPrice = selectedVariation && deliveryType ? getPrice(selectedVariation, deliveryType) : null;
   const regularPrice = selectedVariation && deliveryType ? getRegularPrice(selectedVariation, deliveryType) : null;
+
+  const options = useMemo<DeliveryOptionState[]>(
+    () =>
+      DELIVERY_TYPES.map((type) => {
+        const available = Boolean(selectedVariation && isDeliveryAvailable(selectedVariation, type));
+        return {
+          type,
+          available,
+          price: available && selectedVariation ? getPrice(selectedVariation, type) : null,
+          regularPrice: available && selectedVariation ? getRegularPrice(selectedVariation, type) : null,
+          stockCount:
+            type === "code" && selectedVariation && typeof selectedVariation.codeStockCount === "number"
+              ? selectedVariation.codeStockCount
+              : null,
+          reason: available ? null : unavailableReason(selectedVariation, type),
+        };
+      }),
+    [selectedVariation]
+  );
 
   const isFormValid = useCallback((): boolean => {
     if (!deliveryType) return false;
@@ -187,6 +239,7 @@ export function useProductDelivery({
     isCodeDisabled,
     currentPrice,
     regularPrice,
+    options,
     isFormValid,
     handleAddToCart,
     isCartFull,
