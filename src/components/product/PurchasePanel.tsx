@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Check } from "lucide-react";
 import type { VariationCard } from "@/lib/graphql";
 import DeliveryAndPrice from "@/components/product/DeliveryAndPrice";
 import VariationSelector from "@/components/product/VariationSelector";
 import ProductStickyBar, { type DeliveryOption } from "@/components/product/ProductStickyBar";
-import PurchaseStepper, { type PurchaseStep } from "@/components/product/PurchaseStepper";
+import PurchaseStepper, { type StepperItem } from "@/components/product/PurchaseStepper";
 import PurchaseSummary, { type PurchaseSummaryRow } from "@/components/product/PurchaseSummary";
+import PurchaseActions from "@/components/product/PurchaseActions";
+import StepViewport from "@/components/product/StepViewport";
 import {
   DELIVERY_LABELS,
   hasAnyDelivery,
@@ -26,6 +30,22 @@ import {
   findFirstValidAttributes,
   findRegionInfo,
 } from "./variationMatcher";
+
+type StepId = "options" | "delivery" | "details";
+
+const STEP_LABELS: Record<StepId, string> = {
+  options: "نسخه و مشخصات",
+  delivery: "روش تحویل",
+  details: "تکمیل و ثبت",
+};
+
+function UnavailableNotice() {
+  return (
+    <div className="border border-brand-surface_hover bg-brand-surface py-4 text-center text-sm text-brand-surface_m">
+      محصول در حال حاضر موجود نمی‌باشد.
+    </div>
+  );
+}
 
 interface PurchasePanelProps {
   productId: number;
@@ -53,9 +73,15 @@ export default function PurchasePanel({
   const media = useProductMediaActions();
   const { showToast } = useToast();
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [addedKey, setAddedKey] = useState<string | null>(null);
+  const stepperRef = useRef<HTMLDivElement>(null);
 
   const groupedAttributes = useMemo(() => buildGroupedAttributes(variations), [variations]);
   const regionInfo = useMemo(() => findRegionInfo(variations, region), [variations, region]);
+  const hasChoices = useMemo(
+    () => groupedAttributes.some((group) => group.values.length > 1),
+    [groupedAttributes]
+  );
 
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() =>
     findFirstValidAttributes(variations, groupedAttributes, regionInfo, initialEdition)
@@ -88,16 +114,36 @@ export default function PurchasePanel({
   });
 
   const deliveryAvailable = hasAnyDelivery(selectedVariation);
-  const hasSelectableOptions = groupedAttributes.length > 0;
 
-  const [step, setStep] = useState<PurchaseStep>(() => (deliveryAvailable ? 2 : 1));
+  const [step, setStep] = useState<StepId>(hasChoices ? "options" : "delivery");
 
-  const maxStep: PurchaseStep = !selectedVariation ? 1 : purchase.deliveryType ? 3 : 2;
-  const activeStep: PurchaseStep = step > maxStep ? maxStep : step;
+  let activeStep: StepId = step;
+  if (activeStep === "details" && !purchase.deliveryType) activeStep = "delivery";
+  if (activeStep === "delivery" && !deliveryAvailable && hasChoices) activeStep = "options";
+  if (activeStep === "options" && !hasChoices) activeStep = "delivery";
 
   useEffect(() => {
-    if (step > maxStep) setStep(maxStep);
-  }, [step, maxStep]);
+    if (activeStep !== step) setStep(activeStep);
+  }, [activeStep, step]);
+
+  const previousStepRef = useRef<StepId>(activeStep);
+
+  useEffect(() => {
+    if (previousStepRef.current === activeStep) return;
+    previousStepRef.current = activeStep;
+
+    const node = stepperRef.current;
+    if (!node) return;
+
+    const top = node.getBoundingClientRect().top;
+    if (top >= 72 && top <= window.innerHeight * 0.6) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({
+      top: Math.max(0, window.scrollY + top - 96),
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [activeStep]);
 
   useEffect(() => {
     const urls = variations
@@ -139,16 +185,99 @@ export default function PurchasePanel({
     [variations, groupedAttributes, regionInfo, selectedAttrs, fallback, media]
   );
 
-  const variationText = useMemo(
-    () =>
-      groupedAttributes
-        .map((group) => selectedAttrs[group.name])
-        .filter(Boolean)
-        .join(" - "),
-    [groupedAttributes, selectedAttrs]
-  );
+  const stepIds: StepId[] = hasChoices ? ["options", "delivery", "details"] : ["delivery", "details"];
 
-  const deliveryLabel = purchase.deliveryType ? DELIVERY_LABELS[purchase.deliveryType] : null;
+  const stepperItems: StepperItem[] = stepIds.map((id): StepperItem => {
+    const done =
+      id === "options"
+        ? Boolean(selectedVariation) && deliveryAvailable
+        : id === "delivery"
+        ? Boolean(purchase.deliveryType)
+        : false;
+
+    const reachable =
+      id === "options" ? hasChoices : id === "delivery" ? deliveryAvailable : Boolean(purchase.deliveryType);
+
+    return {
+      id,
+      label: STEP_LABELS[id],
+      status: id === activeStep ? "active" : done ? "done" : "upcoming",
+      clickable: reachable && id !== activeStep,
+    };
+  });
+
+  const variationText = groupedAttributes
+    .map((group) => selectedAttrs[group.name])
+    .filter(Boolean)
+    .join(" - ");
+
+  const deliveryLabel = purchase.deliveryType ? DELIVERY_LABELS[purchase.deliveryType] : "";
+
+  const addedSignature = `${activeStep}|${selectedVariation?.databaseId ?? 0}|${purchase.deliveryType ?? ""}`;
+  const justAdded = activeStep === "details" && addedKey === addedSignature;
+
+  const submitAdd = () => {
+    if (purchase.handleAddToCart()) setAddedKey(addedSignature);
+  };
+
+  const formValid = purchase.isFormValid();
+
+  const primaryLabel =
+    activeStep === "options"
+      ? "ادامه: انتخاب روش تحویل"
+      : activeStep === "delivery"
+      ? "ادامه: تکمیل اطلاعات"
+      : purchase.isAddingToCart
+      ? "در حال پردازش..."
+      : purchase.isCartFull
+      ? "سبد خرید پر است (حداکثر ۱۰ عدد)"
+      : "افزودن به سبد خرید";
+
+  const primaryDisabled =
+    activeStep === "options"
+      ? !deliveryAvailable
+      : activeStep === "delivery"
+      ? !purchase.deliveryType
+      : !formValid || purchase.isAddingToCart || purchase.isCartFull;
+
+  const actionHint =
+    activeStep === "details" && !formValid && !purchase.isCartFull
+      ? purchase.deliveryType === "direct"
+        ? "ایمیل و رمز عبور اکانت را کامل وارد کنید"
+        : purchase.deliveryType === "gift"
+        ? "BattleTag را به شکل Name#1234 وارد کنید"
+        : null
+      : null;
+
+  const goBack =
+    activeStep === "details"
+      ? () => setStep("delivery")
+      : activeStep === "delivery" && hasChoices
+      ? () => setStep("options")
+      : undefined;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (primaryDisabled) return;
+    if (activeStep === "options") setStep("delivery");
+    else if (activeStep === "delivery") setStep("details");
+    else submitAdd();
+  };
+
+  const summaryRows: PurchaseSummaryRow[] = [
+    { label: "محصول", value: productName },
+    ...(regionInfo ? [{ label: "ریجن", value: regionInfo.value }] : []),
+    ...(variationText
+      ? [
+          {
+            label: "نسخه",
+            value: variationText,
+            onEdit: hasChoices ? () => setStep("options") : undefined,
+          },
+        ]
+      : []),
+    { label: "روش تحویل", value: deliveryLabel, onEdit: () => setStep("delivery") },
+  ];
 
   const stickyDeliveryOptions: DeliveryOption[] = [
     { value: "direct", label: "مستقیم", disabled: purchase.isDirectDisabled },
@@ -162,7 +291,7 @@ export default function PurchasePanel({
     ? "سبد پر است"
     : !purchase.deliveryType
     ? "انتخاب روش تحویل"
-    : purchase.isFormValid()
+    : formValid
     ? "افزودن به سبد خرید"
     : "تکمیل اطلاعات";
 
@@ -178,78 +307,18 @@ export default function PurchasePanel({
   const handleStickyCta = () => {
     if (purchase.isCartFull) return;
 
-    if (purchase.isFormValid()) {
-      purchase.handleAddToCart();
+    if (formValid) {
+      submitAdd();
       return;
     }
 
-    setStep(purchase.deliveryType ? 3 : 2);
+    setStep(purchase.deliveryType ? "details" : "delivery");
     document.getElementById(PRODUCT_HERO_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
     showToast(
       purchase.deliveryType ? "لطفاً اطلاعات لازم را تکمیل کنید" : "ابتدا روش تحویل را انتخاب کنید",
       "error"
     );
   };
-
-  const primaryLabel =
-    activeStep === 1
-      ? "ادامه: انتخاب روش تحویل"
-      : activeStep === 2
-      ? "ادامه: تکمیل اطلاعات"
-      : purchase.isAddingToCart
-      ? "در حال پردازش..."
-      : purchase.isCartFull
-      ? "سبد خرید پر است (حداکثر ۱۰ عدد)"
-      : "افزودن به سبد خرید";
-
-  const primaryDisabled =
-    activeStep === 1
-      ? !deliveryAvailable
-      : activeStep === 2
-      ? !purchase.deliveryType
-      : !purchase.isFormValid() || purchase.isAddingToCart || purchase.isCartFull;
-
-  const handlePrimary = () => {
-    if (activeStep === 1) {
-      if (deliveryAvailable) setStep(2);
-      return;
-    }
-    if (activeStep === 2) {
-      if (purchase.deliveryType) setStep(3);
-      return;
-    }
-    purchase.handleAddToCart();
-  };
-
-  const handleBack =
-    activeStep === 3
-      ? () => setStep(2)
-      : activeStep === 2 && hasSelectableOptions
-      ? () => setStep(1)
-      : undefined;
-
-  const summaryRows: PurchaseSummaryRow[] = [
-    { label: "محصول", value: productName },
-    ...(regionInfo ? [{ label: "ریجن", value: regionInfo.value }] : []),
-    ...(variationText
-      ? [
-          {
-            label: "نسخه",
-            value: variationText,
-            onEdit: hasSelectableOptions && activeStep !== 1 ? () => setStep(1) : undefined,
-          },
-        ]
-      : []),
-    {
-      label: "روش تحویل",
-      value: deliveryLabel ?? "انتخاب نشده",
-      muted: !deliveryLabel,
-      onEdit: deliveryAvailable && activeStep !== 2 ? () => setStep(2) : undefined,
-    },
-  ];
-
-  const compactText =
-    [variationText, regionInfo?.value, deliveryLabel].filter(Boolean).join(" · ") || productName;
 
   return (
     <>
@@ -270,57 +339,71 @@ export default function PurchasePanel({
         onCtaClick={handleStickyCta}
       />
 
-      <div className="flex w-full flex-col gap-4">
-        <PurchaseStepper
-          active={activeStep}
-          completed={[
-            Boolean(selectedVariation) && deliveryAvailable,
-            Boolean(purchase.deliveryType),
-            false,
-          ]}
-          selectable={[hasSelectableOptions, deliveryAvailable, Boolean(purchase.deliveryType)]}
-          onSelect={setStep}
-        />
-
-        <div key={activeStep} className="animate-in fade-in duration-200 motion-reduce:animate-none">
-          {activeStep === 1 && (
-            <div className="flex flex-col gap-4">
-              <VariationSelector
-                groupedAttributes={groupedAttributes}
-                selectedAttrs={selectedAttrs}
-                onAttributeSelect={handleAttrSelect}
-                variations={variations}
-                regionInfo={regionInfo}
-                deliveryType={purchase.deliveryType}
-              />
-              {!selectedVariation && (
-                <div className="border border-brand-surface_hover bg-brand-surface py-4 text-center text-sm text-brand-surface_m">
-                  محصول در حال حاضر موجود نمی‌باشد.
-                </div>
-              )}
-            </div>
-          )}
-          {activeStep === 2 && selectedVariation && (
-            <DeliveryAndPrice step={2} selectedVariation={selectedVariation} purchase={purchase} />
-          )}
-          {activeStep === 3 && selectedVariation && (
-            <DeliveryAndPrice step={3} selectedVariation={selectedVariation} purchase={purchase} />
-          )}
+      <form onSubmit={handleSubmit} noValidate className="flex w-full flex-col gap-5">
+        <div ref={stepperRef} className="scroll-mt-24">
+          <PurchaseStepper items={stepperItems} onSelect={(id) => setStep(id as StepId)} />
         </div>
 
-        <PurchaseSummary
-          rows={summaryRows}
-          compactText={compactText}
-          showPrice={Boolean(purchase.deliveryType)}
-          price={purchase.currentPrice}
-          regularPrice={purchase.regularPrice}
-          primaryLabel={primaryLabel}
-          primaryDisabled={primaryDisabled}
-          onPrimary={handlePrimary}
-          onBack={handleBack}
+        <StepViewport>
+          <div
+            key={activeStep}
+            className="animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none"
+          >
+            {activeStep === "options" && (
+              <div className="flex flex-col gap-4">
+                <VariationSelector
+                  groupedAttributes={groupedAttributes}
+                  selectedAttrs={selectedAttrs}
+                  onAttributeSelect={handleAttrSelect}
+                  variations={variations}
+                  regionInfo={regionInfo}
+                  deliveryType={purchase.deliveryType}
+                />
+                {!selectedVariation && <UnavailableNotice />}
+              </div>
+            )}
+
+            {activeStep === "delivery" &&
+              (selectedVariation ? <DeliveryAndPrice step="delivery" purchase={purchase} /> : <UnavailableNotice />)}
+
+            {activeStep === "details" && selectedVariation && (
+              <div className="flex flex-col gap-4">
+                <DeliveryAndPrice step="details" purchase={purchase} />
+                <PurchaseSummary
+                  rows={summaryRows}
+                  price={purchase.currentPrice}
+                  regularPrice={purchase.regularPrice}
+                  specialDiscount={Boolean(selectedVariation.commissionDiscountBadge)}
+                />
+              </div>
+            )}
+          </div>
+        </StepViewport>
+
+        <PurchaseActions
+          label={primaryLabel}
+          disabled={primaryDisabled}
+          onBack={goBack}
           burstKey={purchase.burstKey}
+          hint={actionHint}
+          notice={
+            justAdded ? (
+              <div
+                role="status"
+                className="flex items-center justify-between gap-3 border border-brand-sabz/30 bg-brand-sabz/10 px-3 py-2.5 text-xs font-bold text-brand-sabz animate-in fade-in duration-200"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Check size={14} strokeWidth={3} />
+                  به سبد خرید اضافه شد
+                </span>
+                <Link href="/cart" className="text-white hover:underline">
+                  مشاهده سبد خرید
+                </Link>
+              </div>
+            ) : null
+          }
         />
-      </div>
+      </form>
     </>
   );
 }

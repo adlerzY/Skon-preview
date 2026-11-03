@@ -1,41 +1,39 @@
 import Skeleton from "@/components/ui/Skeleton";
-import PurchaseStepper from "./PurchaseStepper";
+
+function StepperSkeleton() {
+  return (
+    <div className="grid grid-cols-3" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="flex flex-col items-center gap-1.5">
+          <Skeleton className="h-7 w-7 rounded-full" />
+          <div className="flex h-5 items-center">
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function PurchaseCardSkeleton() {
   return (
-    <div className="flex flex-col gap-4 w-full" aria-busy="true">
-      <PurchaseStepper active={1} />
+    <div className="flex w-full flex-col gap-5" aria-busy="true">
+      <StepperSkeleton />
 
-      <div className="skeleton-delayed flex flex-col gap-2.5">
-        <Skeleton className="h-4 w-28" />
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="w-full h-[74px] flex items-center gap-3 px-6 bg-brand-menu border border-brand-surface_hover"
-            >
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-24 mr-auto" />
-            </div>
-          ))}
-        </div>
+      <div className="skeleton-delayed flex flex-col gap-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="w-full h-[74px] flex items-center gap-3 px-6 bg-brand-surface border border-brand-surface_hover"
+          >
+            <Skeleton className="h-5 w-5 rounded-full" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-24 mr-auto" />
+          </div>
+        ))}
       </div>
 
-      <div className="skeleton-delayed flex flex-col gap-3 border border-brand-surface_hover bg-brand-surface p-4">
-        <div className="hidden lg:flex flex-col gap-2.5">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <Skeleton className="h-3 w-12" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-6 w-32" />
-        </div>
-        <Skeleton className="h-[50px] w-full" />
-      </div>
+      <Skeleton className="h-[52px] w-full" />
     </div>
   );
 }

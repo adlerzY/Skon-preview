@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { VariationCard } from "@/lib/graphql";
 import { PriceDisplay } from "./PriceDisplay";
+import SelectionMark from "./SelectionMark";
 import type { DeliveryType } from "./useProductDelivery";
 import {
   hasStock,
@@ -165,8 +166,8 @@ export default function VariationSelector({
   ]);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {groupedAttributes.map((group) => {
+    <div className="flex w-full flex-col gap-5">
+      {groupedAttributes.map((group, groupIndex) => {
         const cleanGroupName = group.name
           .replace("pa_", "")
           .replace("attribute_", "");
@@ -174,83 +175,79 @@ export default function VariationSelector({
         return (
           <div
             key={group.name}
-            className="flex-1 flex flex-col gap-2.5 min-w-0"
+            role="radiogroup"
+            aria-label={cleanGroupName}
+            className={`flex min-w-0 flex-col gap-2 ${
+              groupIndex > 0 ? "border-t border-brand-surface_hover/60 pt-5" : ""
+            }`}
           >
-            <span className="text-xs font-bold text-brand-surface_m">
-              انتخاب {cleanGroupName}:
-            </span>
+            {group.values.map((opt) => {
+              const isSelected = selectedAttrs[group.name] === opt.value;
 
-            <div className="flex flex-col gap-2">
-              {group.values.map((opt) => {
-                const isSelected =
-                  selectedAttrs[group.name] === opt.value;
+              const state = stateMap.get(`${group.name}::${opt.value}`) ?? {
+                available: false,
+                price: null,
+                regularPrice: null,
+              };
 
-                const state = stateMap.get(
-                  `${group.name}::${opt.value}`
-                ) ?? {
-                  available: false,
-                  price: null,
-                  regularPrice: null,
-                };
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  disabled={!state.available}
+                  onClick={() =>
+                    state.available && onAttributeSelect(group.name, opt.value)
+                  }
+                  className={`flex w-full items-center gap-3 border p-5 text-right transition-colors duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue/60 ${
+                    isSelected
+                      ? "border-brand-blue bg-brand-blue/10"
+                      : state.available
+                      ? "border-brand-surface_hover bg-brand-surface hover:border-brand-m_khonsa"
+                      : "cursor-not-allowed border-brand-surface_hover/40 bg-brand-surface/40"
+                  }`}
+                >
+                  <SelectionMark selected={isSelected} disabled={!state.available} />
 
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      state.available &&
-                      onAttributeSelect(group.name, opt.value)
-                    }
-                    disabled={!state.available}
-                    className={`w-full flex items-center gap-3 p-6 text-right transition-all duration-150 border border-brand-surface_hover ${
+                  {opt.flagUrl && (
+                    <Image
+                      src={opt.flagUrl}
+                      alt=""
+                      width={32}
+                      height={24}
+                      className={`h-6 w-8 shrink-0 rounded-sm object-cover ${
+                        !state.available ? "opacity-20" : ""
+                      }`}
+                    />
+                  )}
+
+                  <span
+                    className={`flex-1 text-sm font-bold leading-tight ${
                       isSelected
-                        ? "bg-brand-surface border-r-8 border-r-brand-blue"
+                        ? "text-brand-active"
                         : state.available
-                          ? "bg-brand-menu border-r-1 border-r-brand-surface_hover hover:bg-brand-surface_hover"
-                          : "bg-brand-menu/40 border-brand-surface_hover/40 border-r-1 border-r-brand-surface_hover/40 cursor-not-allowed"
+                        ? "text-brand-m_khonsa"
+                        : "text-brand-surface_m/30 line-through"
                     }`}
                   >
-                    {opt.flagUrl && (
-                      <Image
-                        src={opt.flagUrl}
-                        alt=""
-                        width={32}
-                        height={24}
-                        className={`w-8 h-6 object-cover rounded-sm shrink-0 ${
-                          !state.available ? "opacity-20" : ""
-                        }`}
-                      />
-                    )}
+                    {opt.value}
+                  </span>
 
-                    <span
-                      className={`flex-1 font-bold text-sm leading-tight ${
-                        isSelected
-                          ? "text-brand-active"
-                          : state.available
-                            ? "text-brand-m_khonsa"
-                            : "text-brand-surface_m/30 line-through"
-                      }`}
-                    >
-                      {opt.value}
+                  {state.available && state.price !== null ? (
+                    <PriceDisplay
+                      price={state.price}
+                      regularPrice={state.regularPrice}
+                      compact
+                    />
+                  ) : (
+                    <span className="shrink-0 text-[11px] font-bold text-red-500/70">
+                      {state.available ? "در این روش ناموجود" : "ناموجود"}
                     </span>
-
-                    {state.available && state.price !== null ? (
-                      <PriceDisplay
-                        price={state.price}
-                        regularPrice={state.regularPrice}
-                        compact
-                      />
-                    ) : (
-                      <span className="text-[11px] font-bold text-red-500/70 shrink-0">
-                        {state.available
-                          ? "در این روش ناموجود"
-                          : "ناموجود"}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         );
       })}

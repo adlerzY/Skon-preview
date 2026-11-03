@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import { User, Gift, FileCheck, Eye, EyeOff, ClipboardPaste } from "lucide-react";
-import type { VariationCard } from "@/lib/graphql";
 import { PriceDisplay } from "./PriceDisplay";
+import SelectionMark from "./SelectionMark";
 import { useToast } from "@/context/ToastContext";
 import {
   DELIVERY_LABELS,
@@ -19,9 +19,9 @@ interface DeliveryMeta {
   formTitle: string;
   formHint: string;
   icon: ReactNode;
+  tone: "blue" | "zard" | "sabz";
   selected: string;
   iconWrap: string;
-  radio: string;
 }
 
 const DELIVERY_META: Record<DeliveryType, DeliveryMeta> = {
@@ -32,9 +32,9 @@ const DELIVERY_META: Record<DeliveryType, DeliveryMeta> = {
     formHint:
       "برای فعال‌سازی مستقیم، ایمیل و رمز عبور اکانت را وارد کنید. اطلاعات رمزنگاری‌شده ذخیره می‌شود و پس از تکمیل سفارش حذف می‌گردد.",
     icon: <User size={20} strokeWidth={2} />,
+    tone: "blue",
     selected: "border-brand-blue bg-brand-blue/10",
     iconWrap: "border-brand-blue/30 bg-brand-blue/10 text-brand-blue",
-    radio: "border-brand-blue text-brand-blue",
   },
   gift: {
     summary: "ارسال به دوستان",
@@ -42,9 +42,9 @@ const DELIVERY_META: Record<DeliveryType, DeliveryMeta> = {
     formTitle: "اطلاعات دریافت گیفت",
     formHint: "گیفت به BattleTag شما ارسال می‌شود و نیازمند گذشت ۳ روز از ادد فرند بودن است.",
     icon: <Gift size={20} strokeWidth={2} />,
+    tone: "zard",
     selected: "border-brand-zard bg-brand-zard/10",
     iconWrap: "border-brand-zard/30 bg-brand-zard/10 text-brand-zard",
-    radio: "border-brand-zard text-brand-zard",
   },
   code: {
     summary: "تحویل در لحظه",
@@ -52,9 +52,9 @@ const DELIVERY_META: Record<DeliveryType, DeliveryMeta> = {
     formTitle: "دریافت کد اصلی",
     formHint: "برای این روش نیازی به ثبت اطلاعات اضافی نیست.",
     icon: <FileCheck size={20} strokeWidth={2} />,
+    tone: "sabz",
     selected: "border-brand-sabz bg-brand-sabz/10",
     iconWrap: "border-brand-sabz/30 bg-brand-sabz/10 text-brand-sabz",
-    radio: "border-brand-sabz text-brand-sabz",
   },
 };
 
@@ -174,9 +174,6 @@ function GiftForm({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-brand-zard font-bold">
-        💡 بتل‌تگ خود را جهت ارسال گیفت وارد کنید:
-      </p>
       <div className="relative">
         <input
           type="text"
@@ -261,6 +258,7 @@ function DeliveryCard({
       }`}
     >
       <div className={`flex items-center gap-3 ${dim}`}>
+        <SelectionMark selected={selected} tone={meta.tone} disabled={!option.available} />
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center border ${meta.iconWrap}`}>
           {meta.icon}
         </span>
@@ -268,13 +266,6 @@ function DeliveryCard({
           <span className="text-sm font-bold text-brand-active">{DELIVERY_LABELS[option.type]}</span>
           <span className="text-[11px] leading-5 text-brand-m_khonsa">{meta.summary}</span>
         </div>
-        <span
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-            selected ? meta.radio : "border-brand-surface_m text-transparent"
-          }`}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-        </span>
       </div>
 
       <p className={`text-[11px] leading-5 text-brand-m_khonsa ${dim}`}>{meta.requirement}</p>
@@ -306,31 +297,12 @@ function DeliveryCard({
   );
 }
 
-function DeliveryChoice({
-  selectedVariation,
-  purchase,
-}: {
-  selectedVariation: VariationCard;
-  purchase: ProductPurchaseState;
-}) {
+function DeliveryChoice({ purchase }: { purchase: ProductPurchaseState }) {
   const { options, deliveryType, setDeliveryType } = purchase;
   const anyAvailable = options.some((option) => option.available);
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <span className="text-brand-surface_m text-[13px] font-bold">مسیر تحویل محصول:</span>
-        <span className="text-[11px] leading-5 text-brand-m_khonsa">
-          قیمت هر روش برای مشخصات انتخاب‌شده نمایش داده شده است؛ یکی را انتخاب کنید.
-        </span>
-      </div>
-
-      {selectedVariation.commissionDiscountBadge && (
-        <div className="self-start bg-brand-sabz/10 border border-brand-sabz/40 text-brand-sabz px-3 py-1 text-xs font-bold">
-          تخفیف ویژه فروشگاه
-        </div>
-      )}
-
       <div role="radiogroup" aria-label="روش تحویل" className="flex flex-col gap-2">
         {options.map((option) => (
           <DeliveryCard
@@ -362,14 +334,11 @@ function DeliveryDetails({ purchase }: { purchase: ProductPurchaseState }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-brand-surface_m text-[13px] font-bold">{meta.formTitle}</span>
+        <span className="text-sm font-bold text-brand-active">{meta.formTitle}</span>
         <span className="text-[11px] leading-5 text-brand-m_khonsa">{meta.formHint}</span>
       </div>
 
-      <div
-        key={deliveryType}
-        className="bg-brand-surface p-2 border border-brand-surface_hover animate-in fade-in slide-in-from-top-2 duration-200 motion-reduce:animate-none"
-      >
+      <div className="bg-brand-surface p-2 border border-brand-surface_hover">
         {deliveryType === "direct" && (
           <DirectForm
             email={email}
@@ -385,15 +354,12 @@ function DeliveryDetails({ purchase }: { purchase: ProductPurchaseState }) {
   );
 }
 
-interface DeliveryAndPriceProps {
-  step: 2 | 3;
-  selectedVariation: VariationCard;
+export default function DeliveryAndPrice({
+  step,
+  purchase,
+}: {
+  step: "delivery" | "details";
   purchase: ProductPurchaseState;
-}
-
-export default function DeliveryAndPrice({ step, selectedVariation, purchase }: DeliveryAndPriceProps) {
-  if (step === 2) {
-    return <DeliveryChoice selectedVariation={selectedVariation} purchase={purchase} />;
-  }
-  return <DeliveryDetails purchase={purchase} />;
+}) {
+  return step === "delivery" ? <DeliveryChoice purchase={purchase} /> : <DeliveryDetails purchase={purchase} />;
 }
