@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import { ChevronRight, ChevronLeft, Play, Pause } from "lucide-react";
@@ -26,8 +26,6 @@ export default function CategoryHero({ banners, heading }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [mountedCount, setMountedCount] = useState(1);
-  const [activeImageLoaded, setActiveImageLoaded] = useState(false);
-  const imageRefs = useRef<Record<number, HTMLImageElement | null>>({});
   const renderCount = Math.max(mountedCount, activeIndex + 1);
 
   const handleNext = useCallback(() => {
@@ -37,12 +35,6 @@ export default function CategoryHero({ banners, heading }: Props) {
   const handlePrev = useCallback(() => {
     setActiveIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
-
-  useEffect(() => {
-    setActiveImageLoaded(false);
-    const image = imageRefs.current[activeIndex];
-    if (image?.complete) setActiveImageLoaded(true);
-  }, [activeIndex, renderCount]);
 
   useEffect(() => {
     if (total <= 1) return;
@@ -68,10 +60,7 @@ export default function CategoryHero({ banners, heading }: Props) {
 
   return (
     <div dir="rtl" className="w-full max-w-[1600px] mx-auto font-sans group md:px-0">
-      <section
-        className="relative w-full h-[350px] md:h-[350px] mt-1 bg-brand-bg overflow-hidden"
-        aria-busy={!activeImageLoaded}
-      >
+      <section className="relative w-full h-[350px] md:h-[350px] mt-1 bg-brand-bg overflow-hidden">
         <div className="absolute inset-0 bg-[#111215]">
           {banners.slice(0, renderCount).map((banner, index) => (
             <div
@@ -81,23 +70,14 @@ export default function CategoryHero({ banners, heading }: Props) {
               }`}
             >
               <Image
-                ref={(node) => { imageRefs.current[index] = node; }}
                 src={banner.imageUrl || "/images/bi-aksi.webp"}
                 alt={banner.subtitle}
                 fill
                 preload={index === 0}
                 loading={index === 0 ? undefined : "lazy"}
-                quality={82}
+                quality={75}
                 sizes="(max-width: 1600px) 100vw, 1600px"
-                className={`object-cover object-center transition-opacity duration-300 ${
-                  index === activeIndex && activeImageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                onLoad={() => {
-                  if (index === activeIndex) setActiveImageLoaded(true);
-                }}
-                onError={() => {
-                  if (index === activeIndex) setActiveImageLoaded(true);
-                }}
+                className="object-cover object-center"
               />
             </div>
           ))}

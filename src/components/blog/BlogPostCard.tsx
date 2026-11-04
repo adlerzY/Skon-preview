@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { memo } from "react";
 import { MessageCircle } from "lucide-react";
+import { safeImageUrl } from "@/lib/imageUrl";
 
 interface BlogPostCardProps {
   post: {
@@ -36,12 +38,13 @@ function BlogPostCard({ post, region, categorySlug }: BlogPostCardProps) {
     >
       <div className="relative w-[110px] sm:w-[180px] md:w-[220px] shrink-0 aspect-[4/3] bg-white/5 overflow-hidden">
         {imageUrl ? (
-          <img
-            src={imageUrl}
+          <Image
+            src={safeImageUrl(imageUrl)}
             alt={post.title}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 640px) 110px, (max-width: 768px) 180px, 220px"
+            quality={70}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">بدون تصویر</div>

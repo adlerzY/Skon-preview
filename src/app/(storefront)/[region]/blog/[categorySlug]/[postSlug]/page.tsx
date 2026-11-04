@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Image from "next/image";
+import { safeImageUrl } from "@/lib/imageUrl";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPostDetail } from "@/lib/graphql";
@@ -89,13 +91,14 @@ export default async function BlogPostPage({ params }: PostPageProps) {
       >
         {featuredImageUrl && (
           <div className="relative mb-6 aspect-[16/9] max-h-[360px] w-full overflow-hidden bg-white/5 sm:max-h-[440px] md:mb-8 lg:max-h-[520px]">
-            <img
-              src={featuredImageUrl}
+            <Image
+              src={safeImageUrl(featuredImageUrl)}
               alt={post.title}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover"
+              fill
+              preload
+              quality={75}
+              sizes="100vw"
+              className="object-cover"
             />
           </div>
         )}

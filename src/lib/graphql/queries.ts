@@ -4,6 +4,7 @@ import { fetchGraphQL } from "./client";
 import { formatProducts, sanitizeHtml } from "./utils";
 import { extractTocAndInjectIds } from "@/lib/blogToc";
 import { HeaderCategoryNode, HeroTabItem, ProductNode } from "./types";
+import { cache } from "react";
 import {
   CATEGORY_BASIC_FIELDS,
   PRODUCT_CARD_FIELDS,
@@ -151,138 +152,138 @@ async function loadHeaderRegionsData() {
   return { regions };
 }
 
-export async function getHeaderPublicNavigationData() {
-  const cached = unstable_cache(
-    loadHeaderPublicNavigationData,
-    ["header-public-navigation-data"],
-    { tags: ["header-data"], revalidate: false }
-  );
+const cachedHeaderNavigation = unstable_cache(
+  loadHeaderPublicNavigationData,
+  ["header-public-navigation-data"],
+  { tags: ["header-data"], revalidate: false }
+);
 
-  return cached();
+const cachedHeaderRegions = unstable_cache(
+  loadHeaderRegionsData,
+  ["header-regions-data"],
+  { tags: ["regions"], revalidate: false }
+);
+
+export async function getHeaderPublicNavigationData() {
+  return cachedHeaderNavigation();
 }
 
 export async function getHeaderRegionsData() {
-  const cached = unstable_cache(
-    loadHeaderRegionsData,
-    ["header-regions-data"],
-    { tags: ["regions"], revalidate: false }
-  );
-
-  return cached();
+  return cachedHeaderRegions();
 }
 
-export async function getHomeHeroData() {
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${BANNER_FIELDS}
-          ${HERO_TAB_FIELDS}
-          query GetHomeHero {
-            homeBanners: productCategory(id: "home", idType: SLUG) {
-              banners { ...BannerFields }
-              heroTabs { ...HeroTabFields }
-            }
+const cachedHomeHero = unstable_cache(
+  async () => {
+    const data = await fetchGraphQL(
+      `
+        ${BANNER_FIELDS}
+        ${HERO_TAB_FIELDS}
+        query GetHomeHero {
+          homeBanners: productCategory(id: "home", idType: SLUG) {
+            banners { ...BannerFields }
+            heroTabs { ...HeroTabFields }
           }
-        `,
-        {},
-        ["banners", "home"],
-        "force-cache"
-      );
+        }
+      `,
+      {},
+      ["banners", "home"],
+      "force-cache"
+    );
 
-      if (!data) {
-        throw new Error("دریافت بنرهای صفحه اصلی با خطا مواجه شد");
-      }
+    if (!data) {
+      throw new Error("دریافت بنرهای صفحه اصلی با خطا مواجه شد");
+    }
 
-      return {
-        banners: safeBannerUrls(data.homeBanners?.banners ?? []),
-        heroTabs: safeHeroTabUrls(data.homeBanners?.heroTabs ?? []),
-      };
-    },
-    ["home-hero-data"],
-    { tags: ["banners", "home"], revalidate: false }
-  );
+    return {
+      banners: safeBannerUrls(data.homeBanners?.banners ?? []),
+      heroTabs: safeHeroTabUrls(data.homeBanners?.heroTabs ?? []),
+    };
+  },
+  ["home-hero-data"],
+  { tags: ["banners", "home"], revalidate: false }
+);
 
+export async function getHomeHeroData() {
   try {
-    return await cached();
+    return await cachedHomeHero();
   } catch (error) {
     console.error("getHomeHeroData failed:", error);
     return { banners: [] as Banner[], heroTabs: [] as HeroTabItem[] };
   }
 }
 
-export async function getHomeFeaturedProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${PRODUCT_CARD_FIELDS}
-          query GetHomeFeatured($regionSlug: String) {
-            featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH", regionSlug: $regionSlug }) {
-              nodes { ...ProductCardFields }
-            }
+const cachedHomeFeatured = unstable_cache(
+  async (activeRegion: string) => {
+    const data = await fetchGraphQL(
+      `
+        ${PRODUCT_CARD_FIELDS}
+        query GetHomeFeatured($regionSlug: String) {
+          featuredProducts: products(first: 12, where: { featured: true, status: "PUBLISH", regionSlug: $regionSlug }) {
+            nodes { ...ProductCardFields }
           }
-        `,
-        { regionSlug: activeRegion },
-        ["products", "home", "home-featured"],
-        "force-cache"
-      );
+        }
+      `,
+      { regionSlug: activeRegion },
+      ["products", "home", "home-featured"],
+      "force-cache"
+    );
 
-      if (!data) {
-        throw new Error("دریافت محصولات ویژه با خطا مواجه شد");
-      }
+    if (!data) {
+      throw new Error("دریافت محصولات ویژه با خطا مواجه شد");
+    }
 
-      return formatProducts(
-        data.featuredProducts?.nodes ?? [],
-        true,
-        activeRegion
-      ).filter((p) => p.isAvailableInRegion !== false);
-    },
-    ["home-featured-products", activeRegion],
-    { tags: ["products", "home", "home-featured"], revalidate: false }
-  );
+    return formatProducts(
+      data.featuredProducts?.nodes ?? [],
+      true,
+      activeRegion
+    ).filter((p) => p.isAvailableInRegion !== false);
+  },
+  ["home-featured-products"],
+  { tags: ["products", "home", "home-featured"], revalidate: false }
+);
 
+export async function getHomeFeaturedProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
   try {
-    return await cached();
+    return await cachedHomeFeatured(activeRegion);
   } catch (error) {
     console.error("getHomeFeaturedProducts failed:", error);
     return null;
   }
 }
 
-export async function getHomeLatestProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
-  const cached = unstable_cache(
-    async () => {
-      const data = await fetchGraphQL(
-        `
-          ${PRODUCT_CARD_FIELDS}
-          query GetHomeLatest($regionSlug: String) {
-            latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC }, regionSlug: $regionSlug }) {
-              nodes { ...ProductCardFields }
-            }
+const cachedHomeLatest = unstable_cache(
+  async (activeRegion: string) => {
+    const data = await fetchGraphQL(
+      `
+        ${PRODUCT_CARD_FIELDS}
+        query GetHomeLatest($regionSlug: String) {
+          latestProducts: products(first: 10, where: { status: "PUBLISH", orderby: { field: DATE, order: DESC }, regionSlug: $regionSlug }) {
+            nodes { ...ProductCardFields }
           }
-        `,
-        { regionSlug: activeRegion },
-        ["products", "home", "home-latest"],
-        "force-cache"
-      );
+        }
+      `,
+      { regionSlug: activeRegion },
+      ["products", "home", "home-latest"],
+      "force-cache"
+    );
 
-      if (!data) {
-        throw new Error("دریافت جدیدترین محصولات با خطا مواجه شد");
-      }
+    if (!data) {
+      throw new Error("دریافت جدیدترین محصولات با خطا مواجه شد");
+    }
 
-      return formatProducts(
-        data.latestProducts?.nodes ?? [],
-        true,
-        activeRegion
-      ).filter((p) => p.isAvailableInRegion !== false);
-    },
-    ["home-latest-products", activeRegion],
-    { tags: ["products", "home", "home-latest"], revalidate: false }
-  );
+    return formatProducts(
+      data.latestProducts?.nodes ?? [],
+      true,
+      activeRegion
+    ).filter((p) => p.isAvailableInRegion !== false);
+  },
+  ["home-latest-products"],
+  { tags: ["products", "home", "home-latest"], revalidate: false }
+);
 
+export async function getHomeLatestProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
   try {
-    return await cached();
+    return await cachedHomeLatest(activeRegion);
   } catch (error) {
     console.error("getHomeLatestProducts failed:", error);
     return null;
@@ -320,7 +321,7 @@ const CATEGORY_PRODUCTS_QUERY = `
   }
 `;
 
-export async function getCategoryShell(slug: string) {
+async function loadCategoryShell(slug: string) {
   if (!slug) return null;
 
   const categoryTag = buildSlugTag("category", slug);
@@ -351,6 +352,8 @@ export async function getCategoryShell(slug: string) {
 
   return cached();
 }
+
+export const getCategoryShell = cache(loadCategoryShell);
 
 export async function getCategoryProducts(slug: string, activeRegion: string = "eu"): Promise<ProductNode[]> {
   if (!slug) return [];
@@ -436,7 +439,7 @@ export async function getHeaderBlogCategories() {
   return cached();
 }
 
-export async function getPostDetail(slug: string) {
+async function loadPostDetail(slug: string) {
   if (!slug) return null;
 
   const cached = unstable_cache(
@@ -481,7 +484,10 @@ export async function getPostDetail(slug: string) {
 
       if (!data.post) return null;
 
-      const sanitized = sanitizeHtml(data.post.content) ?? "";
+      const sanitized = (sanitizeHtml(data.post.content) ?? "").replace(
+        /<img\b(?![^>]*\sloading=)/gi,
+        '<img loading="lazy" decoding="async"'
+      );
       const { html, toc } = extractTocAndInjectIds(sanitized);
 
       return {
@@ -497,6 +503,8 @@ export async function getPostDetail(slug: string) {
 
   return cached();
 }
+
+export const getPostDetail = cache(loadPostDetail);
 
 export async function getRelatedPosts(params: {
   categoryId: number;
@@ -807,7 +815,7 @@ export async function getRegions() {
   return cached();
 }
 
-export async function getBlogCategoryArchive(slug: string) {
+async function loadBlogCategoryArchive(slug: string) {
   if (!slug) return null;
 
   const cached = unstable_cache(
@@ -838,7 +846,9 @@ export async function getBlogCategoryArchive(slug: string) {
   return cached();
 }
 
-export async function getBlogTagArchive(slug: string) {
+export const getBlogCategoryArchive = cache(loadBlogCategoryArchive);
+
+async function loadBlogTagArchive(slug: string) {
   if (!slug) return null;
 
   const cached = unstable_cache(
@@ -869,6 +879,8 @@ export async function getBlogTagArchive(slug: string) {
 
   return cached();
 }
+
+export const getBlogTagArchive = cache(loadBlogTagArchive);
 
 export async function getAllBlogPosts(options: {
   search?: string;

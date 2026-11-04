@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { memo } from "react";
+import { safeImageUrl } from "@/lib/imageUrl";
 
 interface BlogFeaturedCardProps {
   post: {
@@ -26,12 +28,13 @@ function BlogFeaturedCard({ post, region }: BlogFeaturedCardProps) {
     >
       <div className="relative w-full aspect-[16/10] bg-white/5 overflow-hidden shrink-0">
         {imageUrl ? (
-          <img
-            src={imageUrl}
+          <Image
+            src={safeImageUrl(imageUrl)}
             alt={post.title}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            quality={70}
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">بدون تصویر</div>

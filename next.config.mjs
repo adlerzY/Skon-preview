@@ -81,7 +81,7 @@ const nextConfig = {
         ],
       },
       {
-        source: '/images/:path*',
+        source: '/:dir(images|avatars)/:path*',
         headers: [
           {
             key: 'Cache-Control',

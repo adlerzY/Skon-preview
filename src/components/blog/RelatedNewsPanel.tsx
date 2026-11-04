@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Newspaper, Package } from "lucide-react";
 import { ProductNode } from "@/lib/graphql";
+import { safeImageUrl } from "@/lib/imageUrl";
 
 interface RelatedPost {
   id: string;
@@ -68,12 +69,13 @@ export default function RelatedNewsPanel({
                 >
                   <div className="relative w-8 h-8 shrink-0 bg-brand-bg overflow-hidden rounded">
                     {post.featuredImage?.node?.sourceUrl && (
-                      <img
-                        src={post.featuredImage.node.sourceUrl}
+                      <Image
+                        src={safeImageUrl(post.featuredImage.node.sourceUrl)}
                         alt={post.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        fill
+                        sizes="32px"
+                        quality={60}
+                        className="object-cover"
                       />
                     )}
                   </div>

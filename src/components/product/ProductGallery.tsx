@@ -75,7 +75,7 @@ export default function ProductGallery({
           alt={name}
           fill
           preload={!selectedImage && !activeVariationImage}
-          quality={90}
+          quality={80}
           className="object-cover transition-opacity duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 58vw"
         />
