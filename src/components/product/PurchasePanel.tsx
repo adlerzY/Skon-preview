@@ -86,7 +86,18 @@ export default function PurchasePanel({
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() =>
     findFirstValidAttributes(variations, groupedAttributes, regionInfo, initialEdition)
   );
+  const editionAppliedRef = useRef(false);
 
+  useEffect(() => {
+    if (editionAppliedRef.current) return;
+    editionAppliedRef.current = true;
+    if (initialEdition) return;
+
+    const edition = new URLSearchParams(window.location.search).get("edition");
+    if (!edition) return;
+
+    setSelectedAttrs(findFirstValidAttributes(variations, groupedAttributes, regionInfo, edition));
+  }, [initialEdition, variations, groupedAttributes, regionInfo]);
   const fallback = useMemo<SimpleProductFallback>(
     () => ({
       databaseId: productId,

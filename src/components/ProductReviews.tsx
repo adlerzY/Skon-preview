@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { Loader2, LogIn } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { useHeaderViewer } from "@/components/Header/HeaderViewerProvider";
 import AdminBadge from "@/components/ui/AdminBadge";
 
 interface ReviewNode {
@@ -27,8 +28,6 @@ interface ProductReviewsProps {
   pageInfo?: PageInfo;
   averageRating?: number;
   reviewCount?: number;
-  isLoggedIn: boolean;
-  isStaff?: boolean;
 }
 
 const MAX_CONTENT_LENGTH = 500;
@@ -212,9 +211,10 @@ export default function ProductReviews({
   pageInfo: initialPageInfo,
   averageRating = 0,
   reviewCount,
-  isLoggedIn,
-  isStaff = false,
 }: ProductReviewsProps) {
+  const { user, loading: viewerLoading } = useHeaderViewer();
+  const isLoggedIn = Boolean(user);
+  const isStaff = Boolean(user?.isStaff);
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -355,6 +355,8 @@ export default function ProductReviews({
                 {isSubmitting ? "در حال ارسال..." : "ثبت نظر"}
               </button>
             </form>
+          ) : viewerLoading ? (
+            <div className="min-h-[150px]" aria-hidden="true" />
           ) : (
             <div className="bg-brand-menu p-6 md:p-8 border border-brand-surface_hover flex flex-col items-center text-center gap-4">
               <span className="w-12 h-12 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0">

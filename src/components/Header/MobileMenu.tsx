@@ -75,9 +75,7 @@ function DrawerUserRow({
       onClick={onNavigate}
       className="flex items-center gap-3 px-5 py-4 border-b border-brand-surface shrink-0 hover:bg-white/5 transition-colors"
     >
-      {loading ? (
-        <DrawerUserRowSkeleton />
-      ) : user ? (
+      {user ? (
         <>
           <UserAvatar src={user.avatarUrl} name={user.name} size="md" ring />
           <div className="flex flex-col min-w-0">

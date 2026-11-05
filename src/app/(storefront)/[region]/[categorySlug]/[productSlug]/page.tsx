@@ -12,6 +12,8 @@ import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema } from "@/lib/seo/jsonld";
 import { makeMetadata, SEO_REGION, stripHtml, selectSeoCategory } from "@/lib/seo/site";
 
+export const revalidate = 120;
+
 function normalizeSlug(value: string): string {
   let normalized = value;
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -29,7 +31,6 @@ function normalizeSlug(value: string): string {
 
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
-  searchParams: Promise<{ edition?: string | string[] }>;
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
@@ -56,12 +57,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   });
 }
 
-export default async function ProductDetailPage({ params, searchParams }: ProductPageProps) {
-  const [{ region, categorySlug, productSlug }, { edition: rawEdition }] = await Promise.all([
-    params,
-    searchParams,
-  ]);
-  const edition = Array.isArray(rawEdition) ? rawEdition[0] : rawEdition;
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const { region, categorySlug, productSlug } = await params;
 
   const heroPromise = getProductHero(productSlug);
   const pricingPromise = getProductPricing(productSlug, region);
@@ -113,7 +110,6 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         <ProductHero
           product={product}
           region={region}
-          edition={edition}
           pricingPromise={pricingPromise}
         />
 

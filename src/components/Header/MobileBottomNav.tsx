@@ -13,7 +13,7 @@ interface MobileBottomNavProps {
   loading?: boolean;
 }
 
-export default function MobileBottomNav({ user, loading = false }: MobileBottomNavProps) {
+export default function MobileBottomNav({ user }: MobileBottomNavProps) {
   const pathname = usePathname();
   const { totalQuantity } = useCart();
   const { region } = useActiveRegion();
@@ -38,9 +38,7 @@ export default function MobileBottomNav({ user, loading = false }: MobileBottomN
           aria-label="حساب کاربری"
           aria-current={isAccountActive ? "page" : undefined}
         >
-          {loading ? (
-            <span className="h-5 w-5 animate-pulse rounded-full bg-brand-surface_hover" aria-hidden="true" />
-          ) : user ? (
+          {user ? (
             <UserAvatar src={user.avatarUrl} name={user.name} size="xs" ring={isAccountActive} />
           ) : (
             <User size={20} strokeWidth={2.5} className={isAccountActive ? "text-brand-blue" : "text-brand-m_khonsa"} />

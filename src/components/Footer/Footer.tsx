@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Send, MessageCircle, TrendingUp } from "lucide-react";
+import { Send, TrendingUp } from "lucide-react";
 import TrustMarks from "@/components/trust/TrustMarks";
 
 export default function Footer({

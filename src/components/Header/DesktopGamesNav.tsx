@@ -15,6 +15,7 @@ export interface HeaderGameItem {
 
 interface DesktopGamesNavProps {
   games: HeaderGameItem[];
+  pending?: boolean;
 }
 
 const ITEM_WIDTH = 60;
@@ -51,7 +52,7 @@ function GameIcon({
   );
 }
 
-export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
+export default function DesktopGamesNav({ games, pending = true }: DesktopGamesNavProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(games?.length ?? 0);
   const { region: currentRegion, pathnameWithoutRegion } = useActiveRegion();
@@ -100,6 +101,8 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   );
 
   if (!games?.length) {
+    if (!pending) return <div className="flex-1 min-w-0 h-full" />;
+
     return (
       <div className="flex items-center gap-2 h-full px-2 w-[240px]">
         {Array.from({ length: 4 }).map((_, i) => (

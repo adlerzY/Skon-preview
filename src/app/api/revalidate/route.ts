@@ -4,7 +4,17 @@ import { revalidateTag, revalidatePath } from "next/cache";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_TAGS_PER_REQUEST = 1000;
-const STALE_PRICING_LIST_SECONDS = 300;
+const MAX_TAG_LENGTH = 256;
+const HOME_PATH_TAGS = new Set([
+  "banners",
+  "home",
+  "products",
+  "products-pricing",
+  "home-featured",
+  "home-latest",
+  "home-featured-pricing",
+  "home-latest-pricing",
+]);
 
 function timingSafeSecretEquals(actual: string, expected: string): boolean {
   if (!actual || !expected) return false;
@@ -15,27 +25,34 @@ function timingSafeSecretEquals(actual: string, expected: string): boolean {
   return crypto.timingSafeEqual(actualHash, expectedHash);
 }
 
+function tagVariants(tag: string): string[] {
+  if (!tag.includes("%") && /^[\x21-\x7E]+$/.test(tag)) return [tag];
+
+  let decoded = tag;
+  try {
+    decoded = decodeURIComponent(tag);
+  } catch {
+    decoded = tag;
+  }
+
+  const encoded = encodeURIComponent(decoded);
+  const lowerEncoded = encoded.replace(/%[0-9A-F]{2}/g, (match) => match.toLowerCase());
+  const base = [tag, decoded, encoded, lowerEncoded];
+
+  return Array.from(new Set(base.flatMap((value) => [value, encodeURIComponent(value)]))).filter(
+    (value) => value.length > 0 && value.length <= MAX_TAG_LENGTH
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const secret = request.headers.get("x-revalidate-secret");
     const expected = process.env.REVALIDATION_SECRET;
 
     if (!expected || !secret || !timingSafeSecretEquals(secret, expected)) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const ip = getClientIp(request);
-
-    if (
-      !(await checkRateLimit(`revalidate:${ip}`, {
-        max: 120,
-        windowMs: 60 * 1000,
-      }))
-    ) {
-      return NextResponse.json(
-        { message: "Too many requests" },
-        { status: 429, headers: { "Retry-After": "60" } }
-      );
+      const ip = getClientIp(request);
+      const allowed = await checkRateLimit(`bad-secret:${ip}`, { max: 20, windowMs: 60 * 1000 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: allowed ? 401 : 429 });
     }
 
     const body = await request.json();
@@ -48,22 +65,15 @@ export async function POST(request: NextRequest) {
     const requestedTags = Array.isArray(tag) ? tag : [tag];
 
     if (requestedTags.length > MAX_TAGS_PER_REQUEST) {
-      return NextResponse.json(
-        { message: "Too many tags" },
-        { status: 413 }
-      );
+      return NextResponse.json({ message: "Too many tags" }, { status: 413 });
     }
 
     const tags: string[] = requestedTags.filter(
-      (t: unknown): t is string =>
-        typeof t === "string" && t.trim() !== ""
+      (t: unknown): t is string => typeof t === "string" && t.trim() !== ""
     );
 
     if (tags.length !== requestedTags.length || tags.length === 0) {
-      return NextResponse.json(
-        { message: "Invalid tag list" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Invalid tag list" }, { status: 400 });
     }
 
     const revalidated: string[] = [];
@@ -83,37 +93,11 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const stalePricingList =
-          t === "home-featured-pricing" ||
-          t === "home-latest-pricing" ||
-          t === "products-pricing" ||
-          t.startsWith("category-pricing-");
-
-        const immediate =
-          t.startsWith("product-pricing-") ||
-          t === "home-featured" ||
-          t === "home-latest" ||
-          t === "products" ||
-          (t.startsWith("category-") && !stalePricingList);
-
-        const expire = stalePricingList
-          ? STALE_PRICING_LIST_SECONDS
-          : immediate
-            ? 0
-            : 1800;
-
-        revalidateTag(t, { expire });
-
-        const encoded = encodeURIComponent(t);
-
-        if (encoded !== t) {
-          revalidateTag(encoded, { expire });
+        for (const variant of tagVariants(t)) {
+          revalidateTag(variant, { expire: 0 });
         }
 
-        if (
-          (t === "home-featured" || t === "home-latest") &&
-          !pathRevalidated
-        ) {
+        if (!pathRevalidated && HOME_PATH_TAGS.has(t)) {
           revalidatePath("/[region]", "page");
           pathRevalidated = true;
         }
@@ -127,12 +111,7 @@ export async function POST(request: NextRequest) {
 
     if (failed.length > 0) {
       return NextResponse.json(
-        {
-          revalidated,
-          failed,
-          pathRevalidated,
-          now: Date.now(),
-        },
+        { revalidated, failed, pathRevalidated, now: Date.now() },
         { status: 500 }
       );
     }
@@ -145,9 +124,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Revalidation error:", error);
 
-    return NextResponse.json(
-      { message: "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

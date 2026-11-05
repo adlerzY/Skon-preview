@@ -205,7 +205,15 @@ function finalizeAuthCookie(
   }
   return response;
 }
-
+function needsServerAuth(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/my-account") ||
+    pathname.startsWith("/cart") ||
+    pathname.startsWith("/admin") ||
+    /\/blog(\/|$)/.test(pathname)
+  );
+}
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -232,7 +240,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const refreshed = hasAuthToken ? await applyAuthRefresh(request) : { token: null, cooldownSeconds: 0 };
+     const refreshed =
+    hasAuthToken && needsServerAuth(pathname)
+      ? await applyAuthRefresh(request)
+      : { token: null, cooldownSeconds: 0 };
 
   if (pathname.startsWith("/api")) {
     const response = NextResponse.next({ request });

@@ -138,7 +138,7 @@ export function itemNeedsCredentials(item: CartItem): boolean {
 }
 
 interface CartContextType {
-  cart: CartItem[];
+  cart: CartItem[];   isReady: boolean;
   addToCart: (item: NewCartItem) => boolean;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -314,6 +314,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <CartContext.Provider
       value={{
         cart,
+        isReady: isMounted,
         addToCart,
         removeFromCart,
         updateQuantity,
