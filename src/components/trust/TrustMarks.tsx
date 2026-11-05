@@ -1,13 +1,23 @@
+import type { ImgHTMLAttributes } from "react";
+
 interface TrustMarksProps {
   variant?: "footer" | "support";
   className?: string;
 }
 
+const ENAMAD_CODE = "uDFad4CdGO1BxiP8jHv9WRnIQl2h7lwX";
+
 const ENAMAD_LINK =
-  "https://trustseal.enamad.ir/?id=590925&Code=uDFad4CdGO1BxiP8jHv9WRnIQl2h7lwX";
+  `https://trustseal.enamad.ir/?id=590925&Code=${ENAMAD_CODE}`;
 
 const ENAMAD_IMAGE =
-  "https://trustseal.enamad.ir/logo.aspx?id=590925&Code=uDFad4CdGO1BxiP8jHv9WRnIQl2h7lwX";
+  `https://trustseal.enamad.ir/logo.aspx?id=590925&Code=${ENAMAD_CODE}`;
+
+const ENAMAD_IMAGE_ATTRIBUTES: ImgHTMLAttributes<HTMLImageElement> & {
+  code: string;
+} = {
+  code: ENAMAD_CODE,
+};
 
 export default function TrustMarks({
   variant = "footer",
@@ -33,10 +43,10 @@ export default function TrustMarks({
         className={`${markSize} shrink-0 flex items-center justify-center overflow-hidden`}
       >
         <img
+          {...ENAMAD_IMAGE_ATTRIBUTES}
           referrerPolicy="origin"
           src={ENAMAD_IMAGE}
           alt=""
-          code="uDFad4CdGO1BxiP8jHv9WRnIQl2h7lwX"
           loading="lazy"
           className="max-w-full max-h-full object-contain"
         />

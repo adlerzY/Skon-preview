@@ -22,6 +22,7 @@ function resolveEndpoint(): { url: string; hostHeader?: string } {
   }
 
   let hostHeader: string | undefined;
+
   try {
     hostHeader = new URL(publicUrl).host;
   } catch {
