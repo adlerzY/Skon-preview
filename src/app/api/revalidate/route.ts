@@ -4,6 +4,7 @@ import { revalidateTag, revalidatePath } from "next/cache";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_TAGS_PER_REQUEST = 1000;
+const STALE_PRICING_LIST_SECONDS = 300;
 
 function timingSafeSecretEquals(actual: string, expected: string): boolean {
   if (!actual || !expected) return false;
@@ -82,13 +83,12 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const immediate =
-          t.startsWith("product-pricing-") ||
-          t === "home-featured" ||
-          t === "home-latest" ||
-          t === "products" ||
-          t.startsWith("category-");
-        const expire = immediate ? 0 : 1800;
+        const stalePricingList =
+          t === "home-featured-pricing" ||
+          t === "home-latest-pricing" ||
+          t === "products-pricing" ||
+          t.startsWith("category-pricing-");
+        const expire = stalePricingList ? STALE_PRICING_LIST_SECONDS : 0;
 
         revalidateTag(t, { expire });
 

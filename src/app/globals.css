@@ -150,6 +150,14 @@
   }
   .prose .has-text-align-center { text-align: center; }
   .prose .has-text-align-left { text-align: left; direction: ltr; }
+  .prose-compact { font-size: 0.9rem; line-height: 1.75; }
+  .prose-compact > * + * { margin-top: 0.6em; }
+  .prose-compact p { margin-top: 0.6em; }
+  .prose-compact h2 { font-size: 1.15rem; margin-top: 1.2em; }
+  .prose-compact h3 { font-size: 1.05rem; margin-top: 1em; }
+  .prose-compact ul, .prose-compact ol { margin-top: 0.5em; gap: 0.2em; }
+  .prose-compact img { margin: 0.75em auto; }
+  .prose-compact > :first-child { margin-top: 0; }
   .matn-p {
     @apply font-bold text-[12px] text-brand-blue md:text-[14px] leading-6;
   }

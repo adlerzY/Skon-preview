@@ -16,6 +16,11 @@ export default function StorefrontError({ error, reset }: { error: Error & { dig
       <p className="text-sm text-brand-m_khonsa max-w-sm">
         اتصال به سرور با خطا مواجه شد. لطفاً دوباره تلاش کنید یا به صفحه اصلی برگردید.
       </p>
+      {error.digest && (
+        <p className="text-[10px] text-brand-surface_m" dir="ltr">
+          ref: {error.digest}
+        </p>
+      )}
       <div className="flex items-center gap-3 mt-2">
         <button
           type="button"

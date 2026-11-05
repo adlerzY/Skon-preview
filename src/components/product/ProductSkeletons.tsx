@@ -59,18 +59,18 @@ export function ProductGallerySkeleton() {
 export function ProductHeroSkeleton() {
   return (
     <div
-      className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 w-full items-stretch"
+      className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 w-full items-stretch"
       aria-busy="true"
     >
       <div className="lg:col-span-4 w-full">
-        <div className="flex flex-col gap-6 lg:sticky lg:top-[96px]">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-[96px]">
           <Skeleton className="h-9 w-64 max-w-full" />
           <PurchaseCardSkeleton />
         </div>
       </div>
 
       <div className="lg:col-span-8 w-full">
-        <div className="flex flex-col gap-6 lg:sticky lg:top-[84px]">
+        <div className="flex flex-col gap-3 lg:sticky lg:top-[84px]">
           <ProductGallerySkeleton />
         </div>
       </div>
@@ -81,7 +81,7 @@ export function ProductHeroSkeleton() {
 export function ProductBodySkeleton() {
   return (
     <div
-      className="skeleton-delayed cv-auto w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6"
+      className="skeleton-delayed cv-auto w-full border-t border-brand-surface_hover pt-5 flex flex-col gap-3"
       aria-hidden="true"
     >
       <Skeleton className="h-7 w-48" />

@@ -12,6 +12,21 @@ import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbSchema } from "@/lib/seo/jsonld";
 import { makeMetadata, SEO_REGION, stripHtml, selectSeoCategory } from "@/lib/seo/site";
 
+function normalizeSlug(value: string): string {
+  let normalized = value;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (!/%[0-9a-f]{2}/i.test(normalized)) break;
+    try {
+      const decoded = decodeURIComponent(normalized);
+      if (decoded === normalized) break;
+      normalized = decoded;
+    } catch {
+      break;
+    }
+  }
+  return normalized.normalize("NFC").toLowerCase();
+}
+
 interface ProductPageProps {
   params: Promise<{ region: string; categorySlug: string; productSlug: string }>;
   searchParams: Promise<{ edition?: string | string[] }>;
@@ -55,7 +70,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   if (!product) notFound();
 
   const primaryCategory = selectSeoCategory(product.productCategories?.nodes);
-  if (primaryCategory?.slug && primaryCategory.slug !== categorySlug) {
+  if (primaryCategory?.slug && normalizeSlug(primaryCategory.slug) !== normalizeSlug(categorySlug)) {
     permanentRedirect(`/${region}/${primaryCategory.slug}/${product.slug}`);
   }
 
@@ -65,7 +80,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
   const isSeoRegion = region === SEO_REGION;
 
   return (
-    <main className="mx-auto w-full max-w-[1600px] px-6 py-8">
+    <main className="mx-auto w-full max-w-[1600px] px-6 pt-2 pb-4">
       {isSeoRegion && (
         <>
           <JsonLd
@@ -86,6 +101,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
       )}
 
       <Breadcrumbs
+        className="mb-3"
         items={[
           { label: "فروشگاه", href: `/${region}` },
           { label: categoryName, href: `/${region}/${canonicalCategorySlug}` },
@@ -93,7 +109,7 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
         ]}
       />
 
-      <div className="flex flex-col gap-12 w-full" dir="rtl">
+      <div className="flex flex-col gap-6 w-full" dir="rtl">
         <ProductHero
           product={product}
           region={region}

@@ -14,14 +14,14 @@ export default async function ProductBodySection({ slug }: { slug: string }) {
   if (!hasMatrix && !hasGallery && !hasDescription) return null;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-6">
       {hasMatrix && (
         <div className="cv-auto">
           <ProductContentMatrix contentMatrix={matrix} />
         </div>
       )}
       {(hasGallery || hasDescription) && (
-        <div className="cv-auto flex flex-col gap-12">
+        <div className="cv-auto flex flex-col gap-6">
           <ProductDescriptionSections
             secondaryGallery={body.secondaryGallery}
             description={body.description}

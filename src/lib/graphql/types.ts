@@ -52,6 +52,7 @@ export interface ProductNode {
   date?: string;
   shortDescription?: string;
   shortNotify?: string;
+  shortDescription2?: string | null;
   secondaryGallery?: Array<{ description: string; imageUrl: string }> | null;
   description?: string;
   image?: { sourceUrl: string } | null;

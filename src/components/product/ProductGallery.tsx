@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { collectImages, stripSizeSuffix } from "./imageUtils";
@@ -45,6 +45,7 @@ export default function ProductGallery({
   const { selectImage } = useProductMediaActions();
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const hasMountedRef = useRef(false);
+  const [thumbsReady, setThumbsReady] = useState(false);
 
   const images = useMemo(
     () => collectImages([...baseImages, activeVariationImage, ...variationImages], MAX_GALLERY_IMAGES),
@@ -52,6 +53,11 @@ export default function ProductGallery({
   );
 
   const displayImage = selectedImage || activeVariationImage || baseImages[0] || FALLBACK_IMAGE;
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setThumbsReady(true), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const currentIndex = useMemo(() => {
     const key = stripSizeSuffix(displayImage);
@@ -76,6 +82,8 @@ export default function ProductGallery({
           fill
           preload={!selectedImage && !activeVariationImage}
           quality={80}
+          onLoad={() => setThumbsReady(true)}
+          onError={() => setThumbsReady(true)}
           className="object-cover transition-opacity duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 58vw"
         />
@@ -104,22 +112,24 @@ export default function ProductGallery({
                 ref={index === currentIndex ? activeThumbRef : undefined}
                 type="button"
                 onClick={() => selectImage(imageUrl)}
-                className={`relative w-[86px] sm:w-full aspect-video flex-shrink-0 overflow-hidden border transition-all duration-300 ${
+                className={`relative w-[86px] sm:w-full aspect-video flex-shrink-0 overflow-hidden border bg-brand-surface transition-all duration-300 ${
                   index === currentIndex
                     ? "border-brand-blue opacity-100 ring-2 ring-brand-blue/60 shadow-[0_0_12px_rgba(0,116,224,0.3)]"
                     : "border-brand-surface_hover opacity-40 hover:opacity-80"
                 }`}
                 aria-label={`تصویر ${index + 1}`}
               >
-                <Image
-                  src={imageUrl}
-                  alt={`گالری ${index + 1}`}
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 86px, 108px"
-                  quality={60}
-                  className="object-cover"
-                />
+                {thumbsReady && (
+                  <Image
+                    src={imageUrl}
+                    alt={`گالری ${index + 1}`}
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 640px) 86px, 108px"
+                    quality={60}
+                    className="object-cover"
+                  />
+                )}
               </button>
             ))}
           </div>

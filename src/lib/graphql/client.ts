@@ -6,7 +6,8 @@ const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL;
 const INTERNAL_WP_GRAPHQL_URL = process.env.INTERNAL_WORDPRESS_API_URL;
 const FALLBACK_LOCAL_URL = "http://tazavesh.local/graphql";
 const REQUEST_TIMEOUT_MS = Number(process.env.GRAPHQL_REQUEST_TIMEOUT_MS) || 12_000;
-const MAX_ATTEMPTS = Math.max(1, Number(process.env.GRAPHQL_MAX_ATTEMPTS) || 1);
+const GRAPHQL_TOTAL_TIMEOUT_MS = Math.max(REQUEST_TIMEOUT_MS, Number(process.env.GRAPHQL_TOTAL_TIMEOUT_MS) || 18_000);
+const MAX_ATTEMPTS = Math.min(2, Math.max(1, Number(process.env.GRAPHQL_MAX_ATTEMPTS) || 2));
 const RETRY_DELAY_MS = Math.max(100, Number(process.env.GRAPHQL_RETRY_DELAY_MS) || 350);
 
 if (!WP_GRAPHQL_URL && process.env.NODE_ENV === "production") {
@@ -51,6 +52,20 @@ type CacheStrategy =
   | { type: "no-store" }
   | { type: "force-cache" }
   | { type: "revalidate"; seconds: number };
+
+class GraphQLRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GraphQLRequestError";
+  }
+}
+
+function isRetrySafeQuery(query: string): boolean {
+  const source = query
+    .replace(/^\uFEFF/u, "")
+    .replace(/^(?:\s|#[^\r\n]*(?:\r?\n|$))*/u, "");
+  return source.startsWith("{") || /^query\b/i.test(source);
+}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -114,12 +129,16 @@ export async function fetchGraphQL(
     }
   }
 
-  const isMutation = /^mutation\b/i.test(query.trim());
-  const maxAttempts = isMutation ? 1 : MAX_ATTEMPTS;
+  const maxAttempts = isRetrySafeQuery(query) ? MAX_ATTEMPTS : 1;
+  const deadline = Date.now() + GRAPHQL_TOTAL_TIMEOUT_MS;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) break;
+
+    const attemptTimeoutMs = Math.min(REQUEST_TIMEOUT_MS, remainingMs);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), attemptTimeoutMs);
 
     try {
       const res = await fetch(endpointUrl, {
@@ -128,41 +147,63 @@ export async function fetchGraphQL(
       });
 
       if (!res.ok) {
-        if (res.status >= 502 && attempt < maxAttempts) {
+        if (res.status >= 500 && attempt < maxAttempts && Date.now() + RETRY_DELAY_MS < deadline) {
           await delay(RETRY_DELAY_MS);
           continue;
         }
-        console.error(`GraphQL HTTP Error: ${res.status} ${res.statusText}`);
-        return null;
+        throw new GraphQLRequestError(`GraphQL HTTP Error: ${res.status} ${res.statusText}`);
       }
 
       const json = await res.json();
 
-      if (json.errors) {
+      if (Array.isArray(json?.errors) && json.errors.length > 0) {
         console.error("GraphQL Errors:", JSON.stringify(json.errors, null, 2));
-        if (!json.data) {
-          console.error("GraphQL query preview:", query.trim().slice(0, 160));
-          return null;
+        console.error("GraphQL query preview:", query.trim().slice(0, 160));
+
+        const retryableGraphQLError = json.errors.some((item: { message?: string; extensions?: { code?: string } }) => {
+          const code = String(item?.extensions?.code ?? "").toUpperCase();
+          const message = String(item?.message ?? "");
+          return ["INTERNAL_SERVER_ERROR", "SERVICE_UNAVAILABLE", "TIMEOUT", "DB_CONNECTION_ERROR"].includes(code)
+            || /temporar|timed?\s*out|timeout|database|connection|internal server error|server unavailable/i.test(message);
+        });
+
+        if (retryableGraphQLError && attempt < maxAttempts && Date.now() + RETRY_DELAY_MS < deadline) {
+          await delay(RETRY_DELAY_MS);
+          continue;
         }
+
+        throw new GraphQLRequestError("GraphQL response contained errors");
+      }
+
+      if (!json || typeof json.data !== "object" || json.data === null) {
+        throw new GraphQLRequestError("GraphQL response did not contain usable data");
       }
 
       return json.data;
     } catch (error) {
+      if (error instanceof GraphQLRequestError) throw error;
+
       const isAbort = (error as Error)?.name === "AbortError";
       if (isAbort) {
-        console.error(`GraphQL request timed out after ${REQUEST_TIMEOUT_MS}ms — query preview:`, query.trim().slice(0, 160));
+        console.error(`GraphQL request timed out after ${attemptTimeoutMs}ms — query preview:`, query.trim().slice(0, 160));
       } else {
         console.error("Fetch GraphQL Network Error:", error);
       }
-      if (attempt < maxAttempts) {
+
+      if (attempt < maxAttempts && Date.now() + RETRY_DELAY_MS < deadline) {
         await delay(RETRY_DELAY_MS);
         continue;
       }
-      return null;
+
+      throw new GraphQLRequestError(
+        isAbort
+          ? `GraphQL request timed out after ${GRAPHQL_TOTAL_TIMEOUT_MS}ms`
+          : "GraphQL network request failed"
+      );
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  return null;
+  throw new GraphQLRequestError(`GraphQL request exceeded ${GRAPHQL_TOTAL_TIMEOUT_MS}ms`);
 }

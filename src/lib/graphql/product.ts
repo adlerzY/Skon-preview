@@ -19,6 +19,7 @@ export type ProductHeroData = Pick<
   | "date"
   | "shortDescription"
   | "shortNotify"
+  | "shortDescription2"
   | "image"
   | "imageLarge"
   | "galleryImages"
@@ -55,6 +56,7 @@ const PRODUCT_HERO_QUERY = `
       date
       shortDescription
       shortNotify
+      shortDescription2
       image { sourceUrl(size: MEDIUM) }
       imageLarge: image { sourceUrl(size: LARGE) }
       galleryImages { nodes { sourceUrl(size: LARGE) } }
@@ -179,6 +181,7 @@ async function loadHero(slug: string): Promise<ProductHeroData | null> {
       return {
         ...product,
         shortDescription: sanitizeHtml(product.shortDescription),
+        shortDescription2: typeof product.shortDescription2 === "string" ? product.shortDescription2.trim() : null,
       } as ProductHeroData;
     },
     ["product-hero", slug],

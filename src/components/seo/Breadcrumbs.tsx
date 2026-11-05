@@ -6,14 +6,14 @@ type BreadcrumbItem = {
   href?: string;
 };
 
-export default function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+export default function Breadcrumbs({ items, className = "mb-5" }: { items: BreadcrumbItem[]; className?: string }) {
   if (!items.length) return null;
 
   const home = items[0];
   const rest = items.slice(1);
 
   return (
-    <nav aria-label="مسیر صفحه" className="mb-5 flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-brand-m_khonsa">
+    <nav aria-label="مسیر صفحه" className={`flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-brand-m_khonsa ${className}`}>
       {home.href && (
         <Link
           href={home.href}

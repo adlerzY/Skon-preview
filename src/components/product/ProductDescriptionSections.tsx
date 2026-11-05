@@ -15,9 +15,9 @@ export default function ProductDescriptionSections({
   return (
     <>
       {(secondaryGallery?.length ?? 0) > 0 && (
-        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
+        <div className="w-full border-t border-brand-surface_hover pt-5 flex flex-col gap-3">
           <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">آیتم‌های محصول</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {secondaryGallery!.map((item, index) => (
               <div key={index} className="bg-brand-menu border border-brand-surface_hover flex flex-col overflow-hidden shadow-md">
                 {item.imageUrl && (
@@ -34,7 +34,7 @@ export default function ProductDescriptionSections({
                 )}
                 {item.description && (
                   <div
-                    className="text-brand-surface_m text-xs leading-7 p-4 prose prose-invert max-w-none"
+                    className="prose prose-compact max-w-none px-3.5 py-3 text-brand-m_khonsa"
                     dangerouslySetInnerHTML={{ __html: item.description }}
                   />
                 )}
@@ -45,10 +45,10 @@ export default function ProductDescriptionSections({
       )}
 
       {description && (
-        <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6">
+        <div className="w-full border-t border-brand-surface_hover pt-5 flex flex-col gap-3">
           <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">توضیحات تکمیلی محصول</h2>
           <div
-            className="text-brand-surface_m text-sm leading-8 prose prose-invert max-w-none bg-brand-menu p-6 border border-brand-surface_hover"
+            className="prose prose-compact max-w-none bg-brand-menu px-5 py-4 border border-brand-surface_hover text-brand-m_khonsa"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         </div>

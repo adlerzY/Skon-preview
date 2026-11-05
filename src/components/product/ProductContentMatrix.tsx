@@ -14,7 +14,7 @@ export default function ProductContentMatrix({
   const { columns, items, image } = contentMatrix;
 
   return (
-    <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6" dir="rtl">
+    <div className="w-full border-t border-brand-surface_hover pt-5 flex flex-col gap-3" dir="rtl">
       <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
         محتویات هر نسخه
       </h2>
