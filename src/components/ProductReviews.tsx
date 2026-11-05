@@ -140,7 +140,7 @@ function ReviewCard({
   const [isReplying, setIsReplying] = useState(false);
 
   return (
-    <div className="bg-brand-menu p-5 border border-brand-surface_hover flex flex-col gap-2">
+    <div className="bg-brand-menu p-4 border border-brand-surface_hover flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <UserAvatar src={review.author?.node?.avatarUrl} name={review.author?.node?.name} size="sm" />
@@ -296,14 +296,14 @@ export default function ProductReviews({
   };
 
   return (
-    <div className="w-full border-t border-brand-surface_hover pt-8 flex flex-col gap-6" dir="rtl">
+    <div className="w-full border-t border-brand-surface_hover pt-5 flex flex-col gap-3" dir="rtl">
       <h2 className="text-xl font-black text-brand-active border-r-4 border-brand-blue pr-3">
         نظرات کاربران
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">        <div className="lg:col-span-8 flex flex-col gap-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">        <div className="lg:col-span-8 flex flex-col gap-4 w-full">
           {isLoggedIn ? (
-            <form onSubmit={handleSubmit} className="bg-brand-menu p-6 border border-brand-surface_hover flex flex-col gap-4">
+            <form onSubmit={handleSubmit} className="bg-brand-menu p-4 border border-brand-surface_hover flex flex-col gap-3">
               <span className="text-sm font-bold text-brand-active">امتیاز و نظر خود را بنویسید</span>
 
               {feedback && (
@@ -406,7 +406,7 @@ export default function ProductReviews({
           </div>
         </div>
 
-        <div className="lg:col-span-4 bg-brand-menu p-6 border border-brand-surface_hover flex flex-col items-center justify-center gap-4 text-center w-full">
+        <div className="lg:col-span-4 bg-brand-menu p-5 border border-brand-surface_hover flex flex-col items-center justify-center gap-3 text-center w-full">
           <span className="text-sm font-bold text-brand-surface_m">امتیاز کلی محصول</span>
           <div className="text-5xl font-black text-brand-blue">
             {averageRating.toLocaleString("fa-IR", { maximumFractionDigits: 1 })}
