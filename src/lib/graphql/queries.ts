@@ -224,7 +224,7 @@ const cachedHomeFeatured = unstable_cache(
         }
       `,
       { regionSlug: activeRegion },
-      ["products", "home", "home-featured", "home-featured-pricing"],
+      ["products", "products-pricing", "home", "home-featured", "home-featured-pricing"],
       "force-cache"
     );
 
@@ -239,7 +239,7 @@ const cachedHomeFeatured = unstable_cache(
     ).filter((p) => p.isAvailableInRegion !== false);
   },
   ["home-featured-products"],
-  { tags: ["products", "home", "home-featured", "home-featured-pricing"], revalidate: false }
+  { tags: ["products", "products-pricing", "home", "home-featured", "home-featured-pricing"], revalidate: false }
 );
 
 export async function getHomeFeaturedProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
@@ -263,7 +263,7 @@ const cachedHomeLatest = unstable_cache(
         }
       `,
       { regionSlug: activeRegion },
-      ["products", "home", "home-latest", "home-latest-pricing"],
+      ["products", "products-pricing", "home", "home-latest", "home-latest-pricing"],
       "force-cache"
     );
 
@@ -278,7 +278,7 @@ const cachedHomeLatest = unstable_cache(
     ).filter((p) => p.isAvailableInRegion !== false);
   },
   ["home-latest-products"],
-  { tags: ["products", "home", "home-latest", "home-latest-pricing"], revalidate: false }
+  { tags: ["products", "products-pricing", "home", "home-latest", "home-latest-pricing"], revalidate: false }
 );
 
 export async function getHomeLatestProducts(activeRegion: string = "eu"): Promise<ProductNode[] | null> {
@@ -370,7 +370,7 @@ export async function getCategoryProducts(slug: string, activeRegion: string = "
         const data: any = await fetchGraphQL(
           CATEGORY_PRODUCTS_QUERY,
           { category: slug, regionSlug: activeRegion, after },
-          ["products", categoryTag, categoryPricingTag],
+          ["products", "products-pricing", categoryTag, categoryPricingTag],
           "force-cache"
         );
 
@@ -390,7 +390,7 @@ export async function getCategoryProducts(slug: string, activeRegion: string = "
       );
     },
     ["category-products", slug, activeRegion],
-    { tags: ["products", categoryTag, categoryPricingTag], revalidate: false }
+    { tags: ["products", "products-pricing", categoryTag, categoryPricingTag], revalidate: false }
   );
 
   try {

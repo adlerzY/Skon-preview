@@ -88,7 +88,19 @@ export async function POST(request: NextRequest) {
           t === "home-latest-pricing" ||
           t === "products-pricing" ||
           t.startsWith("category-pricing-");
-        const expire = stalePricingList ? STALE_PRICING_LIST_SECONDS : 0;
+
+        const immediate =
+          t.startsWith("product-pricing-") ||
+          t === "home-featured" ||
+          t === "home-latest" ||
+          t === "products" ||
+          (t.startsWith("category-") && !stalePricingList);
+
+        const expire = stalePricingList
+          ? STALE_PRICING_LIST_SECONDS
+          : immediate
+            ? 0
+            : 1800;
 
         revalidateTag(t, { expire });
 

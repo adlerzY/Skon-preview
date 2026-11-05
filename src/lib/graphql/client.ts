@@ -6,9 +6,17 @@ const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL;
 const INTERNAL_WP_GRAPHQL_URL = process.env.INTERNAL_WORDPRESS_API_URL;
 const FALLBACK_LOCAL_URL = "http://tazavesh.local/graphql";
 const REQUEST_TIMEOUT_MS = Number(process.env.GRAPHQL_REQUEST_TIMEOUT_MS) || 12_000;
-const GRAPHQL_TOTAL_TIMEOUT_MS = Math.max(REQUEST_TIMEOUT_MS, Number(process.env.GRAPHQL_TOTAL_TIMEOUT_MS) || 18_000);
 const MAX_ATTEMPTS = Math.min(2, Math.max(1, Number(process.env.GRAPHQL_MAX_ATTEMPTS) || 2));
 const RETRY_DELAY_MS = Math.max(100, Number(process.env.GRAPHQL_RETRY_DELAY_MS) || 350);
+
+const MIN_TOTAL_TIMEOUT_MS =
+  REQUEST_TIMEOUT_MS * MAX_ATTEMPTS +
+  RETRY_DELAY_MS * Math.max(0, MAX_ATTEMPTS - 1);
+
+const GRAPHQL_TOTAL_TIMEOUT_MS = Math.max(
+  MIN_TOTAL_TIMEOUT_MS,
+  Number(process.env.GRAPHQL_TOTAL_TIMEOUT_MS) || 0
+);
 
 if (!WP_GRAPHQL_URL && process.env.NODE_ENV === "production") {
   console.error(
@@ -61,10 +69,9 @@ class GraphQLRequestError extends Error {
 }
 
 function isRetrySafeQuery(query: string): boolean {
-  const source = query
-    .replace(/^\uFEFF/u, "")
-    .replace(/^(?:\s|#[^\r\n]*(?:\r?\n|$))*/u, "");
-  return source.startsWith("{") || /^query\b/i.test(source);
+  const source = query.replace(/^\uFEFF/u, "").trim();
+
+  return !/\bmutation\b|\bsubscription\b/i.test(source);
 }
 
 function delay(ms: number) {
