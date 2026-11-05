@@ -1,9 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Send, MessageCircle, Mail, TrendingUp } from "lucide-react";
+import { Send, MessageCircle, TrendingUp } from "lucide-react";
+import TrustMarks from "@/components/trust/TrustMarks";
 
-export default function Footer({ activeRegion = "eu" }: { activeRegion?: string }) {
-
+export default function Footer({
+  activeRegion = "eu",
+}: {
+  activeRegion?: string;
+}) {
   const QUICK_LINKS = [
     { label: "فروشگاه", href: `/${activeRegion}` },
     { label: "وبلاگ", href: `/${activeRegion}/blog` },
@@ -18,12 +22,23 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
   ];
 
   const SOCIAL_LINKS = [
-    { icon: Send, label: "تلگرام", href: "https://t.me/Arena2Battle_support" },
-    { icon: MessageCircle, label: "واتساپ", href: "https://wa.me/989174956653" },
+    {
+      icon: Send,
+      label: "ساپورت تلگرام",
+      href: "https://t.me/Arena2Battle_support",
+    },
+    {
+      icon: Send,
+      label: "واتساپ",
+      href: "https://wa.me/9367335436",
+    },
   ];
 
   return (
-    <footer className="w-full shrink-0 bg-brand-menu border-t border-brand-surface_hover mt-16" dir="rtl">
+    <footer
+      className="w-full shrink-0 bg-brand-menu border-t border-brand-surface_hover mt-16"
+      dir="rtl"
+    >
       <div className="container mx-auto px-6 max-w-site py-10 md:py-14 flex flex-col gap-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
           <div className="lg:col-span-5 flex flex-col items-start gap-4">
@@ -35,9 +50,12 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
               style={{ width: "auto" }}
               className="h-10 w-auto object-contain"
             />
+
             <p className="text-xs text-brand-m_khonsa leading-relaxed max-w-sm">
-              فروشگاه تخصصی بازی، گیفت‌کارت و خدمات درون‌برنامه‌ای گیمینگ با تحویل آنی و امن.
+              فروشگاه تخصصی بازی، گیفت‌کارت و خدمات درون‌برنامه‌ای گیمینگ با
+              تحویل آنی و امن.
             </p>
+
             <Link
               href="https://wowtokenprice.com"
               target="_blank"
@@ -51,31 +69,39 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
 
           <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 w-full">
             <FooterColumn title="دسترسی سریع" links={QUICK_LINKS} />
+
             <FooterColumn title="حساب کاربری" links={ACCOUNT_LINKS} />
 
-            <div className="col-span-2 sm:col-span-1 flex flex-col gap-3">
-              <span className="text-sm font-bold text-white">راه‌های ارتباطی</span>
-              <div className="flex flex-col gap-2.5">
-                {SOCIAL_LINKS.map((s) => (
+            <div className="col-span-2 sm:col-span-1 flex flex-col gap-4">
+              <span className="text-sm font-bold text-white">
+                راه‌های ارتباطی
+              </span>
+
+              <div className="flex items-center gap-2.5">
+                {SOCIAL_LINKS.map((social) => (
                   <Link
-                    key={s.label}
-                    href={s.href}
+                    key={social.label}
+                    href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-brand-m_khonsa hover:text-white transition-colors w-fit"
+                    aria-label={social.label}
+                    title={social.label}
+                    className="w-10 h-10 flex items-center justify-center bg-brand-surface border border-brand-surface_hover text-brand-m_khonsa hover:text-white hover:border-brand-blue hover:bg-brand-blue/10 transition-all"
                   >
-                    <s.icon size={14} />
-                    {s.label}
+                    <social.icon size={18} />
                   </Link>
                 ))}
               </div>
+
+              <TrustMarks variant="footer" />
             </div>
           </div>
         </div>
 
         <div className="border-t border-brand-surface_hover pt-6 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 text-center sm:text-right">
           <span className="text-[11px] text-brand-m_khonsa">
-            © {new Date().getFullYear()} <bdi>Arena2Battle</bdi> — تمامی حقوق محفوظ است.
+            © {new Date().getFullYear()} <bdi>Arena2Battle</bdi> — تمامی حقوق
+            محفوظ است.
           </span>
 
           <Link
@@ -85,6 +111,7 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
             className="group flex flex-wrap items-center justify-center sm:justify-end gap-2 text-[13px]"
           >
             <span className="text-brand-m_khonsa">ساخته‌شده با </span>
+
             <span className="font-black tracking-wide bg-gradient-to-l from-brand-blue via-brand-zard to-brand-sabz bg-clip-text text-transparent group-hover:tracking-widest transition-all duration-300">
               ⚗️✨ جادوی adlerz 🪄
             </span>
@@ -95,14 +122,25 @@ export default function Footer({ activeRegion = "eu" }: { activeRegion?: string 
   );
 }
 
-function FooterColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
     <div className="flex flex-col gap-3">
       <span className="text-sm font-bold text-white">{title}</span>
+
       <div className="flex flex-col gap-2.5">
-        {links.map((l) => (
-          <Link key={l.href} href={l.href} className="text-xs text-brand-m_khonsa hover:text-white transition-colors w-fit">
-            {l.label}
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="text-xs text-brand-m_khonsa hover:text-white transition-colors w-fit"
+          >
+            {link.label}
           </Link>
         ))}
       </div>

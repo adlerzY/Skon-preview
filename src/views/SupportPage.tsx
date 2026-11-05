@@ -1,8 +1,8 @@
-// src/views/SupportPage.tsx
 import Link from "next/link";
 import Image from "next/image";
 import { LifeBuoy, Clock, ShieldCheck, Star, Download } from "lucide-react";
 import SupportFAQ from "@/components/support/SupportFAQ";
+import TrustMarks from "@/components/trust/TrustMarks";
 
 interface ContactChannel {
   icon: string;
@@ -49,7 +49,8 @@ const FAQ_ITEMS = [
   },
   {
     question: "چطور می‌توانم وضعیت سفارشم را پیگیری کنم؟",
-    answer: "از بخش «سفارش‌های من» در پیشخوان حساب کاربری می‌توانید وضعیت هر سفارش و مراحل تحویل آن را مشاهده کنید.",
+    answer:
+      "از بخش «سفارش‌های من» در پیشخوان حساب کاربری می‌توانید وضعیت هر سفارش و مراحل تحویل آن را مشاهده کنید.",
   },
   {
     question: "در صورت بروز مشکل در سفارش چه کار کنم؟",
@@ -63,13 +64,24 @@ const FAQ_ITEMS = [
   },
 ];
 
-function StatRow({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function StatRow({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="flex items-start gap-2.5">
       <span className="mt-0.5 shrink-0">{icon}</span>
+
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-bold text-white">{title}</span>
-        <span className="text-xs text-brand-m_khonsa leading-6">{desc}</span>
+        <span className="text-xs text-brand-m_khonsa leading-6">
+          {desc}
+        </span>
       </div>
     </div>
   );
@@ -77,7 +89,10 @@ function StatRow({ icon, title, desc }: { icon: React.ReactNode; title: string; 
 
 export default function SupportPage({ region }: { region: string }) {
   return (
-    <main className="container mx-auto px-6 max-w-site py-3 md:py-4 text-white flex flex-col gap-5 md:gap-6" dir="rtl">
+    <main
+      className="container mx-auto px-6 max-w-site py-3 md:py-4 text-white flex flex-col gap-5 md:gap-6"
+      dir="rtl"
+    >
       <div className="relative w-full h-[190px] sm:h-[220px] md:h-[250px] overflow-hidden border border-brand-surface_hover shadow-[0_25px_60px_-10px_rgba(0,0,0,0.6)]">
         <Image
           src="/images/support-hero.webp"
@@ -88,8 +103,11 @@ export default function SupportPage({ region }: { region: string }) {
           quality={86}
           className="object-cover"
         />
+
         <div className="absolute inset-0 bg-gradient-to-t from-[#111215] via-[#111215]/70 to-transparent" />
+
         <div className="absolute inset-0 bg-gradient-to-l from-[#111215]/95 via-[#111215]/30 to-transparent w-full md:w-2/3" />
+
         <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-10 gap-2.5 max-w-xl">
           <span className="inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-brand-sabz bg-brand-sabz/10 border border-brand-sabz/20 px-2.5 py-1">
             <span className="relative flex w-1.5 h-1.5">
@@ -98,9 +116,14 @@ export default function SupportPage({ region }: { region: string }) {
             </span>
             پشتیبانی هم‌اکنون پاسخگوست
           </span>
-          <h1 className="text-2xl md:text-3xl font-black leading-tight">پشتیبانی Arena2Battle</h1>
+
+          <h1 className="text-2xl md:text-3xl font-black leading-tight">
+            پشتیبانی Arena2Battle
+          </h1>
+
           <p className="text-brand-m_khonsa text-xs md:text-sm leading-6">
-            هر سوالی درباره سفارش، روش‌های تحویل یا مشکلات فنی دارید، تیم پشتیبانی ما در کنار شماست.
+            هر سوالی درباره سفارش، روش‌های تحویل یا مشکلات فنی دارید، تیم
+            پشتیبانی ما در کنار شماست.
           </p>
         </div>
       </div>
@@ -111,56 +134,116 @@ export default function SupportPage({ region }: { region: string }) {
             <span className="w-10 h-10 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0">
               <LifeBuoy size={20} />
             </span>
+
             <div className="flex flex-col">
-              <span className="font-bold text-sm text-white">ثبت تیکت پشتیبانی</span>
-              <span className="text-xs text-brand-m_khonsa">سریع‌ترین راه برای پیگیری مشکلات سفارش</span>
+              <span className="font-bold text-sm text-white">
+                ثبت تیکت پشتیبانی
+              </span>
+              <span className="text-xs text-brand-m_khonsa">
+                سریع‌ترین راه برای پیگیری مشکلات سفارش
+              </span>
             </div>
           </div>
+
           <p className="text-sm text-brand-m_khonsa leading-7">
-            برای پیگیری دقیق سفارش‌ها، ابتدا وارد حساب کاربری خود شوید و سپس از بخش تیکت‌های پشتیبانی، درخواست خود را با جزئیات ثبت کنید.
+            برای پیگیری دقیق سفارش‌ها، ابتدا وارد حساب کاربری خود شوید و سپس
+            از بخش تیکت‌های پشتیبانی، درخواست خود را با جزئیات ثبت کنید.
           </p>
+
           <div className="flex flex-wrap gap-3">
-            <Link href="/my-account/tickets/new" className="bg-brand-blue hover:bg-[#0062d1] text-white text-sm font-bold px-5 py-2.5 transition-colors">
+            <Link
+              href="/my-account/tickets/new"
+              className="bg-brand-blue hover:bg-[#0062d1] text-white text-sm font-bold px-5 py-2.5 transition-colors"
+            >
               ثبت تیکت جدید
             </Link>
-            <Link href="/my-account/tickets" className="bg-brand-bg border border-brand-surface_hover hover:bg-brand-surface_hover text-brand-m_khonsa hover:text-white text-sm font-bold px-5 py-2.5 transition-colors">
+
+            <Link
+              href="/my-account/tickets"
+              className="bg-brand-bg border border-brand-surface_hover hover:bg-brand-surface_hover text-brand-m_khonsa hover:text-white text-sm font-bold px-5 py-2.5 transition-colors"
+            >
               مشاهده تیکت‌های من
             </Link>
           </div>
         </div>
 
         <div className="bg-brand-surface border border-brand-surface_hover p-6 flex flex-col gap-4">
-          <StatRow icon={<Clock size={16} className="text-brand-zard" />} title="ساعات پاسخگویی" desc="هر روز هفته، از ساعت ۹ صبح تا ۱۲ شب" />
+          <StatRow
+            icon={<Clock size={16} className="text-brand-zard" />}
+            title="ساعات پاسخگویی"
+            desc="هر روز هفته، از ساعت ۹ صبح تا ۱۲ شب"
+          />
+
           <div className="border-t border-brand-surface_hover" />
-          <StatRow icon={<ShieldCheck size={16} className="text-brand-sabz" />} title="امنیت اطلاعات" desc="اطلاعات حساب و پرداخت شما با کنترل دسترسی و رمزنگاری محافظت می‌شود." />
+
+          <StatRow
+            icon={<ShieldCheck size={16} className="text-brand-sabz" />}
+            title="امنیت اطلاعات"
+            desc="اطلاعات حساب و پرداخت شما با کنترل دسترسی و رمزنگاری محافظت می‌شود."
+          />
+
           <div className="border-t border-brand-surface_hover" />
-          <StatRow icon={<Star size={16} className="text-brand-blue" />} title="رضایت مشتریان" desc="پشتیبانی سفارش‌ها هر روز پیگیری و ثبت می‌شود." />
+
+          <StatRow
+            icon={<Star size={16} className="text-brand-blue" />}
+            title="رضایت مشتریان"
+            desc="پشتیبانی سفارش‌ها هر روز پیگیری و ثبت می‌شود."
+          />
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-black">راه‌های ارتباطی</h2>
-        <div className="flex flex-col gap-3 max-w-2xl">
-          {CONTACT_CHANNELS.map((channel) => (
-            <Link 
-              key={channel.label}
-              href={channel.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-brand-surface border border-brand-surface_hover hover:border-brand-blue/50 p-4 md:p-5 flex items-center gap-4 transition-colors"
-            >
-              <span className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-bg border border-brand-surface_hover">
-                <Image src={channel.icon} alt={channel.label} width={24} height={24} className="object-contain" />
-              </span>
-              <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                <span className="font-bold text-sm text-white">{channel.label}</span>
-                <span className="text-xs text-brand-m_khonsa truncate" dir="ltr">{channel.value}</span>
-              </div>
-              <span className="text-[11px] text-brand-sabz font-bold whitespace-nowrap shrink-0 hidden sm:inline-block">
-                {channel.responseTime}
-              </span>
-            </Link>
-          ))}
+      {/* Contact Channels & Trust Marks */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+        {/* Contact Channels */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <h2 className="text-lg font-black">راه‌های ارتباطی</h2>
+
+          <div className="flex flex-col gap-3">
+            {CONTACT_CHANNELS.map((channel) => (
+              <Link
+                key={channel.label}
+                href={channel.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-brand-surface border border-brand-surface_hover hover:border-brand-blue/50 p-4 md:p-5 flex items-center gap-4 transition-colors"
+              >
+                <span className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-bg border border-brand-surface_hover">
+                  <Image
+                    src={channel.icon}
+                    alt={channel.label}
+                    width={24}
+                    height={24}
+                    className="object-contain"
+                  />
+                </span>
+
+                <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                  <span className="font-bold text-sm text-white">
+                    {channel.label}
+                  </span>
+
+                  <span
+                    className="text-xs text-brand-m_khonsa truncate"
+                    dir="ltr"
+                  >
+                    {channel.value}
+                  </span>
+                </div>
+
+                <span className="text-[11px] text-brand-sabz font-bold whitespace-nowrap shrink-0 hidden sm:inline-block">
+                  {channel.responseTime}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Trust Marks */}
+        <div className="bg-brand-surface border border-brand-surface_hover p-5 flex items-center justify-center min-h-[180px]">
+          <TrustMarks
+            variant="support"
+            className="justify-center"
+          />
         </div>
       </div>
 
@@ -174,13 +257,23 @@ export default function SupportPage({ region }: { region: string }) {
           <span className="w-10 h-10 rounded-full bg-brand-sabz/10 text-brand-sabz flex items-center justify-center shrink-0">
             <Download size={18} />
           </span>
+
           <div className="flex flex-col">
-            <span className="font-bold text-sm text-white">دانلود بازی‌ها با لینک مستقیم</span>
-            <span className="text-xs text-brand-m_khonsa">لینک دانلود مستقیم و پرسرعت بازی‌ها را اینجا پیدا میکنی.</span>
+            <span className="font-bold text-sm text-white">
+              دانلود بازی‌ها با لینک مستقیم
+            </span>
+
+            <span className="text-xs text-brand-m_khonsa">
+              لینک دانلود مستقیم و پرسرعت بازی‌ها را اینجا پیدا میکنی.
+            </span>
           </div>
         </div>
-        <Link href={`/${region}/download`} className="bg-brand-bg border border-brand-surface_hover hover:bg-brand-surface_hover text-white text-sm font-bold px-5 py-2.5 transition-colors whitespace-nowrap">
-         مشاهده لینک‌های دانلود
+
+        <Link
+          href={`/${region}/download`}
+          className="bg-brand-bg border border-brand-surface_hover hover:bg-brand-surface_hover text-white text-sm font-bold px-5 py-2.5 transition-colors whitespace-nowrap"
+        >
+          مشاهده لینک‌های دانلود
         </Link>
       </div>
     </main>
