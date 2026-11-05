@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { notFound } from "next/navigation";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
-import { DEFAULT_REGION, KNOWN_REGIONS } from "@/lib/regions";
+import { KNOWN_REGIONS } from "@/lib/regions";
 import { DEFAULT_SEO_DESCRIPTION, SEO_REGION, makeMetadata, absoluteUrl } from "@/lib/seo/site";
 
 export const revalidate = 900;
-export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return KNOWN_REGIONS.map((region) => ({ region }));
+  return [{ region: SEO_REGION }];
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ region: string }> }): Promise<Metadata> {
@@ -47,7 +47,9 @@ export default async function RegionLayout({
   params: Promise<{ region: string }>;
 }) {
   const { region } = await params;
-  const activeRegion = KNOWN_REGIONS.includes(region.toLowerCase()) ? region.toLowerCase() : DEFAULT_REGION;
+  const activeRegion = region.toLowerCase();
+
+  if (!KNOWN_REGIONS.includes(activeRegion)) notFound();
 
   return (
     <>

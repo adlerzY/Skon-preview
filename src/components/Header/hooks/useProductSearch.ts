@@ -1,7 +1,11 @@
 import { useState, useEffect, useTransition } from "react";
 import { searchProductsByKeyword } from "@/actions/search";
-import type { ProductNode } from "@/lib/graphql";
+import type { ProductNode } from "@/lib/graphql/types";
 import { useActiveRegion } from "@/lib/hooks/useActiveRegion";
+
+const MIN_QUERY_LENGTH = 2;
+const QUICK_RESULTS_LIMIT = 6;
+const DEBOUNCE_MS = 350;
 
 interface UseProductSearchResult {
   searchQuery: string;
@@ -17,7 +21,9 @@ export function useProductSearch(): UseProductSearchResult {
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const trimmed = searchQuery.trim();
+
+    if (trimmed.length < MIN_QUERY_LENGTH) {
       setSearchResults([]);
       return;
     }
@@ -26,12 +32,12 @@ export function useProductSearch(): UseProductSearchResult {
 
     const timer = setTimeout(() => {
       startTransition(async () => {
-        const results = await searchProductsByKeyword(searchQuery, activeRegion);
+        const results = await searchProductsByKeyword(trimmed, activeRegion, { first: QUICK_RESULTS_LIMIT });
         if (!cancelled) {
           setSearchResults(results.products);
         }
       });
-    }, 400);
+    }, DEBOUNCE_MS);
 
     return () => {
       cancelled = true;

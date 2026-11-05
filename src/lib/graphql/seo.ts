@@ -225,12 +225,14 @@ async function loadBlogPostIndex() {
 export async function getSeoSitemapData() {
   const cached = unstable_cache(
     async () => {
-      const [products, productCategories, blogCategories, blogPosts] = await Promise.all([
-        loadProductIndex(),
-        loadProductCategoryIndex(),
-        loadBlogCategoryIndex(),
-        loadBlogPostIndex(),
-      ]);
+      const products = await loadProductIndex();
+      const productCategories = await loadProductCategoryIndex();
+      const blogCategories = await loadBlogCategoryIndex();
+      const blogPosts = await loadBlogPostIndex();
+
+      if (products.length === 0 && productCategories.length === 0 && blogPosts.length === 0) {
+        throw new Error("sitemap_data_unavailable");
+      }
 
       return { products, productCategories, blogCategories, blogPosts };
     },

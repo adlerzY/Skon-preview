@@ -5,13 +5,43 @@ import "server-only";
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL;
 const INTERNAL_WP_GRAPHQL_URL = process.env.INTERNAL_WORDPRESS_API_URL;
 const FALLBACK_LOCAL_URL = "http://tazavesh.local/graphql";
-const REQUEST_TIMEOUT_MS = Number(process.env.GRAPHQL_REQUEST_TIMEOUT_MS) || 12_000;
+const IS_BUILD = process.env.NEXT_PHASE === "phase-production-build";
+const REQUEST_TIMEOUT_MS = Number(process.env.GRAPHQL_REQUEST_TIMEOUT_MS) || (IS_BUILD ? 8_000 : 10_000);
+const MAX_CONCURRENT = Number(process.env.GRAPHQL_MAX_CONCURRENCY) || (IS_BUILD ? 3 : 8);
+const QUEUE_WAIT_MS = 10_000;
+const BREAKER_THRESHOLD = 5;
+const BREAKER_COOLDOWN_MS = 15_000;
 
 if (!WP_GRAPHQL_URL && process.env.NODE_ENV === "production") {
   console.error(
     "[graphql/client] NEXT_PUBLIC_WORDPRESS_API_URL تنظیم نشده؛ درخواست‌های GraphQL fail خواهند شد."
   );
 }
+
+interface Waiter {
+  resolve: (acquired: boolean) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+interface GraphQLRuntime {
+  active: number;
+  queue: Waiter[];
+  inflight: Map<string, Promise<any>>;
+  failures: number;
+  openUntil: number;
+}
+
+const RUNTIME_KEY = Symbol.for("arena2battle.graphql.runtime");
+const globalRuntime = globalThis as typeof globalThis & { [RUNTIME_KEY]?: GraphQLRuntime };
+const runtime: GraphQLRuntime =
+  globalRuntime[RUNTIME_KEY] ??
+  (globalRuntime[RUNTIME_KEY] = {
+    active: 0,
+    queue: [],
+    inflight: new Map(),
+    failures: 0,
+    openUntil: 0,
+  });
 
 function resolveEndpoint(): { url: string; hostHeader?: string } {
   const publicUrl = WP_GRAPHQL_URL || (process.env.NODE_ENV === "production" ? "" : FALLBACK_LOCAL_URL);
@@ -59,39 +89,89 @@ type CacheStrategy =
   | { type: "force-cache" }
   | { type: "revalidate"; seconds: number };
 
-export async function fetchGraphQL(
-  query: string,
-  variables: Record<string, unknown> = {},
-  tags: string[] = [],
-  cacheStrategy: CacheStrategy | RequestCache = "force-cache",
-  authToken?: string,
-  sessionId?: string,
-  bootstrapProof?: string,
-  previousAuthToken?: string,
-  extraHeaders: Record<string, string> = {}
-) {
-  const strategy: CacheStrategy =
-    typeof cacheStrategy === "string"
-      ? cacheStrategy === "no-store"
-        ? { type: "no-store" }
-        : { type: "force-cache" }
-      : cacheStrategy;
+interface ExecuteArgs {
+  query: string;
+  variables: Record<string, unknown>;
+  tags: string[];
+  strategy: CacheStrategy;
+  authToken?: string;
+  sessionId?: string;
+  bootstrapProof?: string;
+  previousAuthToken?: string;
+  extraHeaders: Record<string, string>;
+}
 
+interface ExecuteResult {
+  data: any;
+  failed: boolean;
+}
+
+function normalizeStrategy(value: CacheStrategy | RequestCache): CacheStrategy {
+  if (typeof value !== "string") return value;
+  return value === "no-store" ? { type: "no-store" } : { type: "force-cache" };
+}
+
+function breakerIsOpen(): boolean {
+  return Date.now() < runtime.openUntil;
+}
+
+function recordSuccess() {
+  runtime.failures = 0;
+}
+
+function recordFailure() {
+  runtime.failures += 1;
+  if (runtime.failures >= BREAKER_THRESHOLD) {
+    const wasOpen = breakerIsOpen();
+    runtime.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
+    runtime.failures = BREAKER_THRESHOLD - 1;
+    if (!wasOpen) {
+      console.error(`[graphql] backend unreachable, pausing public requests for ${BREAKER_COOLDOWN_MS}ms`);
+    }
+  }
+}
+
+function acquireSlot(): Promise<boolean> {
+  if (runtime.active < MAX_CONCURRENT) {
+    runtime.active += 1;
+    return Promise.resolve(true);
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const waiter: Waiter = {
+      resolve,
+      timer: setTimeout(() => {
+        const index = runtime.queue.indexOf(waiter);
+        if (index !== -1) runtime.queue.splice(index, 1);
+        resolve(false);
+      }, QUEUE_WAIT_MS),
+    };
+    runtime.queue.push(waiter);
+  });
+}
+
+function releaseSlot() {
+  const waiter = runtime.queue.shift();
+  if (waiter) {
+    clearTimeout(waiter.timer);
+    waiter.resolve(true);
+    return;
+  }
+  runtime.active = Math.max(0, runtime.active - 1);
+}
+
+async function execute(args: ExecuteArgs): Promise<ExecuteResult> {
+  const { query, variables, tags, strategy, authToken, sessionId, bootstrapProof, previousAuthToken, extraHeaders } = args;
   const { url: endpointUrl, hostHeader } = resolveEndpoint();
 
   let boundSessionId = sessionId;
 
-  const needsSessionBinding = Boolean(
-    authToken || bootstrapProof || previousAuthToken || sessionId
-  );
+  const needsSessionBinding = Boolean(authToken || bootstrapProof || previousAuthToken || sessionId);
 
-  if (needsSessionBinding) {
+  if (needsSessionBinding && !boundSessionId) {
     try {
       const cookieStore = await cookies();
-
-      if (!boundSessionId) {
-        boundSessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
-      }
+      boundSessionId = cookieStore.get(SESSION_ID_COOKIE)?.value;
     } catch {}
   }
 
@@ -104,9 +184,7 @@ export async function fetchGraphQL(
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...(boundSessionId ? { "X-BTL-Session-ID": boundSessionId } : {}),
       ...(bootstrapProof ? { "X-BTL-Session-Bootstrap": bootstrapProof } : {}),
-      ...(previousAuthToken
-        ? { "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}` }
-        : {}),
+      ...(previousAuthToken ? { "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}` } : {}),
       ...(hostHeader ? { Host: hostHeader } : {}),
       ...extraHeaders,
     },
@@ -131,11 +209,7 @@ export async function fetchGraphQL(
   }
 
   const controller = new AbortController();
-
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    REQUEST_TIMEOUT_MS
-  );
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     const res = await fetch(endpointUrl, {
@@ -145,7 +219,7 @@ export async function fetchGraphQL(
 
     if (!res.ok) {
       console.error(`GraphQL HTTP Error: ${res.status} ${res.statusText}`);
-      return null;
+      return { data: null, failed: res.status >= 500 };
     }
 
     const json = await res.json();
@@ -154,16 +228,12 @@ export async function fetchGraphQL(
       console.error("GraphQL Errors:", JSON.stringify(json.errors, null, 2));
 
       if (!json.data) {
-        console.error(
-          "GraphQL query preview:",
-          query.trim().slice(0, 160)
-        );
-
-        return null;
+        console.error("GraphQL query preview:", query.trim().slice(0, 160));
+        return { data: null, failed: false };
       }
     }
 
-    return json.data ?? null;
+    return { data: json.data ?? null, failed: false };
   } catch (error) {
     const isAbort = (error as Error)?.name === "AbortError";
 
@@ -176,8 +246,88 @@ export async function fetchGraphQL(
       console.error("Fetch GraphQL Network Error:", error);
     }
 
-    return null;
+    return { data: null, failed: true };
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function runPublic(args: ExecuteArgs): Promise<any> {
+  const acquired = await acquireSlot();
+
+  if (!acquired) {
+    console.error("GraphQL queue wait exceeded — query preview:", args.query.trim().slice(0, 160));
+    return null;
+  }
+
+  try {
+    if (breakerIsOpen()) return null;
+
+    const result = await execute(args);
+
+    if (result.failed) recordFailure();
+    else recordSuccess();
+
+    return result.data;
+  } finally {
+    releaseSlot();
+  }
+}
+
+export async function fetchGraphQL(
+  query: string,
+  variables: Record<string, unknown> = {},
+  tags: string[] = [],
+  cacheStrategy: CacheStrategy | RequestCache = "force-cache",
+  authToken?: string,
+  sessionId?: string,
+  bootstrapProof?: string,
+  previousAuthToken?: string,
+  extraHeaders: Record<string, string> = {}
+): Promise<any> {
+  const strategy = normalizeStrategy(cacheStrategy);
+
+  const args: ExecuteArgs = {
+    query,
+    variables,
+    tags,
+    strategy,
+    authToken,
+    sessionId,
+    bootstrapProof,
+    previousAuthToken,
+    extraHeaders,
+  };
+
+  const isPublic =
+    !authToken &&
+    !sessionId &&
+    !bootstrapProof &&
+    !previousAuthToken &&
+    Object.keys(extraHeaders).length === 0;
+
+  if (!isPublic) {
+    const result = await execute(args);
+    return result.data;
+  }
+
+  if (breakerIsOpen()) return null;
+
+  const key = [
+    strategy.type,
+    strategy.type === "revalidate" ? strategy.seconds : "",
+    tags.join(","),
+    query,
+    JSON.stringify(variables),
+  ].join("\u0001");
+
+  const pending = runtime.inflight.get(key);
+  if (pending) return pending;
+
+  const request = runPublic(args).finally(() => {
+    runtime.inflight.delete(key);
+  });
+
+  runtime.inflight.set(key, request);
+  return request;
 }

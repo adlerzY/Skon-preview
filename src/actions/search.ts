@@ -14,6 +14,17 @@ export interface SearchProductsResult {
   };
 }
 
+const CACHE_TTL_MS = 60_000;
+const CACHE_MAX_ENTRIES = 200;
+const resultCache = new Map<string, { expiresAt: number; value: SearchProductsResult }>();
+
+function emptyResult(): SearchProductsResult {
+  return {
+    products: [],
+    pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+  };
+}
+
 function resolveRegion(region: string): string {
   const normalized = region.trim().toLowerCase();
   return KNOWN_REGIONS.includes(normalized) ? normalized : DEFAULT_REGION;
@@ -24,19 +35,18 @@ export async function searchProductsByKeyword(
   region: string,
   options: { after?: string; before?: string; first?: number; last?: number } = {},
 ): Promise<SearchProductsResult> {
-  const safeKeyword = keyword?.trim();
+  const safeKeyword = keyword?.trim().slice(0, 100);
   const activeRegion = resolveRegion(region);
-  if (!safeKeyword) {
-    return {
-      products: [],
-      pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
-    };
-  }
+  if (!safeKeyword) return emptyResult();
 
   const first = options.before ? null : Math.min(Math.max(Number(options.first) || 24, 1), 48);
   const last = options.before ? Math.min(Math.max(Number(options.last) || 24, 1), 48) : null;
   const after = options.before ? null : options.after || null;
   const before = options.before || null;
+
+  const cacheKey = [activeRegion, safeKeyword.toLowerCase(), first, last, after, before].join("|");
+  const cached = resultCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
 
   try {
     const data = await fetchGraphQL(
@@ -81,12 +91,14 @@ export async function searchProductsByKeyword(
       "no-store",
     );
 
+    if (data === null) return emptyResult();
+
     const products = formatProducts(data?.products?.nodes || [], true, activeRegion).filter(
       (p) => p.isAvailableInRegion !== false,
     );
     const pageInfo = data?.products?.pageInfo || {};
 
-    return {
+    const result: SearchProductsResult = {
       products,
       pageInfo: {
         hasNextPage: Boolean(pageInfo.hasNextPage),
@@ -95,11 +107,16 @@ export async function searchProductsByKeyword(
         endCursor: typeof pageInfo.endCursor === "string" ? pageInfo.endCursor : null,
       },
     };
+
+    if (resultCache.size >= CACHE_MAX_ENTRIES) {
+      const oldest = resultCache.keys().next().value;
+      if (oldest !== undefined) resultCache.delete(oldest);
+    }
+    resultCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, value: result });
+
+    return result;
   } catch (error) {
     console.error("searchProductsByKeyword error:", error);
-    return {
-      products: [],
-      pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
-    };
+    return emptyResult();
   }
 }

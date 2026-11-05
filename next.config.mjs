@@ -13,35 +13,15 @@ if (process.env.ANALYZE === 'true') {
 
 const nextConfig = {
   poweredByHeader: false,
+  compress: true,
+  serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
 
   images: {
     formats: ['image/webp'],
 
-    deviceSizes: [
-      360,
-      414,
-      640,
-      750,
-      828,
-      1080,
-      1200,
-      1600,
-      1920,
-    ],
+    deviceSizes: [360, 414, 640, 750, 828, 1080, 1200, 1600, 1920],
 
-    imageSizes: [
-      16,
-      24,
-      32,
-      48,
-      64,
-      86,
-      96,
-      108,
-      128,
-      256,
-      384,
-    ],
+    imageSizes: [16, 24, 32, 48, 64, 86, 96, 108, 128, 256, 384],
 
     qualities: [60, 65, 70, 75, 80, 82, 85, 86, 90],
 
@@ -67,7 +47,6 @@ const nextConfig = {
       },
     ],
   },
-  compress: true,
 
   async headers() {
     return [
@@ -94,6 +73,9 @@ const nextConfig = {
 
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    cpus: 2,
+    staticGenerationMaxConcurrency: 2,
+    staticGenerationMinPagesPerWorker: 8,
   },
 };
 

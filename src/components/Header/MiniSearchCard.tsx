@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ProductNode } from "@/lib/graphql";
+import type { ProductNode } from "@/lib/graphql/types";
 import { DEFAULT_REGION } from "@/lib/regions";
 
 export default function MiniSearchCard({ product, activeRegion }: { product: ProductNode; activeRegion?: string }) {

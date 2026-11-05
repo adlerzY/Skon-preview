@@ -25,6 +25,32 @@ function normalizePath(path?: string | null): string {
   return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
 }
 
+function GameIcon({
+  game,
+  size = 36,
+  active,
+}: {
+  game: HeaderGameItem;
+  size?: number;
+  active: boolean;
+}) {
+  return (
+    <div
+      className="relative flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src={game.img}
+        alt={game.title || "game"}
+        fill
+        sizes={`${size}px`}
+        quality={70}
+        className={`object-contain ${active ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" : ""}`}
+      />
+    </div>
+  );
+}
+
 export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(games?.length ?? 0);
@@ -93,35 +119,9 @@ export default function DesktopGamesNav({ games }: DesktopGamesNavProps) {
     return current === clean || current.startsWith(`${clean}/`);
   }
 
-function GameIcon({
-  game,
-  size = 36,
-  active,
-}: {
-  game: HeaderGameItem;
-  size?: number;
-  active: boolean;
-}) {
   return (
     <div
-      className="relative flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-      style={{ width: size, height: size }}
-    >
-      <Image
-        src={game.img}
-        alt={game.title || "game"}
-        fill
-        sizes={`${size}px`}
-        quality={70}
-        className={`object-contain ${active ? "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" : ""}`}
-      />
-    </div>
-  );
-}
-
-  return (
-    <div
-      className="flex-1 h-full flex items-center contain-inline-size w-full"
+      className="flex-1 min-w-0 h-full flex items-center [contain:inline-size] w-full"
       ref={containerRef}
     >
       <div className="flex items-center h-full w-full justify-start">

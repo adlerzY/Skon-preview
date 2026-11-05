@@ -2,16 +2,18 @@ import type { MetadataRoute } from "next";
 import { getSeoSitemapData } from "@/lib/graphql";
 import { absoluteUrl, SEO_REGION, selectSeoCategory } from "@/lib/seo/site";
 
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const data = await getSeoSitemapData();
   const entries: MetadataRoute.Sitemap = [
     { url: absoluteUrl(`/${SEO_REGION}`) },
     { url: absoluteUrl(`/${SEO_REGION}/blog`) },
     { url: absoluteUrl(`/${SEO_REGION}/download`) },
     { url: absoluteUrl(`/${SEO_REGION}/support`) },
   ];
+
+  const data = await getSeoSitemapData().catch(() => null);
+  if (!data) return entries;
 
   for (const category of data.productCategories) {
     entries.push({ url: absoluteUrl(`/${SEO_REGION}/${category.slug}`) });
