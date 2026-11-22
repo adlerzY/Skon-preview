@@ -5,6 +5,8 @@ import { REVALIDATE_CUSTOMER_CART_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
 import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
+import { getJwtDatabaseId } from "@/lib/auth/jwt";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 interface CartItem {
   productId: number;
@@ -28,7 +30,10 @@ export async function POST(request: NextRequest) {
   if (request.headers.get("x-a2b-session-refresh-failed") === "1") {
     return errorResponse("SESSION_REFRESH_FAILED", "نشست شما قابل تمدید نیست؛ دوباره وارد شوید", 401);
   }
-
+  const limitKey = getJwtDatabaseId(token) ?? getClientIp(request);
+  if (!(await checkRateLimit(`cart-revalidate:${limitKey}`, { max: 25, windowMs: 5 * 60 * 1000 }))) {
+    return errorResponse("RATE_LIMITED", "تعداد درخواست بیش از حد مجاز است؛ چند لحظه بعد دوباره تلاش کنید", 429);
+  }
   try {
     const body = await readJsonBody(request, 64 * 1024);
     const items: CartItem[] = Array.isArray(body?.items) ? body.items : [];

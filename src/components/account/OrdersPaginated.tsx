@@ -4,8 +4,12 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Loader2, Search } from "lucide-react";
 import OrdersTable from "./OrdersTable";
 import FilterTabs from "@/components/ui/FilterTabs";
+import { orderNeedsPolling } from "@/lib/orderStatus";
 
 interface PageInfo { hasNextPage: boolean; endCursor: string | null; }
+
+const POLL_MS = 7000;
+const MAX_POLLS = 12;
 
 const STATUS_OPTIONS = [
   { value: "ALL", label: "همه" },
@@ -33,13 +37,39 @@ export default function OrdersPaginated({
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const requestAbortRef = useRef<AbortController | null>(null);
+  const statusRef = useRef(status);
+  const extendedRef = useRef(false);
+  const pollCountRef = useRef(0);
+
+  statusRef.current = status;
 
   useEffect(() => () => requestAbortRef.current?.abort(), []);
+
+  const shouldPoll = useMemo(() => orders.some(orderNeedsPolling), [orders]);
+
+  useEffect(() => {
+    if (!shouldPoll) return;
+    const timer = window.setInterval(async () => {
+      if (extendedRef.current || pollCountRef.current >= MAX_POLLS || document.visibilityState === "hidden") return;
+      pollCountRef.current += 1;
+      try {
+        const res = await fetch(`/api/account/orders?status=${statusRef.current}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (extendedRef.current) return;
+        setOrders(data.orders ?? []);
+        setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
+      } catch {}
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [shouldPoll]);
 
   const handleStatusChange = async (newStatus: string) => {
     requestAbortRef.current?.abort();
     const controller = new AbortController();
     requestAbortRef.current = controller;
+    extendedRef.current = false;
+    pollCountRef.current = 0;
     setStatus(newStatus);
     setIsLoading(true);
     try {
@@ -61,6 +91,7 @@ export default function OrdersPaginated({
     requestAbortRef.current?.abort();
     const controller = new AbortController();
     requestAbortRef.current = controller;
+    extendedRef.current = true;
     setIsLoading(true);
     try {
       const res = await fetch(`/api/account/orders?status=${status}&after=${encodeURIComponent(pageInfo.endCursor)}`, {

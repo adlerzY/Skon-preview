@@ -22,7 +22,11 @@ function resolvePaymentBanner(result: string | undefined, orderId: number | unde
   const status = String(order?.status ?? "").toUpperCase();
 
   if (status === "PROCESSING" || status === "COMPLETED") {
-    return { result: "success" as PaymentResult, polling: false };
+    const waitingForCode = (order?.lineItems?.nodes ?? []).some(
+      (item: any) =>
+        item.metaData?.find((meta: any) => meta.key === "روش تحویل")?.value === "code" && !item.cdkeyReady
+    );
+    return { result: "success" as PaymentResult, polling: waitingForCode };
   }
 
   if (result === "success" || result === "processing") {
@@ -49,7 +53,14 @@ async function OrdersDataStream({
   const pageInfo = data?.customer?.orders?.pageInfo ?? { hasNextPage: false, endCursor: null };
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
   const banner = resolvePaymentBanner(paymentResult, paymentOrderId, orders);
-  const listKey = orders.map((order: any) => `${order.databaseId}:${order.status}`).join("|");
+  const listKey = orders
+    .map(
+      (order: any) =>
+        `${order.databaseId}:${order.status}:${order.paymentState}:${order.fulfillmentSummary}:${order.retryMode}:${(order.lineItems?.nodes ?? [])
+          .map((item: any) => `${item.fulfillmentStatus}${item.cdkeyReady ? 1 : 0}`)
+          .join(",")}`
+    )
+    .join("|");
 
   return (
     <>

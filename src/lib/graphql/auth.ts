@@ -31,11 +31,15 @@ export const CUSTOMER_ORDERS_QUERY = `
         pageInfo { hasNextPage endCursor }
         nodes {
           id databaseId orderNumber status date cancelledAt total
+          paymentState fulfillmentSummary retryMode payDeadline
           lineItems {
             nodes {
               id databaseId quantity total
               fulfillmentStatus
               cdkeyReady
+              btlProductId
+              btlVariationId
+              btlUnitPrice
               product { node { name databaseId } }
               metaData { key value }
             }
@@ -60,6 +64,8 @@ export const DASHBOARD_SUMMARY_QUERY = `
           status
           date
           total
+          paymentState
+          fulfillmentSummary
         }
       }
     }
@@ -389,5 +395,24 @@ export const VERIFY_ADMIN_SMS_OTP_MUTATION = `
 export const REVOKE_CURRENT_SESSION_MUTATION = `
   mutation RevokeCurrentSession {
     revokeCurrentSession { success }
+  }
+`;
+export const RETRY_ORDER_PAYMENT_MUTATION = `
+  mutation RetryOrderPayment($orderId: Int!) {
+    retryOrderPayment(input: { orderId: $orderId }) {
+      success
+      mode
+      paymentUrl
+      status
+    }
+  }
+`;
+
+export const CANCEL_MY_ORDER_MUTATION = `
+  mutation CancelMyOrder($orderId: Int!) {
+    cancelMyOrder(input: { orderId: $orderId }) {
+      success
+      status
+    }
   }
 `;

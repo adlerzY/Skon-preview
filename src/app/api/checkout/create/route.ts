@@ -6,6 +6,7 @@ import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
 import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
+import { getJwtDatabaseId } from "@/lib/auth/jwt";
 
 interface CheckoutCartItem {
   productId: number;
@@ -23,7 +24,7 @@ function errorResponse(code: string, error: string, status: number, extra: Recor
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  if (!(await checkRateLimit(`checkout:${ip}`, { max: 10, windowMs: 10 * 60 * 1000 }))) {
+  if (!(await checkRateLimit(`checkout:${ip}`, { max: 40, windowMs: 10 * 60 * 1000 }))) {
     const response = errorResponse("RATE_LIMITED", "تعداد درخواست بیش از حد مجاز است", 429, { retryAfter: 600 });
     response.headers.set("Retry-After", "600");
     return response;
@@ -38,7 +39,12 @@ export async function POST(request: NextRequest) {
   if (request.headers.get("x-a2b-session-refresh-failed") === "1") {
     return errorResponse("SESSION_REFRESH_FAILED", "نشست شما قابل تمدید نیست؛ دوباره وارد شوید", 401);
   }
-
+  const userKey = getJwtDatabaseId(token) ?? sessionId;
+  if (!(await checkRateLimit(`checkout-user:${userKey}`, { max: 8, windowMs: 10 * 60 * 1000 }))) {
+    const response = errorResponse("RATE_LIMITED", "تعداد درخواست بیش از حد مجاز است", 429, { retryAfter: 600 });
+    response.headers.set("Retry-After", "600");
+    return response;
+  }
   try {
     const sessionPreflight = await fetchGraphQLWithErrors(
       TOUCH_SESSION_MUTATION,

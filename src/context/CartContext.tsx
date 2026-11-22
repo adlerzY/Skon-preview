@@ -139,7 +139,7 @@ export function itemNeedsCredentials(item: CartItem): boolean {
 
 interface CartContextType {
   cart: CartItem[];   isReady: boolean;
-  addToCart: (item: NewCartItem) => boolean;
+  addToCart: (item: NewCartItem, quantity?: number) => boolean;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   updateCredentials: (id: string, credentials: NonNullable<CartItem["customFields"]>) => void;
@@ -182,7 +182,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart, isMounted]);
 
   const addToCart = useCallback(
-    (item: NewCartItem): boolean => {
+    (item: NewCartItem, quantity: number = 1): boolean => {
+      const requested = Math.max(1, Math.floor(quantity) || 1);
       const currentTotal = cartRef.current.reduce((sum, i) => sum + i.quantity, 0);
 
       if (currentTotal >= MAX_CART_QUANTITY) {
@@ -191,11 +192,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const existing = cartRef.current.find((p) => itemsMatch(item, p));
+      let addQty = Math.min(requested, MAX_CART_QUANTITY - currentTotal);
 
-      if (existing && typeof item.maxQuantity === "number" && existing.quantity >= item.maxQuantity) {
-        showToast(`موجودی این محصول محدود به ${item.maxQuantity.toLocaleString("fa-IR")} عدد است`, "error");
-        return false;
+      if (typeof item.maxQuantity === "number") {
+        const room = item.maxQuantity - (existing?.quantity ?? 0);
+        if (room <= 0) {
+          showToast(`موجودی این محصول محدود به ${item.maxQuantity.toLocaleString("fa-IR")} عدد است`, "error");
+          return false;
+        }
+        addQty = Math.min(addQty, room);
       }
+
+      if (addQty < requested) showToast(CAP_MESSAGE, "error");
 
       const id = existing ? existing.id : generateItemId();
 
@@ -207,11 +215,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const existingIndex = prev.findIndex((p) => p.id === id);
         if (existingIndex !== -1) {
           return prev.map((p, idx) =>
-            idx === existingIndex ? { ...p, quantity: p.quantity + 1 } : p
+            idx === existingIndex ? { ...p, quantity: p.quantity + addQty } : p
           );
         }
         if (prev.length >= MAX_CART_ITEMS) return prev;
-        return [...prev, { ...item, id, quantity: 1 }];
+        return [...prev, { ...item, id, quantity: addQty }];
       });
 
       return true;

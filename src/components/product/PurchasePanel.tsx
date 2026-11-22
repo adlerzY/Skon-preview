@@ -80,10 +80,6 @@ export default function PurchasePanel({
 
   const groupedAttributes = useMemo(() => buildGroupedAttributes(variations), [variations]);
   const regionInfo = useMemo(() => findRegionInfo(variations, region), [variations, region]);
-  const hasChoices = useMemo(
-    () => groupedAttributes.some((group) => group.values.length > 1),
-    [groupedAttributes]
-  );
 
   const [selectedAttrs, setSelectedAttrs] = useState<Record<string, string>>(() =>
     findFirstValidAttributes(variations, groupedAttributes, regionInfo, initialEdition)
@@ -127,7 +123,7 @@ export default function PurchasePanel({
   });
 
   const deliveryAvailable = hasAnyDelivery(selectedVariation);
-  const showOptions = hasChoices || (groupedAttributes.length > 0 && !deliveryAvailable);
+  const showOptions = groupedAttributes.length > 0;
 
   const [step, setStep] = useState<StepId>(showOptions ? "options" : "delivery");
 

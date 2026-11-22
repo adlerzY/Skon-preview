@@ -61,6 +61,8 @@ const DISTRIBUTED_REQUIRED_PREFIXES = [
   "reveal:",
   "revoke-session",
   "avatar-",
+  "order-",
+  "cart-",
 ];
 let warnedMissingUpstash = false;
 

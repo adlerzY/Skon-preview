@@ -2,33 +2,61 @@ import { ChevronDown, Download } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SecretReveal from "./SecretReveal";
 import FulfillmentStepper from "./FulfillmentStepper";
+import OrderPayActions, { type ReorderLine } from "./OrderPayActions";
+import { resolveOrderDisplay, type StatusTone } from "@/lib/orderStatus";
 
 interface MetaEntry { key: string; value: string; }
 interface LineItem {
   id: string; databaseId: number; quantity?: number; total?: string;
   fulfillmentStatus?: string;
   cdkeyReady?: boolean;
+  btlProductId?: number;
+  btlVariationId?: number;
+  btlUnitPrice?: number;
   product?: { node?: { name?: string; databaseId?: number } };
   metaData?: MetaEntry[];
 }
 interface OrderNode {
   id: string; databaseId: number; orderNumber?: string; status?: string; date?: string; cancelledAt?: string; total?: string;
+  paymentState?: string | null;
+  fulfillmentSummary?: string | null;
+  retryMode?: string | null;
+  payDeadline?: string | null;
   lineItems?: { nodes?: LineItem[] };
 }
 interface DownloadableItem { downloadId: string; url: string; product?: { databaseId?: number }; }
 
-const STATUS_LABELS: Record<string, { label: string; tone: "blue" | "sabz" | "zard" | "red" | "neutral" }> = {
-  PENDING: { label: "در انتظار پرداخت", tone: "zard" },
-  PROCESSING: { label: "در حال پردازش", tone: "blue" },
-  ON_HOLD: { label: "در انتظار بررسی", tone: "zard" },
-  COMPLETED: { label: "تکمیل‌شده", tone: "sabz" },
-  CANCELLED: { label: "لغو‌شده", tone: "red" },
-  REFUNDED: { label: "بازگشت وجه", tone: "neutral" },
-  FAILED: { label: "ناموفق", tone: "red" },
+const TEXT_TONE: Record<StatusTone, string> = {
+  blue: "text-brand-blue",
+  sabz: "text-brand-sabz",
+  zard: "text-brand-zard",
+  red: "text-red-500",
+  neutral: "text-brand-m_khonsa",
 };
 
 function getMeta(item: LineItem, key: string): string | undefined {
   return item.metaData?.find((m) => m.key === key)?.value;
+}
+
+function buildReorderLines(items: LineItem[]): ReorderLine[] {
+  const lines: ReorderLine[] = [];
+  for (const item of items) {
+    const productId = item.btlProductId || item.product?.node?.databaseId || 0;
+    const deliveryMethod = getMeta(item, "روش تحویل") ?? "";
+    const unitPrice = Number(item.btlUnitPrice) || 0;
+    if (!productId || !deliveryMethod || unitPrice <= 0) continue;
+    lines.push({
+      productId,
+      variationId: item.btlVariationId || undefined,
+      name: item.product?.node?.name ?? "",
+      quantity: Math.max(1, Number(item.quantity) || 1),
+      unitPrice,
+      deliveryMethod,
+      region: getMeta(item, "ریجن"),
+      variationName: getMeta(item, "ویژگی"),
+    });
+  }
+  return lines;
 }
 
 export default function OrdersTable({ orders, downloadableItems = [] }: { orders: OrderNode[]; downloadableItems?: DownloadableItem[] }) {
@@ -46,22 +74,34 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
   return (
     <div className="flex flex-col gap-3">
       {orders.map((order) => {
-        const statusInfo = STATUS_LABELS[order.status ?? ""] ?? { label: order.status ?? "نامشخص", tone: "neutral" as const };
+        const display = resolveOrderDisplay(order);
         const items = order.lineItems?.nodes ?? [];
+        const mode = order.retryMode ?? "none";
+        const actionable = mode === "pay" || mode === "reopen";
 
         return (
-          <details key={order.id} className="bg-brand-surface border border-brand-surface_hover group">
+          <details key={order.id} open={actionable} className="bg-brand-surface border border-brand-surface_hover group">
             <summary className="list-none cursor-pointer w-full flex flex-wrap items-center justify-between gap-3 p-4 md:p-5">
               <div className="flex items-center gap-3">
                 <ChevronDown size={16} className="text-brand-m_khonsa transition-transform group-open:rotate-180" />
                 <span className="font-bold text-white text-sm">سفارش #{order.orderNumber || order.databaseId}</span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-brand-m_khonsa">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-brand-m_khonsa">
                 {order.date && <span>{new Date(order.date).toLocaleDateString("fa-IR")}</span>}
-                <Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>
+                <Badge tone={display.tone}>{display.label}</Badge>
                 {order.total && <span className="text-brand-sabz font-bold">{Number(order.total).toLocaleString("fa-IR")} تومان</span>}
               </div>
             </summary>
+
+            {mode !== "none" && (
+              <OrderPayActions
+                orderId={order.databaseId}
+                orderNumber={String(order.orderNumber || order.databaseId)}
+                mode={mode}
+                deadline={order.payDeadline}
+                lines={buildReorderLines(items)}
+              />
+            )}
 
             <div className="border-t border-brand-surface_hover overflow-x-auto">
               <table className="w-full text-sm">
@@ -78,7 +118,7 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
                     const deliveryMethod = getMeta(item, "روش تحویل");
                     const region = getMeta(item, "ریجن");
                     const variationName = getMeta(item, "ویژگی");
-                    const download = item.product?.node?.databaseId != null
+                    const download = display.isPaid && item.product?.node?.databaseId != null
                       ? downloadsByProduct.get(item.product.node.databaseId)
                       : undefined;
 
@@ -95,7 +135,9 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
                           {item.total ? Number(item.total).toLocaleString("fa-IR") : "-"} تومان
                         </td>
                         <td className="p-3 align-top">
-                          {download ? (
+                          {!display.isPaid ? (
+                            <span className={`text-xs font-bold ${TEXT_TONE[display.itemTone]}`}>{display.itemText}</span>
+                          ) : download ? (
                             <a href={download.url} className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:text-white border border-brand-blue/30 hover:bg-brand-blue px-3 py-2 transition-colors">
                               <Download size={14} /> دانلود فایل
                             </a>

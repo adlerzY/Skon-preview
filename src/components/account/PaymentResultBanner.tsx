@@ -9,8 +9,8 @@ export type PaymentResult = "success" | "processing" | "failed" | "cancelled";
 const MESSAGES: Record<PaymentResult, { text: string; tone: "ok" | "warn" | "wait" }> = {
   success: { text: "پرداخت با موفقیت انجام شد و سفارش شما در حال پردازش است.", tone: "ok" },
   processing: { text: "پرداخت شما در حال بررسی است؛ وضعیت سفارش به‌صورت خودکار به‌روز می‌شود.", tone: "wait" },
-  failed: { text: "پرداخت تأیید نشد. اگر مبلغی از حساب شما کسر شده، شماره سفارش را برای پشتیبانی ارسال کنید.", tone: "warn" },
-  cancelled: { text: "پرداخت لغو شد. سفارش شما هنوز پرداخت نشده است.", tone: "warn" },
+  failed: { text: "پرداخت تأیید نشد. اگر مبلغی کسر شده شماره سفارش را برای پشتیبانی بفرستید؛ در غیر این صورت از لیست پایین می‌توانید دوباره پرداخت کنید.", tone: "warn" },
+  cancelled: { text: "پرداخت انجام نشد. سفارش شما هنوز پرداخت نشده و از همین صفحه می‌توانید دوباره پرداخت کنید.", tone: "warn" },
 };
 
 const TONES = {

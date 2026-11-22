@@ -5,6 +5,8 @@ import ProfileCompletionRing from "./ProfileCompletionRing";
 import InfoTip from "./InfoTip";
 import XPLevelCard from "./XPLevelCard";
 import type { SessionUser } from "@/lib/auth/session";
+import Badge from "@/components/ui/Badge";
+import { resolveOrderDisplay } from "@/lib/orderStatus";
 
 interface OrderSummary {
   id: string;
@@ -13,6 +15,8 @@ interface OrderSummary {
   status?: string;
   date?: string;
   total?: string;
+  paymentState?: string | null;
+  fulfillmentSummary?: string | null;
 }
 
 interface TicketSummary {
@@ -100,14 +104,14 @@ export default function AccountDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
         <PreviewPanel title="آخرین سفارش‌ها" viewAllHref="/my-account/orders" isEmpty={recentOrders.length === 0} emptyText="هنوز سفارشی ثبت نکرده‌اید.">
           {recentOrders.map((order) => {
-            const info = STATUS_LABELS[order.status ?? ""] ?? { label: order.status ?? "نامشخص", color: "text-brand-m_khonsa bg-brand-surface" };
+            const info = resolveOrderDisplay(order);
             return (
               <div key={order.id} className="flex items-center justify-between gap-3 py-3 border-b border-brand-surface_hover last:border-0">
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-bold text-white">سفارش #{order.orderNumber || order.databaseId}</span>
                   {order.date && <span className="text-[11px] text-brand-m_khonsa">{new Date(order.date).toLocaleDateString("fa-IR")}</span>}
                 </div>
-                <span className={`text-[11px] font-bold px-2.5 py-1 border shrink-0 ${info.color}`}>{info.label}</span>
+                <Badge tone={info.tone}>{info.label}</Badge>
               </div>
             );
           })}
