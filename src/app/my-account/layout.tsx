@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import DashboardShell from "@/components/account/DashboardShell";
 import MobileBottomNav from "@/components/Header/MobileBottomNav";
-import AccountLayoutSkeleton from "@/components/account/AccountLayoutSkeleton";
+import AccountGateLoader from "@/components/account/AccountGateLoader";
 import SessionUnavailable from "@/components/account/SessionUnavailable";
 import AccountProviders from "@/components/providers/AccountProviders";
 import { getAuthToken, getSessionState } from "@/lib/auth/session";
@@ -75,7 +75,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
   return (
     <AccountProviders>
       {token ? (
-        <Suspense fallback={<AccountLayoutSkeleton />}>
+        <Suspense fallback={<AccountGateLoader />}>
           <AccountLayoutContent>{children}</AccountLayoutContent>
         </Suspense>
       ) : (

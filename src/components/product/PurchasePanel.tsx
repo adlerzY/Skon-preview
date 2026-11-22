@@ -29,6 +29,8 @@ import {
   buildGroupedAttributes,
   findFirstValidAttributes,
   findRegionInfo,
+  hasStock,
+  matchesRegion,
 } from "./variationMatcher";
 
 type StepId = "options" | "delivery" | "details";
@@ -125,13 +127,14 @@ export default function PurchasePanel({
   });
 
   const deliveryAvailable = hasAnyDelivery(selectedVariation);
+  const showOptions = hasChoices || (groupedAttributes.length > 0 && !deliveryAvailable);
 
-  const [step, setStep] = useState<StepId>(hasChoices ? "options" : "delivery");
+  const [step, setStep] = useState<StepId>(showOptions ? "options" : "delivery");
 
   let activeStep: StepId = step;
   if (activeStep === "details" && !purchase.deliveryType) activeStep = "delivery";
-  if (activeStep === "delivery" && !deliveryAvailable && hasChoices) activeStep = "options";
-  if (activeStep === "options" && !hasChoices) activeStep = "delivery";
+  if (activeStep === "delivery" && !deliveryAvailable && showOptions) activeStep = "options";
+  if (activeStep === "options" && !showOptions) activeStep = "delivery";
 
   useEffect(() => {
     if (activeStep !== step) setStep(activeStep);
@@ -196,7 +199,7 @@ export default function PurchasePanel({
     [variations, groupedAttributes, regionInfo, selectedAttrs, fallback, media]
   );
 
-  const stepIds: StepId[] = hasChoices ? ["options", "delivery", "details"] : ["delivery", "details"];
+  const stepIds: StepId[] = showOptions ? ["options", "delivery", "details"] : ["delivery", "details"];
 
   const stepperItems: StepperItem[] = stepIds.map((id): StepperItem => {
     const done =
@@ -207,7 +210,7 @@ export default function PurchasePanel({
         : false;
 
     const reachable =
-      id === "options" ? hasChoices : id === "delivery" ? deliveryAvailable : Boolean(purchase.deliveryType);
+      id === "options" ? showOptions : id === "delivery" ? deliveryAvailable : Boolean(purchase.deliveryType);
 
     return {
       id,
@@ -263,7 +266,7 @@ export default function PurchasePanel({
   const goBack =
     activeStep === "details"
       ? () => setStep("delivery")
-      : activeStep === "delivery" && hasChoices
+      : activeStep === "delivery" && showOptions
       ? () => setStep("options")
       : undefined;
 
@@ -283,7 +286,7 @@ export default function PurchasePanel({
           {
             label: "نسخه",
             value: variationText,
-            onEdit: hasChoices ? () => setStep("options") : undefined,
+            onEdit: showOptions ? () => setStep("options") : undefined,
           },
         ]
       : []),
@@ -305,6 +308,19 @@ export default function PurchasePanel({
     : formValid
     ? "افزودن به سبد خرید"
     : "تکمیل اطلاعات";
+
+  const isValueAvailable = useCallback(
+    (name: string, value: string) =>
+      variations.some(
+        (variation) =>
+          matchesRegion(variation, regionInfo) &&
+          hasStock(variation) &&
+          (variation.attributes?.some((attr) => attr.name === name && attr.value === value) ?? false)
+      ),
+    [variations, regionInfo]
+  );
+
+  if (!selectedVariation && groupedAttributes.length === 0) return <UnavailableNotice />;
 
   const codeStock = selectedVariation?.codeStockCount;
   const inventoryHint =
@@ -345,6 +361,7 @@ export default function PurchasePanel({
         price={purchase.currentPrice}
         regularPrice={purchase.regularPrice}
         inventoryHint={inventoryHint}
+        isValueAvailable={isValueAvailable}
         ctaLabel={stickyCtaLabel}
         ctaDisabled={purchase.isAddingToCart || purchase.isCartFull}
         onCtaClick={handleStickyCta}
@@ -370,7 +387,7 @@ export default function PurchasePanel({
                   regionInfo={regionInfo}
                   deliveryType={purchase.deliveryType}
                 />
-                {!selectedVariation && <UnavailableNotice />}
+                {!deliveryAvailable && <UnavailableNotice />}
               </div>
             )}
 

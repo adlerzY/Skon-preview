@@ -3,6 +3,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { absoluteUrl } from "@/lib/seo/site";
 
 const ALLOWED_PROVIDERS = new Set(["zarinpal", "aqayepardakht"]);
+const CALLBACK_TIMEOUT_MS = 20_000;
 
 function resultUrl(result: string, orderId?: string) {
   const query = new URLSearchParams({ payment: result });
@@ -34,6 +35,9 @@ async function forward(
     return NextResponse.redirect(resultUrl("processing", orderId), { status: 303, headers: noStore });
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CALLBACK_TIMEOUT_MS);
+
   try {
     const target = new URL(`${backendBase()}/btl/v1/pay/${provider}/${orderId}/callback`);
     request.nextUrl.searchParams.forEach((value, key) => target.searchParams.append(key, value));
@@ -43,6 +47,7 @@ async function forward(
       redirect: "manual",
       cache: "no-store",
       headers: {},
+      signal: controller.signal,
     };
 
     if (request.method === "POST") {
@@ -59,10 +64,12 @@ async function forward(
       return NextResponse.redirect(absoluteUrl(`${parsed.pathname}${parsed.search}`), { status: 303, headers: noStore });
     }
 
-    return NextResponse.redirect(resultUrl("failed", orderId), { status: 303, headers: noStore });
+    return NextResponse.redirect(resultUrl("processing", orderId), { status: 303, headers: noStore });
   } catch (error) {
     console.error("Payment callback proxy error:", error);
-    return NextResponse.redirect(resultUrl("failed", orderId), { status: 303, headers: noStore });
+    return NextResponse.redirect(resultUrl("processing", orderId), { status: 303, headers: noStore });
+  } finally {
+    clearTimeout(timer);
   }
 }
 

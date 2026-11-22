@@ -1,11 +1,14 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
-const MESSAGES: Record<string, { text: string; tone: "ok" | "warn" | "wait" }> = {
+export type PaymentResult = "success" | "processing" | "failed" | "cancelled";
+
+const MESSAGES: Record<PaymentResult, { text: string; tone: "ok" | "warn" | "wait" }> = {
   success: { text: "پرداخت با موفقیت انجام شد و سفارش شما در حال پردازش است.", tone: "ok" },
-  processing: { text: "پرداخت شما در حال بررسی است. چند لحظه بعد صفحه را تازه کنید.", tone: "wait" },
+  processing: { text: "پرداخت شما در حال بررسی است؛ وضعیت سفارش به‌صورت خودکار به‌روز می‌شود.", tone: "wait" },
   failed: { text: "پرداخت تأیید نشد. اگر مبلغی از حساب شما کسر شده، شماره سفارش را برای پشتیبانی ارسال کنید.", tone: "warn" },
   cancelled: { text: "پرداخت لغو شد. سفارش شما هنوز پرداخت نشده است.", tone: "warn" },
 };
@@ -16,14 +19,32 @@ const TONES = {
   wait: "text-brand-blue bg-brand-blue/10 border-brand-blue/20",
 };
 
-export default function PaymentResultBanner() {
-  const searchParams = useSearchParams();
-  const result = searchParams.get("payment");
-  const order = searchParams.get("order");
-  const message = result ? MESSAGES[result] : undefined;
+const POLL_MS = 5000;
+const MAX_POLLS = 12;
 
-  if (!message) return null;
+export default function PaymentResultBanner({
+  result,
+  orderId,
+  polling = false,
+}: {
+  result: PaymentResult;
+  orderId?: number;
+  polling?: boolean;
+}) {
+  const router = useRouter();
 
+  useEffect(() => {
+    if (!polling) return;
+    let count = 0;
+    const timer = window.setInterval(() => {
+      count += 1;
+      router.refresh();
+      if (count >= MAX_POLLS) window.clearInterval(timer);
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [polling, router]);
+
+  const message = MESSAGES[result];
   const Icon = message.tone === "ok" ? CheckCircle2 : message.tone === "wait" ? Clock : AlertTriangle;
 
   return (
@@ -31,7 +52,7 @@ export default function PaymentResultBanner() {
       <Icon size={16} className="mt-0.5 shrink-0" />
       <span>
         {message.text}
-        {order ? ` (سفارش #${Number(order).toLocaleString("fa-IR")})` : ""}
+        {orderId ? ` (سفارش #${orderId.toLocaleString("fa-IR")})` : ""}
       </span>
     </div>
   );

@@ -21,6 +21,7 @@ interface ProductStickyBarProps {
   groupedAttributes: GroupedAttribute[];
   selectedAttrs: Record<string, string>;
   onAttributeSelect: (name: string, value: string) => void;
+  isValueAvailable?: (name: string, value: string) => boolean;
   deliveryOptions?: DeliveryOption[];
   selectedDelivery?: string;
   onDeliverySelect?: (value: string) => void;
@@ -38,6 +39,7 @@ export default function ProductStickyBar({
   groupedAttributes,
   selectedAttrs,
   onAttributeSelect,
+  isValueAvailable,
   deliveryOptions,
   selectedDelivery,
   onDeliverySelect,
@@ -99,11 +101,19 @@ export default function ProductStickyBar({
                 className="bg-brand-surface border border-brand-surface_hover hover:border-brand-surface_m text-white text-xs font-bold px-2.5 py-1.5 focus:outline-none focus:border-brand-blue cursor-pointer shrink-0 min-w-[110px]"
                 aria-label={cleanName}
               >
-                {group.values.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-brand-surface text-white">
-                    {opt.value}
-                  </option>
-                ))}
+                {group.values.map((opt) => {
+                  const available = isValueAvailable ? isValueAvailable(group.name, opt.value) : true;
+                  return (
+                    <option
+                      key={opt.value}
+                      value={opt.value}
+                      disabled={!available && selectedAttrs[group.name] !== opt.value}
+                      className="bg-brand-surface text-white"
+                    >
+                      {opt.value}{!available ? " (ناموجود)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             );
           })}
