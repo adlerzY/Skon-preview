@@ -54,9 +54,10 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
   const [status, setStatus] = useState("open");
   const [search, setSearch] = useState("");
   const [mine, setMine] = useState(false);
+  const [order, setOrder] = useState("desc");
   const params = useMemo(
-    () => ({ status, search: search.trim(), mineOnly: mine ? "true" : "" }),
-    [status, search, mine]
+    () => ({ status, search: search.trim(), mineOnly: mine ? "true" : "", order }),
+    [status, search, mine, order]
   );
 
   const { data, loading, loadingMore, error, refresh, loadMore } = useAdminList<TicketsData>({
@@ -90,6 +91,10 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
         <AdminSelect value={mine ? "mine" : "all"} onChange={(event) => setMine(event.target.value === "mine")} className="lg:w-[200px] lg:flex-none">
           <option value="all">همه تیکت‌ها</option>
           <option value="mine">فقط تیکت‌های من</option>
+        </AdminSelect>
+                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
+          <option value="desc">جدیدترین</option>
+          <option value="asc">قدیمی‌ترین (صف انتظار)</option>
         </AdminSelect>
       </AdminFilterBar>
 

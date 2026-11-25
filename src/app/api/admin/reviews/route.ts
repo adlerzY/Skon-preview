@@ -15,6 +15,7 @@ export function GET(request: NextRequest) {
     const data = await adminQuery(ADMIN_REVIEWS_QUERY, {
       first: 20,
       state: STATES.has(requested) ? requested : "pending",
+            order: params.get("order") === "asc" ? "asc" : "desc",
       after: params.get("after") || undefined,
     });
     if (!data) return adminFail("خطا در دریافت دیدگاه‌ها", 502);

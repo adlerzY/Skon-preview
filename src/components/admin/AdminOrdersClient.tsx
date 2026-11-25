@@ -69,7 +69,8 @@ export default function AdminOrdersClient({
   const effectivePermissions = permissions.length ? permissions : context.permissions;
   const [status, setStatus] = useState("processing");
   const [search, setSearch] = useState("");
-  const params = useMemo(() => ({ status, search: search.trim() }), [status, search]);
+  const [order, setOrder] = useState("desc");
+  const params = useMemo(() => ({ status, search: search.trim(), order }), [status, search, order]);
 
   const { data, loading, loadingMore, error, refresh, loadMore } = useAdminList<OrdersData>({
     endpoint: "/api/admin/orders",
@@ -94,6 +95,10 @@ export default function AdminOrdersClient({
           <option value="processing">در حال پردازش</option>
           <option value="completed">تکمیل‌شده</option>
           <option value="all">همه پرداخت‌شده‌ها</option>
+        </AdminSelect>
+                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
+          <option value="desc">جدیدترین</option>
+          <option value="asc">قدیمی‌ترین</option>
         </AdminSelect>
       </AdminFilterBar>
 

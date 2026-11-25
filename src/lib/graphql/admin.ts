@@ -42,8 +42,8 @@ export const ADMIN_DASHBOARD_SUMMARY_QUERY = `
 `;
 
 export const ADMIN_ORDERS_QUERY = `
-  query GetAdminOrders($first: Int, $after: String, $status: String, $search: String) {
-    adminOrders(first: $first, after: $after, status: $status, search: $search) {
+  query GetAdminOrders($first: Int, $after: String, $status: String, $search: String, $order: String) {
+    adminOrders(first: $first, after: $after, status: $status, search: $search, order: $order) {
       pageInfo { hasNextPage endCursor }
       nodes {
         databaseId orderNumber status paymentStatus fulfillmentStatus total currency date
@@ -84,8 +84,8 @@ export const ADMIN_UPDATE_ORDER_ITEM_FULFILLMENT_MUTATION = `
 `;
 
 export const ADMIN_TICKETS_QUERY = `
-  query GetAdminTickets($first: Int, $after: String, $status: String, $search: String, $mineOnly: Boolean) {
-    adminTickets(first: $first, after: $after, status: $status, search: $search, mineOnly: $mineOnly) {
+  query GetAdminTickets($first: Int, $after: String, $status: String, $search: String, $mineOnly: Boolean, $order: String) {
+    adminTickets(first: $first, after: $after, status: $status, search: $search, mineOnly: $mineOnly, order: $order) {
       pageInfo { hasNextPage endCursor }
       nodes {
         databaseId title date status priority customerId customerName customerEmail linkedOrderId assigneeId assigneeName claimExpiresAt
@@ -139,8 +139,8 @@ export const ADMIN_REASSIGN_TICKET_MUTATION = `
 
 
 export const ADMIN_REVIEWS_QUERY = `
-  query GetAdminReviews($first: Int, $after: String, $state: String) {
-    adminReviews(first: $first, after: $after, state: $state) {
+  query GetAdminReviews($first: Int, $after: String, $state: String, $order: String) {
+    adminReviews(first: $first, after: $after, state: $state, order: $order) {
       pageInfo { hasNextPage endCursor }
       nodes { databaseId content rating date status moderationState userId userName userEmail productId productName productSlug }
     }

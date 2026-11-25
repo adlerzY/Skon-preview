@@ -53,6 +53,7 @@ export function GET(request: NextRequest) {
       first: 20,
       status: params.get("status") || "",
       search: (params.get("search") || "").trim().slice(0, 100),
+            order: params.get("order") === "asc" ? "asc" : "desc",
       after: params.get("after") || undefined,
     });
     if (!data) return adminFail("خطا در دریافت سفارش‌ها", 502);

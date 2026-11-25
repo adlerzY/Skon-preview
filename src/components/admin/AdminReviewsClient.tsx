@@ -40,9 +40,10 @@ const STATES: Record<string, string> = {
 
 export default function AdminReviewsClient({ initial }: { initial?: ReviewsData }) {
   const [state, setState] = useState("pending");
+    const [order, setOrder] = useState("desc");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
-  const params = useMemo(() => ({ state }), [state]);
+  const params = useMemo(() => ({ state, order }), [state, order]);
 
   const { data, setData, loading, loadingMore, error, refresh, loadMore } = useAdminList<ReviewsData>({
     endpoint: "/api/admin/reviews",
@@ -90,6 +91,10 @@ export default function AdminReviewsClient({ initial }: { initial?: ReviewsData 
           <option value="published">منتشرشده</option>
           <option value="flagged">علامت‌گذاری‌شده</option>
           <option value="hidden">مخفی</option>
+        </AdminSelect>
+                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
+          <option value="desc">جدیدترین</option>
+          <option value="asc">قدیمی‌ترین</option>
         </AdminSelect>
       </AdminFilterBar>
 

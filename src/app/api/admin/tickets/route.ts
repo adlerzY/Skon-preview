@@ -83,6 +83,7 @@ export function GET(request: NextRequest) {
       status: params.get("status") || "",
       search: text(params.get("search"), 100),
       mineOnly: params.get("mineOnly") === "true",
+            order: params.get("order") === "asc" ? "asc" : "desc",
       after: params.get("after") || undefined,
     });
     if (!data) return adminFail("خطا در دریافت تیکت‌ها", 502);
