@@ -49,7 +49,8 @@ export async function fetchGraphQLWithErrors(
   authToken?: string,
   sessionId?: string,
   bootstrapProof?: string,
-  previousAuthToken?: string
+  previousAuthToken?: string,
+  extraHeaders: Record<string, string> = {}
 ): Promise<{ data: any; errorMessage: string | null }> {
   const { url: endpointUrl, hostHeader } = resolveEndpoint();
   let boundSessionId = sessionId;
@@ -77,6 +78,7 @@ export async function fetchGraphQLWithErrors(
         ...(previousAuthToken ? { "X-BTL-Previous-Authorization": `Bearer ${previousAuthToken}` } : {}),
         ...(hostHeader ? { Host: hostHeader } : {}),
         ...clientIpHeaders,
+        ...extraHeaders,
       },
       body: JSON.stringify({ query, variables }),
     });

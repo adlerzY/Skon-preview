@@ -1,55 +1,104 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminMutation, getAdminCdKeyStock, ADMIN_MUTATIONS } from "@/lib/admin/server";
-import { ADMIN_PERMISSIONS } from "@/lib/admin/permissions";
-import { readJsonBody, requestBodyErrorResponse } from "@/lib/requestBody";
+import { NextRequest } from "next/server";
+import { adminFail, adminJson, positiveInt, runAdmin, runMutation } from "@/lib/admin/api";
+import { adminQuery, assertAdminApi, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { ADMIN_CDKEY_STOCK_QUERY } from "@/lib/graphql/admin";
+import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/admin/permissions";
+import { readJsonBody } from "@/lib/requestBody";
 
-export async function GET(request: NextRequest) {
-  try {
-    const params = request.nextUrl.searchParams;
-    const data = await getAdminCdKeyStock({
-      status: params.get("status") || "all",
-      productId: params.get("productId") ? Number(params.get("productId")) : undefined,
-      variationId: params.get("variationId") ? Number(params.get("variationId")) : undefined,
-      after: params.get("after") || undefined,
-    });
-    return NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
-  } catch (error) {
-    console.error("Admin CD Key stock GET:", error);
-    return NextResponse.json({ error: "خطا در دریافت موجودی CD Key" }, { status: 500 });
-  }
+const STATUSES = new Set(["all", "available", "reserved", "used", "duplicate", "decrypt_failed", "failed"]);
+
+interface ActionSpec {
+  permission: AdminPermission;
+  query: string;
+  key: string;
+  variables: (body: any) => Record<string, unknown> | null;
 }
 
-export async function POST(request: NextRequest) {
-  try {
+const ACTIONS: Record<string, ActionSpec> = {
+  import: {
+    permission: ADMIN_PERMISSIONS.CDKEYS_WRITE,
+    query: ADMIN_MUTATIONS.importCdKeys,
+    key: "adminImportCdKeys",
+    variables: (body) => {
+      const productId = positiveInt(body?.productId);
+      const variationId = positiveInt(body?.variationId);
+      const keys = String(body?.keys ?? "");
+      return productId && variationId && keys.trim() ? { productId, variationId, keys } : null;
+    },
+  },
+  delete: {
+    permission: ADMIN_PERMISSIONS.CDKEYS_WRITE,
+    query: ADMIN_MUTATIONS.deleteCdKey,
+    key: "adminDeleteCdKey",
+    variables: (body) => {
+      const stockId = positiveInt(body?.stockId);
+      return stockId ? { stockId } : null;
+    },
+  },
+  assign: {
+    permission: ADMIN_PERMISSIONS.CDKEYS_WRITE,
+    query: ADMIN_MUTATIONS.assignCdKeys,
+    key: "adminAssignCdKeys",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const itemId = positiveInt(body?.itemId);
+      const quantity = positiveInt(body?.quantity);
+      return orderId && itemId && quantity ? { orderId, itemId, quantity } : null;
+    },
+  },
+  manualAssign: {
+    permission: ADMIN_PERMISSIONS.CDKEYS_WRITE,
+    query: ADMIN_MUTATIONS.assignCdKeyManually,
+    key: "adminAssignCdKeyManually",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const itemId = positiveInt(body?.itemId);
+      const key = String(body?.key ?? "").trim();
+      return orderId && itemId && key ? { orderId, itemId, key } : null;
+    },
+  },
+  reveal: {
+    permission: ADMIN_PERMISSIONS.CDKEYS_REVEAL,
+    query: ADMIN_MUTATIONS.revealCdKeys,
+    key: "adminRevealCdKeys",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const itemId = positiveInt(body?.itemId);
+      return orderId && itemId ? { orderId, itemId } : null;
+    },
+  },
+};
+
+export function GET(request: NextRequest) {
+  return runAdmin(ADMIN_PERMISSIONS.CDKEYS_READ, "خطا در دریافت موجودی CD Key", async () => {
+    const params = request.nextUrl.searchParams;
+    const requested = params.get("status") || "all";
+    const data = await adminQuery(ADMIN_CDKEY_STOCK_QUERY, {
+      first: 30,
+      status: STATUSES.has(requested) ? requested : "all",
+      productId: positiveInt(params.get("productId")) ?? undefined,
+      variationId: positiveInt(params.get("variationId")) ?? undefined,
+      after: params.get("after") || undefined,
+    });
+    if (!data) return adminFail("خطا در دریافت موجودی CD Key", 502);
+    return adminJson(
+      data.adminCdKeyStock ?? {
+        nodes: [],
+        pageInfo: { hasNextPage: false, endCursor: null },
+        summary: { available: 0, reserved: 0, used: 0, failed: 0, total: 0 },
+      }
+    );
+  });
+}
+
+export function POST(request: NextRequest) {
+  return runAdmin(undefined, "عملیات CD Key انجام نشد", async () => {
     const body = await readJsonBody(request, 1024 * 1024);
-    const action = String(body?.action || "");
-    const map: Record<string, string> = {
-      import: ADMIN_MUTATIONS.importCdKeys,
-      delete: ADMIN_MUTATIONS.deleteCdKey,
-      assign: ADMIN_MUTATIONS.assignCdKeys,
-      manualAssign: ADMIN_MUTATIONS.assignCdKeyManually,
-      reveal: ADMIN_MUTATIONS.revealCdKeys,
-    };
-    if (!map[action]) return NextResponse.json({ error: "عملیات نامعتبر است" }, { status: 400 });
-
-    const variables = action === "import"
-      ? { productId: Number(body.productId), variationId: Number(body.variationId), keys: String(body.keys || "") }
-      : action === "delete"
-        ? { stockId: Number(body.stockId) }
-      : action === "assign"
-        ? { orderId: Number(body.orderId), itemId: Number(body.itemId), quantity: Number(body.quantity) }
-        : action === "manualAssign"
-          ? { orderId: Number(body.orderId), itemId: Number(body.itemId), key: String(body.key || "") }
-          : { orderId: Number(body.orderId), itemId: Number(body.itemId) };
-
-    const permission = action === "reveal"
-      ? ADMIN_PERMISSIONS.CDKEYS_REVEAL
-      : ADMIN_PERMISSIONS.CDKEYS_WRITE;
-    return NextResponse.json(await adminMutation(map[action], variables, permission), { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    const bodyError = requestBodyErrorResponse(error);
-    if (bodyError) return bodyError;
-    console.error("Admin CD Key mutation:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "عملیات CD Key انجام نشد" }, { status: 500 });
-  }
+    const spec = ACTIONS[String(body?.action || "")];
+    if (!spec) return adminFail("عملیات نامعتبر است", 400);
+    await assertAdminApi(spec.permission);
+    const variables = spec.variables(body);
+    if (!variables) return adminFail("اطلاعات ارسالی نامعتبر است", 400);
+    return runMutation(spec.query, variables, spec.key, "عملیات CD Key انجام نشد");
+  });
 }

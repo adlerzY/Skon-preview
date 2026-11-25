@@ -1,8 +1,10 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getAuthToken, getCurrentAdminUser } from "@/lib/auth/session";
 import { fetchGraphQL } from "@/lib/graphql";
+import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
 import {
   ADMIN_BOOTSTRAP_QUERY,
   ADMIN_CLAIM_TICKET_MUTATION,
@@ -35,17 +37,78 @@ import { resolveAvatarUrl } from "@/lib/avatars";
 import type { AdminPermission } from "./permissions";
 import { getAdminGraphQLHeaders } from "./headers";
 
-export async function requireAdmin(permission?: AdminPermission): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentAdminUser>>>; permissions: string[] }> {
+const ACCESS_TTL_MS = 20_000;
+const ACCESS_CACHE_LIMIT = 500;
+const accessCache = new Map<string, { permissions: string[]; expiresAt: number }>();
+
+export const ADMIN_UNREAD_COUNT_QUERY = `query GetAdminUnreadCount { adminUnreadNotificationsCount }`;
+
+export class AdminAccessError extends Error {
+  readonly status: 401 | 403;
+
+  constructor(message: string, status: 401 | 403) {
+    super(message);
+    this.name = "AdminAccessError";
+    this.status = status;
+  }
+}
+
+async function resolveAdminAccess(): Promise<{ permissions: string[] } | null> {
+  const token = await getAuthToken();
+  if (!token) return null;
+
+  const key = createHash("sha256").update(token).digest("hex");
+  const now = Date.now();
+  const hit = accessCache.get(key);
+  if (hit && hit.expiresAt > now) return { permissions: hit.permissions };
+
   const user = await getCurrentAdminUser();
-  if (!user?.isStaff) redirect("/admin-login");
+  if (!user?.isStaff) {
+    accessCache.delete(key);
+    return null;
+  }
+
+  if (accessCache.size >= ACCESS_CACHE_LIMIT) {
+    for (const [cacheKey, entry] of accessCache) {
+      if (entry.expiresAt <= now) accessCache.delete(cacheKey);
+    }
+    if (accessCache.size >= ACCESS_CACHE_LIMIT) accessCache.clear();
+  }
+
   const permissions = user.adminPermissions ?? [];
-  if (permission && !permissions.includes(permission)) redirect("/admin");
-  return { user, permissions };
+  accessCache.set(key, { permissions, expiresAt: now + ACCESS_TTL_MS });
+  return { permissions };
+}
+
+export async function requireAdmin(permission?: AdminPermission): Promise<{ permissions: string[] }> {
+  const access = await resolveAdminAccess();
+  if (!access) redirect("/admin-login");
+  if (permission && !access.permissions.includes(permission)) redirect("/admin");
+  return access;
+}
+
+export async function assertAdminApi(permission?: AdminPermission): Promise<{ permissions: string[] }> {
+  const access = await resolveAdminAccess();
+  if (!access) throw new AdminAccessError("دسترسی غیرمجاز", 401);
+  if (permission && !access.permissions.includes(permission)) throw new AdminAccessError("دسترسی غیرمجاز", 403);
+  return access;
 }
 
 async function adminFetch<T = any>(query: string, variables: Record<string, unknown> = {}) {
   const token = (await getAuthToken()) || undefined;
   return fetchGraphQL(query, variables, [], "no-store", token, undefined, undefined, undefined, getAdminGraphQLHeaders()) as T;
+}
+
+export function adminQuery<T = any>(query: string, variables: Record<string, unknown> = {}) {
+  return adminFetch<T>(query, variables);
+}
+
+export async function adminAction(
+  query: string,
+  variables: Record<string, unknown> = {}
+): Promise<{ data: any; errorMessage: string | null }> {
+  const token = (await getAuthToken()) || undefined;
+  return fetchGraphQLWithErrors(query, variables, token, undefined, undefined, undefined, getAdminGraphQLHeaders());
 }
 
 export interface AdminBootstrap {
@@ -80,10 +143,6 @@ export const getAdminBootstrap = cache(async (): Promise<AdminBootstrap> => {
     permissions,
   };
 });
-
-
-
-
 
 export async function getAdminDashboardWithContext(bootstrap: AdminBootstrap) {
   if (!bootstrap?.user?.id) redirect("/admin-login");
@@ -139,7 +198,6 @@ export async function getAdminTicketWithContext(bootstrap: AdminBootstrap, id: n
   return data?.adminTicket ?? null;
 }
 
-
 export async function getAdminReviewsWithContext(bootstrap: AdminBootstrap, variables: Record<string, unknown> = {}) {
   assertAdminBootstrapPermission(bootstrap, "reviews.moderate");
   const data = await adminFetch(ADMIN_REVIEWS_QUERY, { first: 20, state: "pending", ...variables });
@@ -179,7 +237,6 @@ export async function getAdminTicket(id: number) {
   const data = await adminFetch(ADMIN_TICKET_QUERY, { id });
   return data?.adminTicket ?? null;
 }
-
 
 export async function getAdminReviews(variables: Record<string, unknown> = {}) {
   await requireAdmin("reviews.moderate");

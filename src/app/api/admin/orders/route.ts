@@ -1,41 +1,73 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminMutation, getAdminOrders, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { NextRequest } from "next/server";
+import { adminFail, adminJson, positiveInt, runAdmin, runMutation } from "@/lib/admin/api";
+import { adminQuery, assertAdminApi, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { ADMIN_ORDERS_QUERY } from "@/lib/graphql/admin";
 import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/admin/permissions";
+import { readJsonBody } from "@/lib/requestBody";
 
-export async function GET(request: NextRequest) {
-  try {
-    const params = request.nextUrl.searchParams;
-    const data = await getAdminOrders({
-      status: params.get("status") || "",
-      search: params.get("search") || "",
-      after: params.get("after") || undefined,
-    });
-    return NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
-  } catch (error) {
-    console.error("Admin orders GET:", error);
-    return NextResponse.json({ error: "خطا در دریافت سفارش‌ها" }, { status: 500 });
-  }
+interface ActionSpec {
+  permission: AdminPermission;
+  query: string;
+  key: string;
+  variables: (body: any) => Record<string, unknown> | null;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const action = String(body?.action || "");
-    const map: Record<string, { query: string; permission: AdminPermission }> = {
-      addNote: { query: ADMIN_MUTATIONS.addOrderNote, permission: ADMIN_PERMISSIONS.ORDERS_WRITE },
-      updateStatus: { query: ADMIN_MUTATIONS.updateOrderStatus, permission: ADMIN_PERMISSIONS.ORDERS_WRITE },
-      updateFulfillment: { query: ADMIN_MUTATIONS.updateOrderItemFulfillment, permission: ADMIN_PERMISSIONS.ORDERS_FULFILL },
-    };
-    if (!map[action]) return NextResponse.json({ error: "عملیات نامعتبر است" }, { status: 400 });
-    const variables = action === "addNote"
-      ? { orderId: Number(body.orderId), content: String(body.content || "") }
-      : action === "updateStatus"
-        ? { orderId: Number(body.orderId), status: String(body.status || "") }
-        : { orderId: Number(body.orderId), itemId: Number(body.itemId), status: String(body.status || "") };
-    const data = await adminMutation(map[action].query, variables, map[action].permission);
-    return NextResponse.json(data ?? { success: false });
-  } catch (error) {
-    console.error("Admin orders POST:", error);
-    return NextResponse.json({ error: "عملیات سفارش انجام نشد" }, { status: 500 });
-  }
+const ACTIONS: Record<string, ActionSpec> = {
+  addNote: {
+    permission: ADMIN_PERMISSIONS.ORDERS_WRITE,
+    query: ADMIN_MUTATIONS.addOrderNote,
+    key: "adminAddOrderNote",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const content = String(body?.content ?? "").trim().slice(0, 5000);
+      return orderId && content ? { orderId, content } : null;
+    },
+  },
+  updateStatus: {
+    permission: ADMIN_PERMISSIONS.ORDERS_WRITE,
+    query: ADMIN_MUTATIONS.updateOrderStatus,
+    key: "adminUpdateOrderStatus",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const status = String(body?.status ?? "").trim();
+      return orderId && status ? { orderId, status } : null;
+    },
+  },
+  updateFulfillment: {
+    permission: ADMIN_PERMISSIONS.ORDERS_FULFILL,
+    query: ADMIN_MUTATIONS.updateOrderItemFulfillment,
+    key: "adminUpdateOrderItemFulfillment",
+    variables: (body) => {
+      const orderId = positiveInt(body?.orderId);
+      const itemId = positiveInt(body?.itemId);
+      const status = String(body?.status ?? "").trim();
+      return orderId && itemId && status ? { orderId, itemId, status } : null;
+    },
+  },
+};
+
+export function GET(request: NextRequest) {
+  return runAdmin(ADMIN_PERMISSIONS.ORDERS_READ, "خطا در دریافت سفارش‌ها", async () => {
+    const params = request.nextUrl.searchParams;
+    const data = await adminQuery(ADMIN_ORDERS_QUERY, {
+      first: 20,
+      status: params.get("status") || "",
+      search: (params.get("search") || "").trim().slice(0, 100),
+      after: params.get("after") || undefined,
+    });
+    if (!data) return adminFail("خطا در دریافت سفارش‌ها", 502);
+    return adminJson(data.adminOrders ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } });
+  });
+}
+
+export function POST(request: NextRequest) {
+  return runAdmin(undefined, "عملیات سفارش انجام نشد", async () => {
+    const body = await readJsonBody(request, 16 * 1024);
+    const spec = ACTIONS[String(body?.action || "")];
+    if (!spec) return adminFail("عملیات نامعتبر است", 400);
+    await assertAdminApi(spec.permission);
+    const variables = spec.variables(body);
+    if (!variables) return adminFail("اطلاعات ارسالی نامعتبر است", 400);
+    return runMutation(spec.query, variables, spec.key, "عملیات سفارش انجام نشد");
+  });
 }

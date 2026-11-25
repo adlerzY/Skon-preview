@@ -1,26 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminMutation, getAdminNotifications } from "@/lib/admin/server";
-import { MARK_ADMIN_NOTIFICATIONS_READ_MUTATION } from "@/lib/graphql/admin";
+import { NextRequest } from "next/server";
+import { adminFail, adminJson, runAdmin, runMutation } from "@/lib/admin/api";
+import { adminQuery, ADMIN_UNREAD_COUNT_QUERY } from "@/lib/admin/server";
+import { ADMIN_NOTIFICATIONS_QUERY, MARK_ADMIN_NOTIFICATIONS_READ_MUTATION } from "@/lib/graphql/admin";
+import { readJsonBody } from "@/lib/requestBody";
 
-export async function GET(request: NextRequest) {
-  try {
-    const unreadOnly = request.nextUrl.searchParams.get("unreadOnly") === "true";
-    const data = await getAdminNotifications(unreadOnly);
-    return NextResponse.json({ notifications: data }, { headers: { "Cache-Control": "private, no-store" } });
-  } catch (error) {
-    console.error("Admin notifications GET:", error);
-    return NextResponse.json({ error: "خطا در دریافت اعلان‌ها" }, { status: 500 });
-  }
+export function GET(request: NextRequest) {
+  return runAdmin(undefined, "خطا در دریافت اعلان‌ها", async () => {
+    const params = request.nextUrl.searchParams;
+
+    if (params.get("countOnly") === "1") {
+      const data = await adminQuery(ADMIN_UNREAD_COUNT_QUERY);
+      if (!data) return adminFail("خطا در دریافت اعلان‌ها", 502);
+      return adminJson({ count: Number(data.adminUnreadNotificationsCount ?? 0) });
+    }
+
+    const data = await adminQuery(ADMIN_NOTIFICATIONS_QUERY, {
+      first: 20,
+      unreadOnly: params.get("unreadOnly") === "true",
+    });
+    if (!data) return adminFail("خطا در دریافت اعلان‌ها", 502);
+    return adminJson({ notifications: Array.isArray(data.adminNotifications) ? data.adminNotifications : [] });
+  });
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const ids = Array.isArray(body?.notificationIds) ? body.notificationIds.map(Number) : [];
-    const data = await adminMutation(MARK_ADMIN_NOTIFICATIONS_READ_MUTATION, { notificationIds: ids });
-    return NextResponse.json(data ?? { success: false });
-  } catch (error) {
-    console.error("Admin notifications POST:", error);
-    return NextResponse.json({ error: "اعلان‌ها به‌روزرسانی نشدند" }, { status: 500 });
-  }
+export function POST(request: NextRequest) {
+  return runAdmin(undefined, "اعلان‌ها به‌روزرسانی نشدند", async () => {
+    const body = await readJsonBody(request, 8 * 1024);
+    const ids = Array.isArray(body?.notificationIds)
+      ? body.notificationIds.map(Number).filter((id: number) => Number.isInteger(id) && id > 0).slice(0, 100)
+      : [];
+    return runMutation(
+      MARK_ADMIN_NOTIFICATIONS_READ_MUTATION,
+      { notificationIds: ids },
+      "markAdminNotificationsRead",
+      "اعلان‌ها به‌روزرسانی نشدند"
+    );
+  });
 }

@@ -1,48 +1,103 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminMutation, getAdminTickets, getAdminStaffUsers, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { NextRequest } from "next/server";
+import { adminFail, adminJson, positiveInt, runAdmin, runMutation } from "@/lib/admin/api";
+import { adminQuery, assertAdminApi, ADMIN_MUTATIONS } from "@/lib/admin/server";
+import { ADMIN_STAFF_USERS_QUERY, ADMIN_TICKETS_QUERY } from "@/lib/graphql/admin";
 import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/admin/permissions";
+import { readJsonBody } from "@/lib/requestBody";
 
-export async function GET(request: NextRequest) {
-  try {
-    const params = request.nextUrl.searchParams;
-    if (params.get("staff") === "1") {
-      const staff = await getAdminStaffUsers();
-      return NextResponse.json({ staff }, { headers: { "Cache-Control": "private, no-store" } });
+interface ActionSpec {
+  permission: AdminPermission;
+  query: string;
+  key: string;
+  variables: (body: any) => Record<string, unknown> | null;
+}
+
+const text = (value: unknown, max: number) => String(value ?? "").trim().slice(0, max);
+
+const ACTIONS: Record<string, ActionSpec> = {
+  claim: {
+    permission: ADMIN_PERMISSIONS.TICKETS_CLAIM,
+    query: ADMIN_MUTATIONS.claimTicket,
+    key: "adminClaimTicket",
+    variables: (body) => {
+      const ticketId = positiveInt(body?.ticketId);
+      return ticketId ? { ticketId } : null;
+    },
+  },
+  reply: {
+    permission: ADMIN_PERMISSIONS.TICKETS_WRITE,
+    query: ADMIN_MUTATIONS.replyTicket,
+    key: "adminReplyToTicket",
+    variables: (body) => {
+      const ticketId = positiveInt(body?.ticketId);
+      const content = text(body?.content, 10000);
+      return ticketId && content ? { ticketId, content } : null;
+    },
+  },
+  note: {
+    permission: ADMIN_PERMISSIONS.TICKETS_WRITE,
+    query: ADMIN_MUTATIONS.addTicketNote,
+    key: "adminAddTicketNote",
+    variables: (body) => {
+      const ticketId = positiveInt(body?.ticketId);
+      const content = text(body?.content, 10000);
+      return ticketId && content ? { ticketId, content } : null;
+    },
+  },
+  status: {
+    permission: ADMIN_PERMISSIONS.TICKETS_WRITE,
+    query: ADMIN_MUTATIONS.setTicketStatus,
+    key: "adminSetTicketStatus",
+    variables: (body) => {
+      const ticketId = positiveInt(body?.ticketId);
+      const status = text(body?.status, 32);
+      return ticketId && status ? { ticketId, status } : null;
+    },
+  },
+  reassign: {
+    permission: ADMIN_PERMISSIONS.TICKETS_WRITE,
+    query: ADMIN_MUTATIONS.reassignTicket,
+    key: "adminReassignTicket",
+    variables: (body) => {
+      const ticketId = positiveInt(body?.ticketId);
+      const adminUserId = positiveInt(body?.adminUserId);
+      return ticketId && adminUserId ? { ticketId, adminUserId } : null;
+    },
+  },
+};
+
+export function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const wantsStaff = params.get("staff") === "1";
+  const permission = wantsStaff ? ADMIN_PERMISSIONS.TICKETS_WRITE : ADMIN_PERMISSIONS.TICKETS_READ;
+
+  return runAdmin(permission, "خطا در دریافت تیکت‌ها", async () => {
+    if (wantsStaff) {
+      const data = await adminQuery(ADMIN_STAFF_USERS_QUERY);
+      if (!data) return adminFail("خطا در دریافت لیست پشتیبان‌ها", 502);
+      return adminJson({ staff: Array.isArray(data.adminStaffUsers) ? data.adminStaffUsers : [] });
     }
-    const data = await getAdminTickets({
+
+    const data = await adminQuery(ADMIN_TICKETS_QUERY, {
+      first: 20,
       status: params.get("status") || "",
-      search: params.get("search") || "",
+      search: text(params.get("search"), 100),
       mineOnly: params.get("mineOnly") === "true",
       after: params.get("after") || undefined,
     });
-    return NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
-  } catch (error) {
-    console.error("Admin tickets GET:", error);
-    return NextResponse.json({ error: "خطا در دریافت تیکت‌ها" }, { status: 500 });
-  }
+    if (!data) return adminFail("خطا در دریافت تیکت‌ها", 502);
+    return adminJson(data.adminTickets ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } });
+  });
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const action = String(body?.action || "");
-    const map: Record<string, { query: string; permission: AdminPermission }> = {
-      claim: { query: ADMIN_MUTATIONS.claimTicket, permission: ADMIN_PERMISSIONS.TICKETS_CLAIM },
-      reply: { query: ADMIN_MUTATIONS.replyTicket, permission: ADMIN_PERMISSIONS.TICKETS_WRITE },
-      note: { query: ADMIN_MUTATIONS.addTicketNote, permission: ADMIN_PERMISSIONS.TICKETS_WRITE },
-      status: { query: ADMIN_MUTATIONS.setTicketStatus, permission: ADMIN_PERMISSIONS.TICKETS_WRITE },
-      reassign: { query: ADMIN_MUTATIONS.reassignTicket, permission: ADMIN_PERMISSIONS.TICKETS_CLAIM },
-    };
-    if (!map[action]) return NextResponse.json({ error: "عملیات نامعتبر است" }, { status: 400 });
-    let variables: Record<string, unknown>;
-    if (action === "claim") variables = { ticketId: Number(body.ticketId) };
-    else if (action === "reply" || action === "note") variables = { ticketId: Number(body.ticketId), content: String(body.content || "") };
-    else if (action === "status") variables = { ticketId: Number(body.ticketId), status: String(body.status || "") };
-    else variables = { ticketId: Number(body.ticketId), adminUserId: Number(body.adminUserId) };
-    const data = await adminMutation(map[action].query, variables, map[action].permission);
-    return NextResponse.json(data ?? { success: false });
-  } catch (error) {
-    console.error("Admin tickets POST:", error);
-    return NextResponse.json({ error: "عملیات تیکت انجام نشد" }, { status: 500 });
-  }
+export function POST(request: NextRequest) {
+  return runAdmin(undefined, "عملیات تیکت انجام نشد", async () => {
+    const body = await readJsonBody(request, 64 * 1024);
+    const spec = ACTIONS[String(body?.action || "")];
+    if (!spec) return adminFail("عملیات نامعتبر است", 400);
+    await assertAdminApi(spec.permission);
+    const variables = spec.variables(body);
+    if (!variables) return adminFail("اطلاعات ارسالی نامعتبر است", 400);
+    return runMutation(spec.query, variables, spec.key, "عملیات تیکت انجام نشد");
+  });
 }
