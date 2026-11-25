@@ -257,3 +257,40 @@ export const ADMIN_SET_SITE_NOTICE_MUTATION = `
     }
   }
 `;
+export const ADMIN_USERS_QUERY = `
+  query GetAdminUsers($first: Int, $after: String, $search: String, $segment: String, $order: String) {
+    adminUsers(first: $first, after: $after, search: $search, segment: $segment, order: $order) {
+      pageInfo { hasNextPage endCursor }
+      nodes { databaseId name email phone registeredAt isStaff paidOrdersCount ticketsCount reviewsCount lastActive }
+    }
+  }
+`;
+
+export const ADMIN_USER_QUERY = `
+  query GetAdminUser($id: Int!) {
+    adminUser(id: $id) {
+      user { databaseId name email phone registeredAt isStaff paidOrdersCount ticketsCount reviewsCount lastActive }
+      recentOrders { databaseId orderNumber status total currency date }
+      recentTickets { databaseId title status date }
+    }
+  }
+`;
+
+export const ADMIN_PRODUCTS_QUERY = `
+  query GetAdminProducts($first: Int, $after: String, $search: String, $status: String, $sort: String, $order: String) {
+    adminProducts(first: $first, after: $after, search: $search, status: $status, sort: $sort, order: $order) {
+      pageInfo { hasNextPage endCursor }
+      nodes { databaseId name slug status imageUrl variationCount codeAvailable codeReserved editUrl }
+    }
+  }
+`;
+
+export const ADMIN_PRODUCT_QUERY = `
+  query GetAdminProduct($id: Int!) {
+    adminProduct(id: $id) {
+      product { databaseId name slug status imageUrl variationCount codeAvailable codeReserved editUrl }
+      variations { databaseId name region currency status baseForeignPrice directPrice giftPrice codePrice codeAvailable codeReserved codeUsed }
+      categories
+    }
+  }
+`;

@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, ClipboardList, LayoutDashboard, LifeBuoy, LogOut, UserCog, ShieldCheck, ShoppingCart, X } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  LayoutDashboard,
+  LifeBuoy,
+  LogOut,
+  Package,
+  ShieldCheck,
+  ShoppingCart,
+  UserCog,
+  Users,
+  X,
+} from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/admin/permissions";
 import { useLogout } from "@/lib/hooks/useLogout";
@@ -29,6 +41,8 @@ const NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/tickets", label: "تیکت‌ها", icon: LifeBuoy, permission: ADMIN_PERMISSIONS.TICKETS_READ },
   { href: "/admin/cdkeys", label: "CD Keyها", icon: ShieldCheck, permission: ADMIN_PERMISSIONS.CDKEYS_READ },
   { href: "/admin/reviews", label: "دیدگاه‌ها", icon: ClipboardList, permission: ADMIN_PERMISSIONS.REVIEWS_MODERATE },
+  { href: "/admin/users", label: "کاربران", icon: Users, permission: ADMIN_PERMISSIONS.USERS_READ },
+  { href: "/admin/products", label: "محصولات", icon: Package, permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
 ];
 
 function canSee(item: AdminNavItem, permissions: string[]) {
@@ -46,10 +60,10 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
 
   return (
     <aside className={containerClasses} role={!isDesktop ? "dialog" : undefined} aria-modal={!isDesktop ? isOpen : undefined}>
-      <div className="flex flex-col h-full w-[260px]">
-        <div className="relative flex items-center gap-3 px-5 py-4 border-b border-brand-surface_hover shrink-0">
+      <div className="flex h-full w-[260px] flex-col">
+        <div className="relative flex shrink-0 items-center gap-3 border-b border-brand-surface_hover px-5 py-4">
           {!isDesktop && (
-            <button type="button" onClick={onClose} className="absolute top-3 left-3 text-brand-m_khonsa hover:text-white p-1.5" aria-label="بستن منو">
+            <button type="button" onClick={onClose} className="absolute left-3 top-3 p-1.5 text-brand-m_khonsa hover:text-white" aria-label="بستن منو">
               <X size={18} />
             </button>
           )}
@@ -59,17 +73,33 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
           </div>
         </div>
 
-        <nav className="flex flex-col flex-1 overflow-y-auto py-2">
-          {items.map((item) => <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} />)}
+        <nav className="flex flex-1 flex-col overflow-y-auto py-2">
+          {items.map((item) => (
+            <NavLink key={item.href} item={item} pathname={pathname} isDesktop={isDesktop} onClose={onClose} />
+          ))}
 
           <div className="mt-auto border-t border-brand-surface_hover pt-2">
-            <Link href="/admin/settings" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
+            <Link
+              href="/admin/settings"
+              prefetch={false}
+              onClick={!isDesktop ? onClose : undefined}
+              className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa transition-colors hover:bg-white/[.03] hover:text-white"
+            >
               <UserCog size={17} /> تنظیمات حساب
             </Link>
-            <Link href="/" prefetch={false} onClick={!isDesktop ? onClose : undefined} className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa hover:text-white hover:bg-white/[.03] transition-colors">
+            <Link
+              href="/"
+              prefetch={false}
+              onClick={!isDesktop ? onClose : undefined}
+              className="flex items-center gap-2.5 px-4 py-3 text-[15px] font-medium text-brand-m_khonsa transition-colors hover:bg-white/[.03] hover:text-white"
+            >
               <ArrowRight size={18} /> بازگشت به فروشگاه
             </Link>
-            <button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50">
+            <button
+              onClick={logout}
+              disabled={isLoggingOut}
+              className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+            >
               <LogOut size={17} /> {isLoggingOut ? "در حال خروج..." : "خروج از پنل"}
             </button>
           </div>
@@ -79,7 +109,17 @@ export default function AdminSidebar({ user, permissions, isOpen, isDesktop, onC
   );
 }
 
-function NavLink({ item, pathname, isDesktop, onClose }: { item: AdminNavItem; pathname: string | null; isDesktop: boolean; onClose: () => void }) {
+function NavLink({
+  item,
+  pathname,
+  isDesktop,
+  onClose,
+}: {
+  item: AdminNavItem;
+  pathname: string | null;
+  isDesktop: boolean;
+  onClose: () => void;
+}) {
   const active = item.exact ? pathname === item.href : pathname === item.href || pathname?.startsWith(`${item.href}/`);
   const Icon = item.icon;
   return (
@@ -87,7 +127,9 @@ function NavLink({ item, pathname, isDesktop, onClose }: { item: AdminNavItem; p
       prefetch={false}
       href={item.href}
       onClick={!isDesktop ? onClose : undefined}
-      className={`flex items-center gap-3 mx-2 border-r-2 px-3 py-3 text-[15px] transition-colors ${active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/[.03]"}`}
+      className={`mx-2 flex items-center gap-3 border-r-2 px-3 py-3 text-[15px] transition-colors ${
+        active ? "border-brand-blue bg-brand-blue/5 text-white" : "border-transparent text-brand-m_khonsa hover:bg-white/[.03] hover:text-white"
+      }`}
     >
       <Icon size={19} strokeWidth={2.25} />
       {item.label}

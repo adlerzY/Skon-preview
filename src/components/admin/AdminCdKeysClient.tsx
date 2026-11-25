@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import { UploadCloud } from "lucide-react";
 import { useAdminContext } from "./AdminContext";
+import AdminProductPicker, { type ProductPickerValue } from "./AdminProductPicker";
 import {
   AdminBadge,
   AdminButton,
   AdminCard,
   AdminEmpty,
-  AdminField,
   AdminFilterBar,
   AdminListCard,
   AdminMobileList,
@@ -23,6 +23,7 @@ import {
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
 import { useAdminList, type AdminListData } from "./useAdminList";
+import { faDate, faNumber } from "./format";
 
 interface Row {
   stockId: number;
@@ -57,30 +58,42 @@ const DELETABLE = new Set(["available", "duplicate", "failed", "decrypt_failed"]
 const tone = (status: string): "success" | "danger" | "neutral" =>
   status === "available" ? "success" : status === "failed" || status === "decrypt_failed" ? "danger" : "neutral";
 
-export default function AdminCdKeysClient({ initial }: { initial?: Data }) {
+export default function AdminCdKeysClient({
+  initial,
+  initialProductId = "",
+  initialVariationId = "",
+}: {
+  initial?: Data;
+  initialProductId?: string;
+  initialVariationId?: string;
+}) {
   const { permissions } = useAdminContext();
   const [status, setStatus] = useState("all");
-  const [productId, setProductId] = useState("");
-  const [variationId, setVariationId] = useState("");
+  const [selection, setSelection] = useState<ProductPickerValue>({
+    productId: initialProductId,
+    variationId: initialVariationId,
+  });
   const [keys, setKeys] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
 
   const params = useMemo(
-    () => ({ status, productId: productId.trim(), variationId: variationId.trim() }),
-    [status, productId, variationId]
+    () => ({ status, productId: selection.productId, variationId: selection.variationId }),
+    [status, selection.productId, selection.variationId]
   );
 
   const { data, loading, loadingMore, error, refresh, loadMore } = useAdminList<Data>({
     endpoint: "/api/admin/cdkeys",
     params,
     initial,
+    debounceMs: 150,
   });
 
   const canWrite = permissions.includes("cdkeys.write");
   const summary = data.summary ?? { available: 0, reserved: 0, used: 0, failed: 0, total: 0 };
   const showSkeleton = loading && data.nodes.length === 0;
+  const readyToImport = Number(selection.productId) > 0 && Number(selection.variationId) > 0 && keys.trim().length > 0;
 
   const notify = (text: string, isError = false) => {
     setMessage(text);
@@ -99,21 +112,22 @@ export default function AdminCdKeysClient({ initial }: { initial?: Data }) {
   };
 
   const importKeys = async () => {
-    const pid = Number(productId);
-    const vid = Number(variationId);
-    if (!Number.isInteger(pid) || pid <= 0 || !Number.isInteger(vid) || vid <= 0 || !keys.trim()) {
-      notify("شناسه محصول، شناسه تنوع و حداقل یک کلید را وارد کنید", true);
+    if (!readyToImport) {
+      notify("محصول، تنوع و حداقل یک کلید را مشخص کنید", true);
       return;
     }
 
     setBusy(true);
     notify("");
     try {
-      const json = await post({ action: "import", productId: pid, variationId: vid, keys });
+      const json = await post({
+        action: "import",
+        productId: Number(selection.productId),
+        variationId: Number(selection.variationId),
+        keys,
+      });
       const result = json?.adminImportCdKeys;
-      notify(
-        `${Number(result?.added ?? 0).toLocaleString("fa-IR")} کد اضافه شد؛ ${Number(result?.rejected ?? 0).toLocaleString("fa-IR")} مورد رد شد.`
-      );
+      notify(`${faNumber(result?.added)} کد اضافه شد؛ ${faNumber(result?.rejected)} مورد رد شد.`);
       setKeys("");
       await refresh();
     } catch (caught) {
@@ -159,7 +173,7 @@ export default function AdminCdKeysClient({ initial }: { initial?: Data }) {
         <AdminCard className="mb-3 border-amber-400/20 bg-amber-400/[.05] p-3">
           <div className="text-sm font-black text-amber-200">موجودی CD Key پایین است.</div>
           <div className="mt-1 text-xs leading-6 text-brand-m_khonsa">
-            فقط {Number(summary.available).toLocaleString("fa-IR")} کلید آماده تخصیص باقی مانده؛ قبل از رسیدن سفارش‌های بعدی موجودی را بررسی کن.
+            فقط {faNumber(summary.available)} کلید آماده تخصیص باقی مانده؛ قبل از رسیدن سفارش‌های بعدی موجودی را بررسی کن.
           </div>
         </AdminCard>
       )}
@@ -171,37 +185,39 @@ export default function AdminCdKeysClient({ initial }: { initial?: Data }) {
         <AdminStatCard label="خطادار" value={summary.failed} helper="نیازمند بررسی" tone={summary.failed ? "warning" : "default"} />
       </div>
 
-      {canWrite && (
-        <AdminCard className="mb-4 overflow-hidden">
-          <AdminSectionHeader
-            icon={<UploadCloud size={17} />}
-            title="افزودن موجودی"
-            description="شناسه محصول و تنوع را وارد کن و هر کلید را در یک خط قرار بده. همین دو فیلد، فهرست پایین را هم فیلتر می‌کنند."
-          />
-          <div className="p-4">
-            <div className="grid gap-2 md:grid-cols-2">
-              <AdminField value={productId} onChange={(event) => setProductId(event.target.value)} placeholder="شناسه محصول" dir="ltr" inputMode="numeric" />
-              <AdminField value={variationId} onChange={(event) => setVariationId(event.target.value)} placeholder="شناسه تنوع" dir="ltr" inputMode="numeric" />
-            </div>
-            <AdminTextarea
-              value={keys}
-              onChange={(event) => setKeys(event.target.value)}
-              rows={5}
-              placeholder="هر CD Key در یک خط"
-              className="mt-2"
-              dir="ltr"
-            />
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <AdminButton variant="primary" onClick={() => void importKeys()} disabled={busy || !keys.trim()}>
-                افزودن به موجودی
-              </AdminButton>
-              {message && (
-                <span className={`text-xs ${messageIsError ? "text-red-300" : "text-emerald-300"}`}>{message}</span>
-              )}
-            </div>
-          </div>
-        </AdminCard>
-      )}
+      <AdminCard className="mb-4 overflow-hidden">
+        <AdminSectionHeader
+          icon={<UploadCloud size={17} />}
+          title={canWrite ? "افزودن موجودی" : "فیلتر بر اساس محصول"}
+          description={
+            canWrite
+              ? "محصول و تنوع را انتخاب کن و هر کلید را در یک خط قرار بده. انتخاب شما فهرست پایین را هم فیلتر می‌کند."
+              : "محصول و تنوع را انتخاب کن تا فهرست پایین فیلتر شود."
+          }
+        />
+        <div className="p-4">
+          <AdminProductPicker value={selection} onChange={setSelection} disabled={busy} />
+
+          {canWrite && (
+            <>
+              <AdminTextarea
+                value={keys}
+                onChange={(event) => setKeys(event.target.value)}
+                rows={5}
+                placeholder="هر CD Key در یک خط"
+                className="mt-3"
+                dir="ltr"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <AdminButton variant="primary" onClick={() => void importKeys()} disabled={busy || !readyToImport}>
+                  افزودن به موجودی
+                </AdminButton>
+                {message && <span className={`text-xs ${messageIsError ? "text-red-300" : "text-emerald-300"}`}>{message}</span>}
+              </div>
+            </>
+          )}
+        </div>
+      </AdminCard>
 
       <AdminFilterBar>
         <AdminSelect value={status} onChange={(event) => setStatus(event.target.value)} className="lg:w-[240px] lg:flex-none">
@@ -252,9 +268,7 @@ export default function AdminCdKeysClient({ initial }: { initial?: Data }) {
                     <AdminBadge tone={tone(row.status)}>{LABELS[row.status] ?? row.status}</AdminBadge>
                   </td>
                   <td className="text-xs text-white" dir="ltr">{row.orderId ? `#${row.orderId}` : "—"}</td>
-                  <td className="text-xs text-brand-m_khonsa">
-                    {row.createdAt ? new Date(row.createdAt).toLocaleDateString("fa-IR") : "—"}
-                  </td>
+                  <td className="text-xs text-brand-m_khonsa">{faDate(row.createdAt)}</td>
                   <td>
                     {canWrite && DELETABLE.has(row.status) && !row.orderId && (
                       <AdminButton variant="danger" onClick={() => void deleteKey(row.stockId)} disabled={busy} className="min-h-9 px-3 text-xs">

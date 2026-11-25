@@ -9,6 +9,8 @@ export const ADMIN_PERMISSIONS = {
   CDKEYS_READ: "cdkeys.read",
   CDKEYS_WRITE: "cdkeys.write",
   CDKEYS_REVEAL: "cdkeys.reveal",
+  USERS_READ: "users.read",
+  PRODUCTS_READ: "products.read",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];

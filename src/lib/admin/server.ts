@@ -32,6 +32,10 @@ import {
   ADMIN_ASSIGN_CDKEYS_MUTATION,
   ADMIN_ASSIGN_CDKEY_MANUALLY_MUTATION,
   ADMIN_REVEAL_CDKEYS_MUTATION,
+  ADMIN_USERS_QUERY,
+  ADMIN_USER_QUERY,
+  ADMIN_PRODUCTS_QUERY,
+  ADMIN_PRODUCT_QUERY,
 } from "@/lib/graphql/admin";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import type { AdminPermission } from "./permissions";
@@ -91,6 +95,14 @@ export async function assertAdminApi(permission?: AdminPermission): Promise<{ pe
   const access = await resolveAdminAccess();
   if (!access) throw new AdminAccessError("دسترسی غیرمجاز", 401);
   if (permission && !access.permissions.includes(permission)) throw new AdminAccessError("دسترسی غیرمجاز", 403);
+  return access;
+}
+export async function assertAdminApiAny(permissions: AdminPermission[]): Promise<{ permissions: string[] }> {
+  const access = await resolveAdminAccess();
+  if (!access) throw new AdminAccessError("دسترسی غیرمجاز", 401);
+  if (!permissions.some((permission) => access.permissions.includes(permission))) {
+    throw new AdminAccessError("دسترسی غیرمجاز", 403);
+  }
   return access;
 }
 
@@ -212,6 +224,29 @@ export async function getAdminCdKeyStockWithContext(bootstrap: AdminBootstrap, v
     pageInfo: { hasNextPage: false, endCursor: null },
     summary: { available: 0, reserved: 0, used: 0, failed: 0, total: 0 },
   };
+}
+export async function getAdminUsersWithContext(bootstrap: AdminBootstrap, variables: Record<string, unknown> = {}) {
+  assertAdminBootstrapPermission(bootstrap, "users.read");
+  const data = await adminFetch(ADMIN_USERS_QUERY, { first: 20, segment: "all", ...variables });
+  return data?.adminUsers ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+}
+
+export async function getAdminUserWithContext(bootstrap: AdminBootstrap, id: number) {
+  assertAdminBootstrapPermission(bootstrap, "users.read");
+  const data = await adminFetch(ADMIN_USER_QUERY, { id });
+  return data?.adminUser ?? null;
+}
+
+export async function getAdminProductsWithContext(bootstrap: AdminBootstrap, variables: Record<string, unknown> = {}) {
+  assertAdminBootstrapPermission(bootstrap, "products.read");
+  const data = await adminFetch(ADMIN_PRODUCTS_QUERY, { first: 20, status: "all", sort: "date", order: "desc", ...variables });
+  return data?.adminProducts ?? { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+}
+
+export async function getAdminProductWithContext(bootstrap: AdminBootstrap, id: number) {
+  assertAdminBootstrapPermission(bootstrap, "products.read");
+  const data = await adminFetch(ADMIN_PRODUCT_QUERY, { id });
+  return data?.adminProduct ?? null;
 }
 
 export async function getAdminOrders(variables: Record<string, unknown> = {}) {
