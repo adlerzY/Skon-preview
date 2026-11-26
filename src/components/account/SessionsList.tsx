@@ -23,7 +23,10 @@ export default function SessionsList({
 }) {
   const router = useRouter();
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
+
+  const visible = sessions.filter((session) => !removed.has(session.sessionId));
 
   const handleRevoke = async (sessionId: string) => {
     setError("");
@@ -34,7 +37,7 @@ export default function SessionsList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
         setError(data?.error || "خطا در خروج از این نشست");
@@ -47,7 +50,7 @@ export default function SessionsList({
         return;
       }
 
-      router.refresh();
+      setRemoved((previous) => new Set(previous).add(sessionId));
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {
@@ -55,14 +58,14 @@ export default function SessionsList({
     }
   };
 
-  if (sessions.length === 0) {
+  if (visible.length === 0) {
     return <Card className="p-10 text-center text-brand-m_khonsa">نشست فعالی یافت نشد.</Card>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       {error && <p className="text-xs text-red-500 font-medium bg-red-500/10 border border-red-500/20 p-3">{error}</p>}
-      {sessions.map((session) => {
+      {visible.map((session) => {
         const isCurrent = session.sessionId === currentSessionId;
         return (
           <Card key={session.sessionId} className="p-4 flex items-center justify-between gap-3">

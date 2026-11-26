@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
 export type PaymentResult = "success" | "processing" | "failed" | "cancelled";
@@ -19,31 +15,7 @@ const TONES = {
   wait: "text-brand-blue bg-brand-blue/10 border-brand-blue/20",
 };
 
-const POLL_MS = 5000;
-const MAX_POLLS = 12;
-
-export default function PaymentResultBanner({
-  result,
-  orderId,
-  polling = false,
-}: {
-  result: PaymentResult;
-  orderId?: number;
-  polling?: boolean;
-}) {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!polling) return;
-    let count = 0;
-    const timer = window.setInterval(() => {
-      count += 1;
-      router.refresh();
-      if (count >= MAX_POLLS) window.clearInterval(timer);
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [polling, router]);
-
+export default function PaymentResultBanner({ result, orderId }: { result: PaymentResult; orderId?: number }) {
   const message = MESSAGES[result];
   const Icon = message.tone === "ok" ? CheckCircle2 : message.tone === "wait" ? Clock : AlertTriangle;
 

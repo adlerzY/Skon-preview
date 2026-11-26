@@ -4,6 +4,7 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { UPDATE_PROFILE_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { invalidateSessionCache } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!result?.success) {
       return NextResponse.json({ error: "بروزرسانی اطلاعات با خطا مواجه شد" }, { status: 500 });
     }
-
+    invalidateSessionCache(token);
     return NextResponse.json({ success: true, name: result.name, email: result.email });
   } catch (error) {
     console.error("Update profile error:", error);

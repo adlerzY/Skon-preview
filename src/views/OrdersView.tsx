@@ -7,37 +7,11 @@ import { fetchGraphQL } from "@/lib/graphql";
 import { CUSTOMER_ORDERS_QUERY } from "@/lib/graphql/auth";
 import OrdersPaginated from "@/components/account/OrdersPaginated";
 import { AccountOrdersLoadingShell } from "@/components/account/AccountPageLoadingShell";
-import PaymentResultBanner, { type PaymentResult } from "@/components/account/PaymentResultBanner";
 import { keepVisibleOrder } from "@/lib/orderVisibility";
 
 type OrdersData = Awaited<ReturnType<typeof fetchGraphQL>>;
 
 const ALL_STATUSES = ["PENDING", "PROCESSING", "ON_HOLD", "COMPLETED", "CANCELLED", "REFUNDED", "FAILED"];
-
-function resolvePaymentBanner(result: string | undefined, orderId: number | undefined, orders: any[]) {
-  const knownResults: PaymentResult[] = ["success", "processing", "failed", "cancelled"];
-  if (!result || !knownResults.includes(result as PaymentResult)) return null;
-
-  const order = orderId ? orders.find((item) => Number(item.databaseId) === orderId) : undefined;
-  const status = String(order?.status ?? "").toUpperCase();
-
-  if (status === "PROCESSING" || status === "COMPLETED") {
-    const waitingForCode = (order?.lineItems?.nodes ?? []).some(
-      (item: any) =>
-        item.metaData?.find((meta: any) => meta.key === "روش تحویل")?.value === "code" && !item.cdkeyReady
-    );
-    return { result: "success" as PaymentResult, polling: waitingForCode };
-  }
-
-  if (result === "success" || result === "processing") {
-    return {
-      result: "processing" as PaymentResult,
-      polling: Boolean(order) && (status === "PENDING" || status === "ON_HOLD"),
-    };
-  }
-
-  return { result: result as PaymentResult, polling: false };
-}
 
 async function OrdersDataStream({
   dataPromise,
@@ -52,26 +26,15 @@ async function OrdersDataStream({
   const orders = (data?.customer?.orders?.nodes ?? []).filter(keepVisibleOrder);
   const pageInfo = data?.customer?.orders?.pageInfo ?? { hasNextPage: false, endCursor: null };
   const downloadableItems = data?.customer?.downloadableItems?.nodes ?? [];
-  const banner = resolvePaymentBanner(paymentResult, paymentOrderId, orders);
-  const listKey = orders
-    .map(
-      (order: any) =>
-        `${order.databaseId}:${order.status}:${order.paymentState}:${order.fulfillmentSummary}:${order.retryMode}:${(order.lineItems?.nodes ?? [])
-          .map((item: any) => `${item.fulfillmentStatus}${item.cdkeyReady ? 1 : 0}`)
-          .join(",")}`
-    )
-    .join("|");
 
   return (
-    <>
-      {banner && <PaymentResultBanner result={banner.result} orderId={paymentOrderId} polling={banner.polling} />}
-      <OrdersPaginated
-        key={listKey}
-        initialOrders={orders}
-        initialPageInfo={pageInfo}
-        downloadableItems={downloadableItems}
-      />
-    </>
+    <OrdersPaginated
+      initialOrders={orders}
+      initialPageInfo={pageInfo}
+      downloadableItems={downloadableItems}
+      paymentResult={paymentResult}
+      paymentOrderId={paymentOrderId}
+    />
   );
 }
 
@@ -90,8 +53,7 @@ export default async function OrdersView({
     "no-store",
     token || undefined
   );
-  const userPromise = getCurrentUser();
-  const user = await userPromise;
+  const user = await getCurrentUser();
 
   if (!user) redirect("/my-account");
 

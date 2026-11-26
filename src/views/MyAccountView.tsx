@@ -8,8 +8,6 @@ import UnifiedLoginFlow from "@/components/account/UnifiedLoginFlow";
 import AccountDashboard from "@/components/account/AccountDashboard";
 import DashboardContentSkeleton from "@/components/account/DashboardContentSkeleton";
 
-const SUCCESSFUL_STATUSES = new Set(["PROCESSING", "COMPLETED"]);
-
 type AccountDashboardProps = ComponentProps<typeof AccountDashboard>;
 type OrderSummary = AccountDashboardProps["recentOrders"][number];
 type TicketSummary = AccountDashboardProps["recentTickets"][number];
@@ -25,34 +23,24 @@ async function AccountDashboardStream({
 }) {
   const data = await dataPromise;
 
-  const allOrders: OrderSummary[] = data?.customer?.orders?.nodes ?? [];
-  const successfulOrdersCount = allOrders.filter(
-    (o) => typeof o.status === "string" && SUCCESSFUL_STATUSES.has(o.status)
-  ).length;
-  const recentSuccessfulOrders = allOrders.filter(
-    (o) => typeof o.status === "string" && SUCCESSFUL_STATUSES.has(o.status)
-  );
-  const tickets: TicketSummary[] = data?.myTickets?.nodes ?? [];
-  const openTicketsCount = tickets.filter(
-    (t) => (t.ticketStatus ?? "open") !== "closed"
-  ).length;
-  const reviewsCount: number = data?.myReviews?.totalCount ?? 0;
+  const recentOrders: OrderSummary[] = data?.customer?.orders?.nodes ?? [];
+  const recentTickets: TicketSummary[] = data?.myTickets?.nodes ?? [];
+  const stats = data?.myAccountStats;
 
   return (
     <AccountDashboard
       user={user}
-      recentOrders={recentSuccessfulOrders.slice(0, 3)}
-      successfulOrdersCount={successfulOrdersCount}
-      recentTickets={tickets.slice(0, 3)}
-      openTicketsCount={openTicketsCount}
-      reviewsCount={reviewsCount}
+      recentOrders={recentOrders}
+      successfulOrdersCount={Number(stats?.successfulOrdersCount ?? 0)}
+      recentTickets={recentTickets}
+      openTicketsCount={Number(stats?.openTicketsCount ?? 0)}
+      reviewsCount={Number(data?.myReviews?.totalCount ?? 0)}
     />
   );
 }
 
 export default async function MyAccountView({ resumeCart = false }: { resumeCart?: boolean }) {
-  const userPromise = getCurrentUser();
-  const user = await userPromise;
+  const user = await getCurrentUser();
 
   if (!user) {
     return <UnifiedLoginFlow />;

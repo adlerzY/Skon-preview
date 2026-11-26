@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Loader2, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -41,6 +41,20 @@ const STATUS_OPTIONS = [
   { value: "closed", label: "بسته‌شده" },
 ];
 
+async function requestTickets(search: string, status: string, after: string | null, signal: AbortSignal) {
+  const params = new URLSearchParams();
+  if (search.trim()) params.set("search", search.trim());
+  if (status !== "ALL") params.set("status", status);
+  if (after) params.set("after", after);
+  const res = await fetch(`/api/account/tickets?${params.toString()}`, { cache: "no-store", signal });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data) throw new Error(data?.error || "tickets_request_failed");
+  return {
+    tickets: (Array.isArray(data.tickets) ? data.tickets : []) as TicketNode[],
+    pageInfo: (data.pageInfo ?? { hasNextPage: false, endCursor: null }) as PageInfo,
+  };
+}
+
 export default function TicketsPaginated({
   initialTickets,
   initialPageInfo,
@@ -51,73 +65,47 @@ export default function TicketsPaginated({
   const [tickets, setTickets] = useState(initialTickets);
   const [pageInfo, setPageInfo] = useState(initialPageInfo);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestAbortRef = useRef<AbortController | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const isFirstRun = useRef(true);
 
-  const fetchTickets = async (nextSearch: string, nextStatus: string) => {
-    requestAbortRef.current?.abort();
-    const controller = new AbortController();
-    requestAbortRef.current = controller;
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (nextSearch.trim()) params.set("search", nextSearch.trim());
-      if (nextStatus !== "ALL") params.set("status", nextStatus);
-      const res = await fetch(`/api/account/tickets?${params.toString()}`, { cache: "no-store", signal: controller.signal });
-      const data = await res.json();
-      if (!controller.signal.aborted) {
-        setTickets(data.tickets ?? []);
-        setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
+  const load = useCallback(
+    async (mode: "replace" | "append", nextSearch: string, nextStatus: string, after: string | null = null) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setIsLoading(true);
+      setError("");
+      try {
+        const data = await requestTickets(nextSearch, nextStatus, after, controller.signal);
+        if (controller.signal.aborted) return;
+        setTickets((previous) => (mode === "append" ? [...previous, ...data.tickets] : data.tickets));
+        setPageInfo(data.pageInfo);
+      } catch {
+        if (!controller.signal.aborted) setError("دریافت تیکت‌ها انجام نشد؛ دوباره تلاش کنید");
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
       }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) throw error;
-    } finally {
-      if (!controller.signal.aborted) setIsLoading(false);
-    }
-  };
-
-  useEffect(() => () => requestAbortRef.current?.abort(), [requestAbortRef]);
+    },
+    []
+  );
 
   useEffect(() => {
     if (isFirstRun.current) {
       isFirstRun.current = false;
       return;
     }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchTickets(search, statusFilter);
-    }, 400);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      requestAbortRef.current?.abort();
-    };
-  }, [search, statusFilter]);
+    const timer = setTimeout(() => void load("replace", search, statusFilter), 400);
+    return () => clearTimeout(timer);
+  }, [search, statusFilter, load]);
 
-  const handleLoadMore = async () => {
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const handleLoadMore = () => {
     if (!pageInfo.endCursor || isLoading) return;
-    requestAbortRef.current?.abort();
-    const controller = new AbortController();
-    requestAbortRef.current = controller;
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search.trim()) params.set("search", search.trim());
-      if (statusFilter !== "ALL") params.set("status", statusFilter);
-      params.set("after", pageInfo.endCursor);
-      const res = await fetch(`/api/account/tickets?${params.toString()}`, { cache: "no-store", signal: controller.signal });
-      const data = await res.json();
-      if (!controller.signal.aborted) {
-        setTickets((prev) => [...prev, ...(data.tickets ?? [])]);
-        setPageInfo(data.pageInfo ?? { hasNextPage: false, endCursor: null });
-      }
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) throw error;
-    } finally {
-      if (!controller.signal.aborted) setIsLoading(false);
-    }
+    void load("append", search, statusFilter, pageInfo.endCursor);
   };
 
   return (
@@ -127,7 +115,7 @@ export default function TicketsPaginated({
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder="جستجو در عنوان تیکت..."
           className="w-full bg-brand-surface border border-brand-surface_hover pr-9 pl-3 py-2.5 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors"
         />
@@ -135,14 +123,18 @@ export default function TicketsPaginated({
 
       <FilterTabs options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter} />
 
+      {error && (
+        <p className="text-xs text-red-500 font-medium bg-red-500/10 border border-red-500/20 p-3">{error}</p>
+      )}
+
       {isLoading && tickets.length === 0 ? (
         <div className="flex items-center justify-center py-10 text-brand-m_khonsa gap-2 text-sm">
           <Loader2 size={16} className="animate-spin" /> در حال بارگذاری...
         </div>
-      ) : tickets.length === 0 ? (
+      ) : tickets.length === 0 && !error ? (
         <Card className="p-10 text-center text-brand-m_khonsa">تیکتی با این مشخصات یافت نشد.</Card>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className={`flex flex-col gap-3 ${isLoading ? "opacity-60 transition-opacity" : "transition-opacity"}`}>
           {tickets.map((ticket) => {
             const status = ticket.ticketStatus ?? "open";
             return (
@@ -167,9 +159,7 @@ export default function TicketsPaginated({
                     {ticket.linkedOrderId && (
                       <span className="text-xs text-brand-m_khonsa">سفارش #{ticket.linkedOrderId}</span>
                     )}
-                    <Badge tone={STATUS_TONE[status] ?? "neutral"}>
-                      {STATUS_LABEL[status] ?? status}
-                    </Badge>
+                    <Badge tone={STATUS_TONE[status] ?? "neutral"}>{STATUS_LABEL[status] ?? status}</Badge>
                   </div>
                 </Card>
               </Link>

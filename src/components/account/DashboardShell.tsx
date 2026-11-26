@@ -15,48 +15,42 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ user, children }: DashboardShellProps) {
   const pathname = usePathname();
-  const [isDesktop, setIsDesktop] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [desktopOpen, setDesktopOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
     const mql = window.matchMedia("(min-width: 1024px)");
-
-    const applyMode = (matches: boolean) => {
-      setIsDesktop(matches);
-      setIsSidebarOpen(matches);
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileOpen(false);
     };
-
-    applyMode(mql.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => applyMode(e.matches);
+    document.body.style.overflow = "hidden";
     mql.addEventListener("change", handleChange);
-    return () => mql.removeEventListener("change", handleChange);
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop) setIsSidebarOpen(false);
-  }, [pathname, isDesktop]);
-
-  useEffect(() => {
-    if (isDesktop) return;
-    document.body.style.overflow = isSidebarOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
+      mql.removeEventListener("change", handleChange);
     };
-  }, [isSidebarOpen, isDesktop]);
+  }, [mobileOpen]);
 
-  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
-  const toggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+
+  const toggleSidebar = useCallback(() => {
+    if (window.matchMedia("(min-width: 1024px)").matches) setDesktopOpen((value) => !value);
+    else setMobileOpen((value) => !value);
+  }, []);
 
   const isDashboardRoot = pathname === "/my-account";
-  const isFixedDashboard = isDesktop && isDashboardRoot;
 
   return (
     <div className="h-screen w-full bg-brand-bg flex overflow-hidden" dir="rtl">
-      {!isDesktop && isSidebarOpen && (
+      {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]"
-          onClick={closeSidebar}
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998] lg:hidden"
+          onClick={closeMobile}
           aria-hidden="true"
         />
       )}
@@ -65,9 +59,9 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
         avatarUrl={user.avatarUrl}
         name={user.name}
         isStaff={user.isStaff}
-        isOpen={isSidebarOpen}
-        isDesktop={isDesktop}
-        onClose={closeSidebar}
+        desktopOpen={desktopOpen}
+        mobileOpen={mobileOpen}
+        onClose={closeMobile}
       />
 
       <div className="flex-1 min-w-0 flex flex-col h-screen">
@@ -78,7 +72,6 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
               onClick={toggleSidebar}
               className="text-brand-m_khonsa hover:text-white transition-colors p-2 shrink-0"
               aria-label="نمایش یا پنهان کردن منو"
-              aria-expanded={isSidebarOpen}
             >
               <Menu size={20} />
             </button>
@@ -93,10 +86,10 @@ export default function DashboardShell({ user, children }: DashboardShellProps) 
         </div>
         <main
           className={`flex-1 min-h-0 w-full p-4 md:p-6 pb-[calc(58px+env(safe-area-inset-bottom))] lg:pb-6 ${
-            isFixedDashboard ? "overflow-hidden" : "overflow-y-auto"
+            isDashboardRoot ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
           }`}
         >
-          <div className={isFixedDashboard ? "h-full" : ""}>{children}</div>
+          <div className={isDashboardRoot ? "lg:h-full" : ""}>{children}</div>
         </main>
       </div>
 

@@ -50,7 +50,6 @@ export default function NewTicketForm({ orders }: { orders: OrderOption[] }) {
       }
 
       router.push("/my-account/tickets");
-      router.refresh();
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {

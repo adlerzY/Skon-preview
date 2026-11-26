@@ -56,7 +56,7 @@ export const CUSTOMER_ORDERS_QUERY = `
 export const DASHBOARD_SUMMARY_QUERY = `
   query GetDashboardSummary {
     customer {
-      orders(first: 10) {
+      orders(first: 3, where: { statuses: [PROCESSING, COMPLETED] }) {
         nodes {
           id
           databaseId
@@ -69,7 +69,11 @@ export const DASHBOARD_SUMMARY_QUERY = `
         }
       }
     }
-    myTickets(first: 10) {
+    myAccountStats {
+      successfulOrdersCount
+      openTicketsCount
+    }
+    myTickets(first: 3) {
       nodes {
         id
         databaseId
@@ -78,7 +82,7 @@ export const DASHBOARD_SUMMARY_QUERY = `
         ticketStatus
       }
     }
-    myReviews(first: 1) {
+    myReviews(first: 0) {
       totalCount
     }
   }

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Send } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 
-interface ReplyNode {
+export interface ReplyNode {
   id: string;
   authorRole: string;
   authorName: string;
@@ -13,17 +12,29 @@ interface ReplyNode {
   createdAt: string;
 }
 
-export default function TicketReplyThread({ ticketId, replies }: { ticketId: number; replies: ReplyNode[] }) {
-  const router = useRouter();
+export default function TicketReplyThread({
+  ticketId,
+  replies,
+  userName,
+  onStatusChange,
+}: {
+  ticketId: number;
+  replies: ReplyNode[];
+  userName: string;
+  onStatusChange?: (status: string) => void;
+}) {
+  const [items, setItems] = useState(replies);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isSubmitting) return;
     setError("");
 
-    if (content.trim().length < 2) {
+    const trimmed = content.trim();
+    if (trimmed.length < 2) {
       setError("متن پاسخ را کامل‌تر وارد کنید");
       return;
     }
@@ -33,17 +44,27 @@ export default function TicketReplyThread({ ticketId, replies }: { ticketId: num
       const res = await fetch(`/api/tickets/${ticketId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim() }),
+        body: JSON.stringify({ content: trimmed }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
         setError(data?.error || "ثبت پاسخ با خطا مواجه شد");
         return;
       }
 
+      setItems((previous) => [
+        ...previous,
+        {
+          id: `local-${Date.now()}`,
+          authorRole: "customer",
+          authorName: userName,
+          content: trimmed,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
       setContent("");
-      router.refresh();
+      onStatusChange?.(typeof data?.ticketStatus === "string" ? data.ticketStatus : "open");
     } catch {
       setError("خطا در ارتباط با سرور");
     } finally {
@@ -54,10 +75,10 @@ export default function TicketReplyThread({ ticketId, replies }: { ticketId: num
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
-        {replies.length === 0 ? (
+        {items.length === 0 ? (
           <p className="text-xs text-brand-m_khonsa text-center py-4">هنوز پاسخی ثبت نشده است.</p>
         ) : (
-          replies.map((reply) => {
+          items.map((reply) => {
             const isStaff = reply.authorRole === "staff";
             return (
               <div key={reply.id} className={`flex gap-3 ${isStaff ? "flex-row" : "flex-row-reverse"}`}>
@@ -68,9 +89,7 @@ export default function TicketReplyThread({ ticketId, replies }: { ticketId: num
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
-                    <span className="text-xs font-bold text-white">
-                      {isStaff ? "پشتیبانی" : reply.authorName}
-                    </span>
+                    <span className="text-xs font-bold text-white">{isStaff ? "پشتیبانی" : reply.authorName}</span>
                     <span className="text-[10px] text-brand-m_khonsa">
                       {new Date(reply.createdAt).toLocaleDateString("fa-IR")}
                     </span>
@@ -88,7 +107,7 @@ export default function TicketReplyThread({ ticketId, replies }: { ticketId: num
         <textarea
           rows={3}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(event) => setContent(event.target.value)}
           placeholder="پاسخ خود را بنویسید..."
           className="bg-brand-bg border border-brand-surface_hover p-3 text-sm text-brand-active focus:outline-none focus:border-brand-blue transition-colors resize-none"
         />

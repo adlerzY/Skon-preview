@@ -59,7 +59,15 @@ function buildReorderLines(items: LineItem[]): ReorderLine[] {
   return lines;
 }
 
-export default function OrdersTable({ orders, downloadableItems = [] }: { orders: OrderNode[]; downloadableItems?: DownloadableItem[] }) {
+export default function OrdersTable({
+  orders,
+  downloadableItems = [],
+  onOrderChanged,
+}: {
+  orders: OrderNode[];
+  downloadableItems?: DownloadableItem[];
+  onOrderChanged?: () => void;
+}) {
   const downloadsByProduct = new Map<number, DownloadableItem>();
   for (const download of downloadableItems) {
     const productId = download.product?.databaseId;
@@ -100,6 +108,7 @@ export default function OrdersTable({ orders, downloadableItems = [] }: { orders
                 mode={mode}
                 deadline={order.payDeadline}
                 lines={buildReorderLines(items)}
+                onChanged={onOrderChanged}
               />
             )}
 

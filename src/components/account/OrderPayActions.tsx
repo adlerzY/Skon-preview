@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Clock, CreditCard, Loader2, RotateCcw, ShoppingCart, XCircle } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -24,6 +23,7 @@ interface OrderPayActionsProps {
   mode: string;
   deadline?: string | null;
   lines: ReorderLine[];
+  onChanged?: () => void;
 }
 
 function useRemainingText(deadline?: string | null): string | null {
@@ -62,8 +62,7 @@ async function postOrder(url: string, orderId: number) {
   return { ok: response.ok, data };
 }
 
-export default function OrderPayActions({ orderId, orderNumber, mode, deadline, lines }: OrderPayActionsProps) {
-  const router = useRouter();
+export default function OrderPayActions({ orderId, orderNumber, mode, deadline, lines, onChanged }: OrderPayActionsProps) {
   const { showToast } = useToast();
   const { addToCart, totalQuantity } = useCart();
   const [busy, setBusy] = useState<"pay" | "cancel" | null>(null);
@@ -82,7 +81,7 @@ export default function OrderPayActions({ orderId, orderNumber, mode, deadline, 
         showToast(data?.error || "پرداخت مجدد انجام نشد", "error");
         if (mode === "reopen") setReorderOnly(true);
         setBusy(null);
-        router.refresh();
+        onChanged?.();
         return;
       }
       if (data?.paymentUrl) {
@@ -91,7 +90,7 @@ export default function OrderPayActions({ orderId, orderNumber, mode, deadline, 
       }
       showToast("پرداخت شما قبلاً تأیید شده و سفارش در حال تکمیل است", "success");
       setBusy(null);
-      router.refresh();
+      onChanged?.();
     } catch {
       showToast("خطا در ارتباط با سرور", "error");
       setBusy(null);
@@ -108,7 +107,7 @@ export default function OrderPayActions({ orderId, orderNumber, mode, deadline, 
         return;
       }
       showToast("سفارش لغو شد");
-      router.refresh();
+      onChanged?.();
     } catch {
       showToast("خطا در ارتباط با سرور", "error");
     } finally {

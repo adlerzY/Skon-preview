@@ -5,7 +5,7 @@ import { SET_PASSWORD_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getJwtDatabaseId } from "@/lib/auth/jwt";
-import { getCurrentUser, getSessionId } from "@/lib/auth/session";
+import { getCurrentUser, getSessionId, invalidateSessionCache } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!data?.setPassword?.success) {
       return NextResponse.json({ error: errorMessage || "بروزرسانی رمز عبور با خطا مواجه شد" }, { status: 400 });
     }
-
+    invalidateSessionCache(token);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Set password error:", error);

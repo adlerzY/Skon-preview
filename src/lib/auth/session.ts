@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
@@ -61,9 +62,36 @@ const AUTH_FAILURE_PATTERN = /btl_session_denied|expired|signature|segments|toke
 const VIEWER_MAX_ATTEMPTS = 2;
 const VIEWER_RETRY_DELAY_MS = 300;
 const VIEWER_RETRY_WINDOW_MS = 4000;
+const SESSION_TTL_MS = 20_000;
+const SESSION_CACHE_LIMIT = 500;
+
+const sessionCache = new Map<string, { user: SessionUser; expiresAt: number }>();
+const sessionInflight = new Map<string, Promise<SessionState>>();
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function tokenKey(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function invalidateSessionCache(token?: string | null) {
+  if (!token) return;
+  const key = tokenKey(token);
+  sessionCache.delete(key);
+  sessionInflight.delete(key);
+}
+
+function storeSession(key: string, user: SessionUser) {
+  const now = Date.now();
+  if (sessionCache.size >= SESSION_CACHE_LIMIT) {
+    for (const [cacheKey, entry] of sessionCache) {
+      if (entry.expiresAt <= now) sessionCache.delete(cacheKey);
+    }
+    if (sessionCache.size >= SESSION_CACHE_LIMIT) sessionCache.clear();
+  }
+  sessionCache.set(key, { user, expiresAt: now + SESSION_TTL_MS });
 }
 
 export const getAuthToken = cache(async (): Promise<string | null> => {
@@ -76,12 +104,7 @@ export const getSessionId = cache(async (): Promise<string | null> => {
   return cookieStore.get(SESSION_ID_COOKIE)?.value ?? null;
 });
 
-export const getSessionState = cache(async (): Promise<SessionState> => {
-  const token = await getAuthToken();
-  if (!token) return { status: "anonymous" };
-
-  const sessionId = (await getSessionId()) ?? undefined;
-
+async function lookupViewer(token: string, sessionId?: string): Promise<SessionState> {
   for (let attempt = 1; attempt <= VIEWER_MAX_ATTEMPTS; attempt += 1) {
     const startedAt = Date.now();
     const { data, errorMessage } = await fetchGraphQLWithErrors(VIEWER_QUERY, {}, token, sessionId);
@@ -114,6 +137,32 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
 
   console.error("[session] viewer lookup failed after retries");
   return { status: "unavailable" };
+}
+
+export const getSessionState = cache(async (): Promise<SessionState> => {
+  const [token, sessionId] = await Promise.all([getAuthToken(), getSessionId()]);
+  if (!token) return { status: "anonymous" };
+
+  const key = tokenKey(token);
+  const hit = sessionCache.get(key);
+  if (hit && hit.expiresAt > Date.now()) return { status: "authenticated", user: hit.user };
+
+  const pending = sessionInflight.get(key);
+  if (pending) return pending;
+
+  const promise: Promise<SessionState> = lookupViewer(token, sessionId ?? undefined)
+    .then((state) => {
+      if (state.status === "authenticated" && sessionInflight.get(key) === promise) {
+        storeSession(key, state.user);
+      }
+      return state;
+    })
+    .finally(() => {
+      if (sessionInflight.get(key) === promise) sessionInflight.delete(key);
+    });
+
+  sessionInflight.set(key, promise);
+  return promise;
 });
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
@@ -160,38 +209,8 @@ export const getCurrentAdminUser = cache(async (): Promise<SessionUser | null> =
 });
 
 export const getHeaderViewerData = cache(async (): Promise<HeaderViewerData> => {
-  const token = await getAuthToken();
-  if (!token) return { user: null };
-
-  try {
-    const sessionId = await getSessionId();
-    const data = await fetchGraphQL(
-      `
-        query GetHeaderViewer {
-          viewer {
-            id
-            name
-            avatarUrl
-            isStaff
-          }
-        }
-      `,
-      {},
-      [],
-      "no-store",
-      token,
-      sessionId ?? undefined,
-    );
-    const viewer = data?.viewer;
-
-    if (!viewer?.id) return { user: null };
-
-    const avatarUrl = await resolveAvatarUrl(viewer.avatarUrl ?? null);
-
-    return {
-      user: { name: viewer.name, avatarUrl, isStaff: Boolean(viewer.isStaff) },
-    };
-  } catch {
-    return { user: null };
-  }
+  const state = await getSessionState();
+  if (state.status !== "authenticated") return { user: null };
+  const { user } = state;
+  return { user: { name: user.name, avatarUrl: user.avatarUrl, isStaff: user.isStaff } };
 });

@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, LifeBuoy, MessageSquare, UserCog, LogOut, ArrowRight, X } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import AdminBadge from "@/components/ui/AdminBadge";
-import Skeleton from "@/components/ui/Skeleton";
 import { useLogout } from "@/lib/hooks/useLogout";
 
 const NAV_ITEMS = [
@@ -17,70 +15,49 @@ const NAV_ITEMS = [
   { href: "/my-account/settings", label: "تنظیمات حساب", icon: UserCog },
 ];
 
-const STAFF_HIDDEN_HREFS = [
-  "/my-account/orders",
-  "/my-account/reviews",
-  "/my-account/tickets",
-];
+const STAFF_HIDDEN_HREFS = ["/my-account/orders", "/my-account/reviews", "/my-account/tickets"];
 
 interface DashboardSidebarProps {
   avatarUrl?: string | null;
   name?: string | null;
   isStaff?: boolean;
-  isOpen: boolean;
-  isDesktop: boolean;
+  desktopOpen: boolean;
+  mobileOpen: boolean;
   onClose: () => void;
 }
 
-export default function DashboardSidebar({ avatarUrl, name, isStaff = false, isOpen, isDesktop, onClose }: DashboardSidebarProps) {
+export default function DashboardSidebar({
+  avatarUrl,
+  name,
+  isStaff = false,
+  desktopOpen,
+  mobileOpen,
+  onClose,
+}: DashboardSidebarProps) {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useLogout();
-  const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <aside className="hidden lg:flex flex-col shrink-0 w-[260px] h-screen bg-brand-surface border-l border-brand-surface_hover p-6 gap-3">
-        <div className="flex flex-col items-center gap-3 pb-6 mb-3 border-b border-brand-surface_hover">
-          <Skeleton className="w-16 h-16 rounded-full" />
-          <Skeleton className="w-24 h-4" />
-        </div>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="w-full h-9" />
-        ))}
-      </aside>
-    );
-  }
-
-  const navItems = isStaff
-    ? NAV_ITEMS.filter((item) => !STAFF_HIDDEN_HREFS.includes(item.href))
-    : NAV_ITEMS;
-
-  const containerClasses = isDesktop
-    ? `shrink-0 h-screen bg-brand-surface rounded-none border-l border-brand-surface_hover overflow-hidden transition-[width] duration-300 ease-in-out ${
-        isOpen ? "w-[260px]" : "w-0"
-      }`
-    : `fixed top-0 right-0 h-full w-[280px] max-w-[85vw] bg-brand-surface border-l border-brand-surface_hover z-[9999] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
-        isOpen ? "translate-x-0" : "translate-x-full"
-      }`;
+  const navItems = isStaff ? NAV_ITEMS.filter((item) => !STAFF_HIDDEN_HREFS.includes(item.href)) : NAV_ITEMS;
 
   return (
-    <aside className={containerClasses} role={!isDesktop ? "dialog" : undefined} aria-modal={!isDesktop ? isOpen : undefined}>
-      <div className="flex flex-col h-full w-[260px]">
+    <aside
+      aria-label="منوی حساب کاربری"
+      className={`fixed top-0 right-0 z-[9999] h-full w-[280px] max-w-[85vw] flex flex-col bg-brand-surface border-l border-brand-surface_hover transition-[transform,visibility] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        mobileOpen ? "translate-x-0" : "translate-x-full max-lg:invisible"
+      } lg:static lg:z-auto lg:h-screen lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:overflow-hidden lg:transition-[width] lg:duration-300 lg:ease-in-out ${
+        desktopOpen ? "lg:w-[260px]" : "lg:w-0"
+      }`}
+    >
+      <div className="flex h-full w-full flex-col lg:w-[260px]">
         <div className="relative flex flex-col items-center rounded-none gap-3 p-6 border-b border-brand-surface_hover shrink-0">
-          {!isDesktop && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute top-3 left-3 text-brand-m_khonsa hover:text-white transition-colors p-1.5"
-              aria-label="بستن منو"
-            >
-              <X size={18} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 left-3 text-brand-m_khonsa hover:text-white transition-colors p-1.5 lg:hidden"
+            aria-label="بستن منو"
+          >
+            <X size={18} />
+          </button>
           <UserAvatar src={avatarUrl} name={name} size="lg" ring />
           {isStaff && <AdminBadge />}
           <span className="text-sm font-bold text-white truncate max-w-full">{name}</span>
@@ -97,7 +74,7 @@ export default function DashboardSidebar({ avatarUrl, name, isStaff = false, isO
               <Link
                 key={href}
                 href={href}
-                onClick={!isDesktop ? onClose : undefined}
+                onClick={onClose}
                 className={`flex items-center gap-3 px-5 py-3.5 text-sm font-semibold whitespace-nowrap border-r-[3px] rounded-none transition-colors ${
                   active ? "border-brand-blue text-white bg-brand-blue/5" : "border-transparent text-brand-m_khonsa hover:text-white hover:bg-white/5"
                 }`}

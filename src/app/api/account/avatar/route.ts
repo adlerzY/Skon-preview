@@ -5,7 +5,7 @@ import { UPDATE_AVATAR_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getJwtDatabaseId } from "@/lib/auth/jwt";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, invalidateSessionCache } from "@/lib/auth/session";
 import { isValidAvatarId, resolveAvatarUrl } from "@/lib/avatars";
 
 export async function POST(request: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     if (!result?.success) {
       return NextResponse.json({ error: "بروزرسانی عکس پروفایل با خطا مواجه شد" }, { status: 500 });
     }
-
+    invalidateSessionCache(token);
     const resolvedUrl = await resolveAvatarUrl(result.avatarUrl);
 
     return NextResponse.json({ success: true, avatarId: result.avatarUrl, avatarUrl: resolvedUrl });
