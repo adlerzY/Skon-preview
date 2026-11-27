@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
-import { SUBMIT_CUSTOMER_ORDER_MUTATION, TOUCH_SESSION_MUTATION } from "@/lib/graphql/auth";
+import { SUBMIT_CUSTOMER_ORDER_MUTATION } from "@/lib/graphql/auth";
 import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "@/lib/auth/constants";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { MAX_CART_QUANTITY } from "@/lib/cartLimits";
@@ -15,11 +15,13 @@ interface CheckoutCartItem {
   deliveryMethod: string;
   region?: string;
   variationName?: string;
-  customFields?: { email?: string; battleTag?: string; password?: string;};
+  customFields?: { email?: string; battleTag?: string; password?: string };
 }
 
+const NO_STORE = { "Cache-Control": "no-store" };
+
 function errorResponse(code: string, error: string, status: number, extra: Record<string, unknown> = {}) {
-  return NextResponse.json({ ok: false, code, error, ...extra }, { status });
+  return NextResponse.json({ ok: false, code, error, ...extra }, { status, headers: NO_STORE });
 }
 
 export async function POST(request: NextRequest) {
@@ -39,22 +41,15 @@ export async function POST(request: NextRequest) {
   if (request.headers.get("x-a2b-session-refresh-failed") === "1") {
     return errorResponse("SESSION_REFRESH_FAILED", "نشست شما قابل تمدید نیست؛ دوباره وارد شوید", 401);
   }
+
   const userKey = getJwtDatabaseId(token) ?? sessionId;
   if (!(await checkRateLimit(`checkout-user:${userKey}`, { max: 8, windowMs: 10 * 60 * 1000 }))) {
     const response = errorResponse("RATE_LIMITED", "تعداد درخواست بیش از حد مجاز است", 429, { retryAfter: 600 });
     response.headers.set("Retry-After", "600");
     return response;
   }
+
   try {
-    const sessionPreflight = await fetchGraphQLWithErrors(
-      TOUCH_SESSION_MUTATION,
-      { sessionId },
-      token,
-      sessionId,
-    );
-    if (sessionPreflight.data?.touchSession?.success !== true) {
-      return errorResponse("SESSION_INVALID", "نشست شما معتبر نیست؛ دوباره وارد شوید", 401);
-    }
     const body = await readJsonBody(request, 64 * 1024);
     const items: CheckoutCartItem[] = Array.isArray(body?.items) ? body.items : [];
     const idempotencyKey = typeof body?.idempotencyKey === "string" ? body.idempotencyKey.trim() : "";
@@ -102,7 +97,8 @@ export async function POST(request: NextRequest) {
     const { data, errorMessage } = await fetchGraphQLWithErrors(
       SUBMIT_CUSTOMER_ORDER_MUTATION,
       { lineItems, customerNote: "ثبت‌شده از فروشگاه Arena2Battle", idempotencyKey },
-      token
+      token,
+      sessionId
     );
 
     const order = data?.submitCustomerOrder?.order;
@@ -132,7 +128,10 @@ export async function POST(request: NextRequest) {
     const fallbackUrl = `${siteUrl}/checkout/order-pay/${order.databaseId}/?pay_for_order=true&key=${order.orderKey}`;
     const redirectUrl = order.paymentUrl || fallbackUrl;
 
-    return NextResponse.json({ ok: true, success: true, code: "ORDER_CREATED", redirectUrl, orderNumber: order.orderNumber });
+    return NextResponse.json(
+      { ok: true, success: true, code: "ORDER_CREATED", redirectUrl, orderNumber: order.orderNumber },
+      { headers: NO_STORE }
+    );
   } catch (error) {
     const bodyError = requestBodyErrorResponse(error);
     if (bodyError) return bodyError;

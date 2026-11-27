@@ -138,7 +138,8 @@ export function itemNeedsCredentials(item: CartItem): boolean {
 }
 
 interface CartContextType {
-  cart: CartItem[];   isReady: boolean;
+  cart: CartItem[];
+  isReady: boolean;
   addToCart: (item: NewCartItem, quantity?: number) => boolean;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -159,9 +160,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isMounted, setIsMounted] = useState(false);
   const cartRef = useRef<CartItem[]>([]);
 
-  useEffect(() => {
-    cartRef.current = cart;
-  }, [cart]);
+  const commit = useCallback((updater: (previous: CartItem[]) => CartItem[]) => {
+    const next = updater(cartRef.current);
+    if (next === cartRef.current) return;
+    cartRef.current = next;
+    setCart(next);
+  }, []);
 
   useEffect(() => {
     const stored = readStoredCart();
@@ -169,6 +173,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...item,
       customFields: getCredentials(item.id) ?? undefined,
     }));
+    cartRef.current = hydrated;
     setCart(hydrated);
     setIsMounted(true);
   }, []);
@@ -184,14 +189,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = useCallback(
     (item: NewCartItem, quantity: number = 1): boolean => {
       const requested = Math.max(1, Math.floor(quantity) || 1);
-      const currentTotal = cartRef.current.reduce((sum, i) => sum + i.quantity, 0);
+      const currentTotal = cartRef.current.reduce((sum, entry) => sum + entry.quantity, 0);
 
       if (currentTotal >= MAX_CART_QUANTITY) {
         showToast(CAP_MESSAGE, "error");
         return false;
       }
 
-      const existing = cartRef.current.find((p) => itemsMatch(item, p));
+      const existing = cartRef.current.find((entry) => itemsMatch(item, entry));
       let addQty = Math.min(requested, MAX_CART_QUANTITY - currentTotal);
 
       if (typeof item.maxQuantity === "number") {
@@ -211,26 +216,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveCredentials(id, item.customFields);
       }
 
-      setCart((prev) => {
-        const existingIndex = prev.findIndex((p) => p.id === id);
+      commit((previous) => {
+        const existingIndex = previous.findIndex((entry) => entry.id === id);
         if (existingIndex !== -1) {
-          return prev.map((p, idx) =>
-            idx === existingIndex ? { ...p, quantity: p.quantity + addQty } : p
+          return previous.map((entry, index) =>
+            index === existingIndex ? { ...entry, quantity: entry.quantity + addQty } : entry
           );
         }
-        if (prev.length >= MAX_CART_ITEMS) return prev;
-        return [...prev, { ...item, id, quantity: addQty }];
+        if (previous.length >= MAX_CART_ITEMS) return previous;
+        return [...previous, { ...item, id, quantity: addQty }];
       });
 
       return true;
     },
-    [showToast]
+    [showToast, commit]
   );
 
-  const removeFromCart = useCallback((id: string) => {
-    removeCredentials(id);
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+  const removeFromCart = useCallback(
+    (id: string) => {
+      removeCredentials(id);
+      commit((previous) => previous.filter((item) => item.id !== id));
+    },
+    [commit]
+  );
 
   const updateQuantity = useCallback(
     (id: string, quantity: number) => {
@@ -240,10 +248,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const currentCart = cartRef.current;
-      const target = currentCart.find((i) => i.id === id);
+      const target = currentCart.find((item) => item.id === id);
       if (!target) return;
 
-      const otherTotal = currentCart.reduce((sum, i) => (i.id === id ? sum : sum + i.quantity), 0);
+      const otherTotal = currentCart.reduce((sum, item) => (item.id === id ? sum : sum + item.quantity), 0);
       let capped = Math.min(quantity, Math.max(0, MAX_CART_QUANTITY - otherTotal));
       let cappedByStock = false;
 
@@ -265,79 +273,89 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      setCart((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, quantity: capped } : item))
-      );
+      commit((previous) => previous.map((item) => (item.id === id ? { ...item, quantity: capped } : item)));
     },
-    [removeFromCart, showToast]
+    [removeFromCart, showToast, commit]
   );
 
   const updateCredentials = useCallback(
     (id: string, credentials: NonNullable<CartItem["customFields"]>) => {
       saveCredentials(id, credentials);
-      setCart((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, customFields: credentials } : item))
-      );
+      commit((previous) => previous.map((item) => (item.id === id ? { ...item, customFields: credentials } : item)));
     },
-    []
+    [commit]
   );
 
-  const updateItemSnapshot = useCallback((id: string, snapshot: { price?: number; regularPrice?: number; maxQuantity?: number | null }) => {
-    setCart((prev) => prev.map((item) => {
-      if (item.id !== id) return item;
-      return {
-        ...item,
-        ...(typeof snapshot.price === "number" ? { price: snapshot.price } : {}),
-        ...(typeof snapshot.regularPrice === "number" ? { regularPrice: snapshot.regularPrice } : {}),
-        ...(snapshot.maxQuantity === null ? { maxQuantity: undefined } : typeof snapshot.maxQuantity === "number" ? { maxQuantity: snapshot.maxQuantity } : {}),
-      };
-    }));
-  }, []);
+  const updateItemSnapshot = useCallback(
+    (id: string, snapshot: { price?: number; regularPrice?: number; maxQuantity?: number | null }) => {
+      commit((previous) =>
+        previous.map((item) => {
+          if (item.id !== id) return item;
+          return {
+            ...item,
+            ...(typeof snapshot.price === "number" ? { price: snapshot.price } : {}),
+            ...(typeof snapshot.regularPrice === "number" ? { regularPrice: snapshot.regularPrice } : {}),
+            ...(snapshot.maxQuantity === null
+              ? { maxQuantity: undefined }
+              : typeof snapshot.maxQuantity === "number"
+                ? { maxQuantity: snapshot.maxQuantity }
+                : {}),
+          };
+        })
+      );
+    },
+    [commit]
+  );
 
   const clearSensitiveCredentials = useCallback(() => {
     cartRef.current.forEach((item) => removeCredentials(item.id));
-    setCart((prev) => prev.map((item) => ({ ...item, customFields: undefined })));
-  }, []);
+    commit((previous) => previous.map((item) => ({ ...item, customFields: undefined })));
+  }, [commit]);
 
   const clearCart = useCallback(() => {
     clearSensitiveCredentials();
-    setCart([]);
+    commit(() => []);
     try {
       window.localStorage.removeItem(CART_STORAGE_KEY);
     } catch {}
     removeClientCookie(CART_COOKIE);
-  }, [clearSensitiveCredentials]);
+  }, [clearSensitiveCredentials, commit]);
 
-  const totalPrice = useMemo(
-    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [cart]
+  const totalPrice = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+
+  const totalQuantity = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+
+  const value = useMemo<CartContextType>(
+    () => ({
+      cart,
+      isReady: isMounted,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      updateCredentials,
+      updateItemSnapshot,
+      clearCart,
+      clearSensitiveCredentials,
+      totalPrice,
+      totalQuantity,
+      isCartFull: totalQuantity >= MAX_CART_QUANTITY,
+    }),
+    [
+      cart,
+      isMounted,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      updateCredentials,
+      updateItemSnapshot,
+      clearCart,
+      clearSensitiveCredentials,
+      totalPrice,
+      totalQuantity,
+    ]
   );
 
-  const totalQuantity = useMemo(
-    () => cart.reduce((sum, item) => sum + item.quantity, 0),
-    [cart]
-  );
-
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        isReady: isMounted,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        updateCredentials,
-        updateItemSnapshot,
-        clearCart,
-        clearSensitiveCredentials,
-        totalPrice,
-        totalQuantity,
-        isCartFull: totalQuantity >= MAX_CART_QUANTITY,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export const useCart = () => {

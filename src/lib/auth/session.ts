@@ -1,5 +1,4 @@
 import "server-only";
-import { createHash } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { fetchGraphQL } from "@/lib/graphql";
@@ -7,6 +6,7 @@ import { fetchGraphQLWithErrors } from "@/lib/graphql/rawFetch";
 import { AUTH_TOKEN_COOKIE, SESSION_ID_COOKIE } from "./constants";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { getAdminGraphQLHeaders } from "@/lib/admin/headers";
+import { createTokenCache, invalidateToken, tokenKey } from "./tokenCache";
 
 export interface SessionUser {
   id: string;
@@ -62,36 +62,15 @@ const AUTH_FAILURE_PATTERN = /btl_session_denied|expired|signature|segments|toke
 const VIEWER_MAX_ATTEMPTS = 2;
 const VIEWER_RETRY_DELAY_MS = 300;
 const VIEWER_RETRY_WINDOW_MS = 4000;
-const SESSION_TTL_MS = 20_000;
-const SESSION_CACHE_LIMIT = 500;
 
-const sessionCache = new Map<string, { user: SessionUser; expiresAt: number }>();
-const sessionInflight = new Map<string, Promise<SessionState>>();
+const sessionCache = createTokenCache<SessionUser>("session", 20_000);
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function tokenKey(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
-
 export function invalidateSessionCache(token?: string | null) {
-  if (!token) return;
-  const key = tokenKey(token);
-  sessionCache.delete(key);
-  sessionInflight.delete(key);
-}
-
-function storeSession(key: string, user: SessionUser) {
-  const now = Date.now();
-  if (sessionCache.size >= SESSION_CACHE_LIMIT) {
-    for (const [cacheKey, entry] of sessionCache) {
-      if (entry.expiresAt <= now) sessionCache.delete(cacheKey);
-    }
-    if (sessionCache.size >= SESSION_CACHE_LIMIT) sessionCache.clear();
-  }
-  sessionCache.set(key, { user, expiresAt: now + SESSION_TTL_MS });
+  invalidateToken(token);
 }
 
 export const getAuthToken = cache(async (): Promise<string | null> => {
@@ -144,25 +123,12 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
   if (!token) return { status: "anonymous" };
 
   const key = tokenKey(token);
-  const hit = sessionCache.get(key);
-  if (hit && hit.expiresAt > Date.now()) return { status: "authenticated", user: hit.user };
+  const cached = sessionCache.get(key);
+  if (cached) return { status: "authenticated", user: cached };
 
-  const pending = sessionInflight.get(key);
-  if (pending) return pending;
-
-  const promise: Promise<SessionState> = lookupViewer(token, sessionId ?? undefined)
-    .then((state) => {
-      if (state.status === "authenticated" && sessionInflight.get(key) === promise) {
-        storeSession(key, state.user);
-      }
-      return state;
-    })
-    .finally(() => {
-      if (sessionInflight.get(key) === promise) sessionInflight.delete(key);
-    });
-
-  sessionInflight.set(key, promise);
-  return promise;
+  const state = await lookupViewer(token, sessionId ?? undefined);
+  if (state.status === "authenticated") sessionCache.set(key, state.user);
+  return state;
 });
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {

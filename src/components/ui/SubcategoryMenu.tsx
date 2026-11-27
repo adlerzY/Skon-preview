@@ -12,7 +12,7 @@ export default function SubcategoryMenu({ subcategories }: SubcategoryMenuProps)
   if (!subcategories || subcategories.length === 0) return null;
 
   return (
-    <div className="sticky top-16 z-40 w-full bg-[#1c1e25]/80 backdrop-blur-xl border-b border-white/5 py-4 my-6 overflow-x-auto no-scrollbar">
+    <div className="sticky top-[80px] z-40 w-full bg-[#1c1e25]/80 backdrop-blur-xl border-b border-white/5 py-4 my-6 overflow-x-auto no-scrollbar">
       <div className="container mx-auto px-6 flex gap-4 items-center min-w-max">
         {subcategories.map((sub) => (
           <a

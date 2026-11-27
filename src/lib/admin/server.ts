@@ -1,5 +1,4 @@
 import "server-only";
-import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getAuthToken, getCurrentAdminUser } from "@/lib/auth/session";
@@ -40,10 +39,9 @@ import {
 import { resolveAvatarUrl } from "@/lib/avatars";
 import type { AdminPermission } from "./permissions";
 import { getAdminGraphQLHeaders } from "./headers";
+import { createTokenCache, tokenKey } from "@/lib/auth/tokenCache";
 
-const ACCESS_TTL_MS = 20_000;
-const ACCESS_CACHE_LIMIT = 500;
-const accessCache = new Map<string, { permissions: string[]; expiresAt: number }>();
+const accessCache = createTokenCache<string[]>("admin-access", 20_000);
 
 export const ADMIN_UNREAD_COUNT_QUERY = `query GetAdminUnreadCount { adminUnreadNotificationsCount }`;
 
@@ -61,10 +59,9 @@ async function resolveAdminAccess(): Promise<{ permissions: string[] } | null> {
   const token = await getAuthToken();
   if (!token) return null;
 
-  const key = createHash("sha256").update(token).digest("hex");
-  const now = Date.now();
-  const hit = accessCache.get(key);
-  if (hit && hit.expiresAt > now) return { permissions: hit.permissions };
+  const key = tokenKey(token);
+  const cached = accessCache.get(key);
+  if (cached) return { permissions: cached };
 
   const user = await getCurrentAdminUser();
   if (!user?.isStaff) {
@@ -72,15 +69,8 @@ async function resolveAdminAccess(): Promise<{ permissions: string[] } | null> {
     return null;
   }
 
-  if (accessCache.size >= ACCESS_CACHE_LIMIT) {
-    for (const [cacheKey, entry] of accessCache) {
-      if (entry.expiresAt <= now) accessCache.delete(cacheKey);
-    }
-    if (accessCache.size >= ACCESS_CACHE_LIMIT) accessCache.clear();
-  }
-
   const permissions = user.adminPermissions ?? [];
-  accessCache.set(key, { permissions, expiresAt: now + ACCESS_TTL_MS });
+  accessCache.set(key, permissions);
   return { permissions };
 }
 

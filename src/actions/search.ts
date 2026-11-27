@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { fetchGraphQL, formatProducts, PRODUCT_CARD_FIELDS } from "@/lib/graphql";
 import { DEFAULT_REGION, KNOWN_REGIONS } from "@/lib/regions";
