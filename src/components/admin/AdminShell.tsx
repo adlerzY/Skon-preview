@@ -62,7 +62,7 @@ function AdminShellInner({ children }: { children: ReactNode }) {
   const currentUser = user ?? { name: "مدیر", email: "", avatarUrl: null };
 
   return (
-    <div className="admin-shell flex h-dvh w-full overflow-hidden rounded-none bg-brand-bg text-brand-active" dir="rtl">
+    <div className="admin-shell flex h-dvh w-full overflow-hidden rounded-none bg-brand-bg text-[14px] leading-6 text-brand-active" dir="rtl">
       {isMobileSidebarOpen ? (
         <button
           type="button"
@@ -80,7 +80,7 @@ function AdminShellInner({ children }: { children: ReactNode }) {
       />
       <div className="flex h-dvh min-w-0 flex-1 flex-col rounded-none">
         <AdminHeader onToggleNavigation={toggleNavigation} />
-        <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto rounded-none px-3 py-4 sm:px-4 lg:px-5 lg:py-5">
+        <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto rounded-none px-4 py-5 lg:px-6 lg:py-6">
           <div className="mx-auto w-full max-w-[1600px] rounded-none">{children}</div>
         </main>
       </div>

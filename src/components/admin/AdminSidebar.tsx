@@ -86,9 +86,8 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
 
   return (
     <aside
-      className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(17rem,88vw)] flex-col rounded-none border-l border-brand-surface_hover bg-brand-menu transition-[transform,width] duration-150 ease-out lg:sticky lg:top-0 lg:z-30 lg:visible lg:pointer-events-auto lg:translate-x-0 lg:shadow-none ${isCollapsed ? "lg:w-[76px]" : "lg:w-[236px]"} ${isMobileOpen ? "visible translate-x-0 pointer-events-auto" : "invisible translate-x-full pointer-events-none"}`}
+      className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(18rem,88vw)] flex-col rounded-none border-l border-brand-surface_hover bg-brand-menu transition-[transform,width] duration-150 ease-out lg:sticky lg:top-0 lg:z-30 lg:visible lg:pointer-events-auto lg:translate-x-0 ${isCollapsed ? "lg:w-[76px]" : "lg:w-[256px]"} ${isMobileOpen ? "visible translate-x-0 pointer-events-auto" : "invisible translate-x-full pointer-events-none"}`}
       aria-label="منوی مدیریت"
-      aria-hidden={!isMobileOpen ? undefined : false}
     >
       <div className={`flex h-[60px] shrink-0 items-center rounded-none border-b border-brand-surface_hover ${compact ? "justify-center px-2" : "justify-between px-4"}`}>
         <Link href="/admin" onClick={onClose} className="flex min-w-0 items-center rounded-none" aria-label="پیشخوان آرنا۲بتل">
@@ -104,17 +103,17 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-none text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white lg:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-none text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white lg:hidden"
           aria-label="بستن منو"
         >
-          <X size={17} />
+          <X size={18} />
         </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto rounded-none px-2 py-4" aria-label="بخش‌های پنل">
         {groups.map((group, groupIndex) => (
           <section key={group.label} className={groupIndex > 0 ? "mt-5" : ""}>
-            {!compact ? <h2 className="mb-1.5 px-3 text-[10px] font-medium text-brand-surface_m">{group.label}</h2> : null}
+            {!compact ? <h2 className="mb-1.5 px-3 text-[12px] font-medium text-brand-surface_m">{group.label}</h2> : null}
             {compact && groupIndex > 0 ? <div className="mx-2 mb-2 border-t border-brand-surface_hover" /> : null}
             <div className="space-y-0.5">
               {group.items.map((item) => (
@@ -126,12 +125,12 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
       </nav>
 
       <div className="shrink-0 rounded-none border-t border-brand-surface_hover px-2 py-3">
-        <div className={`mb-2 flex min-h-10 items-center gap-2.5 px-2 ${compact ? "justify-center" : ""}`}>
+        <div className={`mb-2 flex min-h-11 items-center gap-3 px-2 ${compact ? "justify-center" : ""}`}>
           <UserAvatar src={user.avatarUrl} name={user.name} size="sm" />
           {!compact ? (
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-medium text-brand-active">{user.name || "مدیر"}</div>
-              <div className="mt-0.5 truncate text-[10px] text-brand-surface_m">مدیریت فروشگاه</div>
+              <div className="truncate text-[14px] font-medium text-brand-active">{user.name || "مدیر"}</div>
+              <div className="mt-0.5 truncate text-[12px] text-brand-surface_m">مدیریت فروشگاه</div>
             </div>
           ) : null}
         </div>
@@ -146,9 +145,9 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
             }}
             disabled={isLoggingOut}
             title={compact ? "خروج از پنل" : undefined}
-            className={`flex min-h-9 w-full items-center gap-2.5 rounded-none px-3 text-xs text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-zard disabled:opacity-50 ${compact ? "justify-center" : ""}`}
+            className={`flex min-h-10 w-full items-center gap-3 rounded-none px-3 text-[14px] text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-zard disabled:opacity-50 ${compact ? "justify-center" : ""}`}
           >
-            <LogOut size={16} className="shrink-0" />
+            <LogOut size={18} className="shrink-0" />
             {!compact ? <span>{isLoggingOut ? "در حال خروج…" : "خروج از پنل"}</span> : null}
           </button>
         </div>
@@ -179,9 +178,9 @@ function NavLink({
       title={compact ? item.label : undefined}
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
-      className={`relative flex min-h-9 items-center gap-2.5 rounded-none px-3 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue ${compact ? "justify-center" : ""} ${active ? "border-r-2 border-brand-blue bg-brand-surface text-brand-white" : "border-r-2 border-transparent text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white"}`}
+      className={`relative flex min-h-10 items-center gap-3 rounded-none px-3 text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue ${compact ? "justify-center" : ""} ${active ? "border-r-2 border-brand-blue bg-brand-surface text-brand-white" : "border-r-2 border-transparent text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white"}`}
     >
-      <Icon size={16} strokeWidth={1.8} className={`shrink-0 ${active ? "text-brand-blue" : "text-brand-surface_m"}`} />
+      <Icon size={18} strokeWidth={1.8} className={`shrink-0 ${active ? "text-brand-blue" : "text-brand-surface_m"}`} />
       {!compact ? <span className="truncate">{item.label}</span> : null}
     </Link>
   );
@@ -207,9 +206,9 @@ function SidebarAction({
       onClick={onClick}
       title={compact ? label : undefined}
       aria-label={label}
-      className={`flex min-h-9 items-center gap-2.5 rounded-none px-3 text-xs text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-white ${compact ? "justify-center" : ""}`}
+      className={`flex min-h-10 items-center gap-3 rounded-none px-3 text-[14px] text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-white ${compact ? "justify-center" : ""}`}
     >
-      <Icon size={16} className="shrink-0" />
+      <Icon size={18} className="shrink-0" />
       {!compact ? <span>{label}</span> : null}
     </Link>
   );

@@ -6,7 +6,7 @@ import { Menu } from "lucide-react";
 
 const AdminNotificationsBell = dynamic(() => import("./AdminNotificationsBell"), {
   ssr: false,
-  loading: () => <span className="block h-8 w-8" aria-hidden="true" />,
+  loading: () => <span className="block h-9 w-9" aria-hidden="true" />,
 });
 
 type PageTitle = { href: string; title: string; exact?: boolean };
@@ -41,21 +41,19 @@ export default function AdminHeader({ onToggleNavigation }: { onToggleNavigation
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-30 flex h-[56px] shrink-0 items-center justify-between rounded-none border-b border-brand-surface_hover bg-brand-surface px-3 sm:px-5 lg:px-6">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <header className="sticky top-0 z-30 flex h-[60px] shrink-0 items-center justify-between rounded-none border-b border-brand-surface_hover bg-brand-surface px-4 lg:px-6">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           onClick={onToggleNavigation}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-none text-brand-m_khonsa transition-colors hover:bg-brand-surface_hover hover:text-brand-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-none text-brand-m_khonsa transition-colors hover:bg-brand-surface_hover hover:text-brand-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue"
           aria-label="باز و بسته کردن منوی مدیریت"
         >
-          <Menu size={18} strokeWidth={1.8} />
+          <Menu size={20} strokeWidth={1.8} />
         </button>
-        <h1 className="truncate text-sm font-medium text-brand-active">{getPageTitle(pathname)}</h1>
+        <span className="truncate text-[15px] font-medium text-brand-active">{getPageTitle(pathname)}</span>
       </div>
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-none text-brand-m_khonsa hover:bg-brand-surface_hover hover:text-brand-white">
-        <AdminNotificationsBell />
-      </div>
+      <AdminNotificationsBell />
     </header>
   );
 }
