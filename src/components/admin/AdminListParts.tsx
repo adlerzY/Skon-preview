@@ -3,32 +3,21 @@ import { AdminButton } from "./AdminUi";
 
 export function AdminSkeletonRows({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid gap-2" aria-busy="true">
-      {Array.from({ length: count }).map((_, index) => (
-        <div
-          key={index}
-          className="h-16 animate-pulse rounded-[4px] border border-brand-surface_hover bg-brand-surface"
-        />
-      ))}
+    <div className="flex min-h-14 items-center gap-2 border-b border-brand-surface_hover py-3 text-xs text-brand-m_khonsa" aria-busy="true">
+      <Loader2 size={14} className="animate-spin text-brand-blue" />
+      <span>در حال دریافت اطلاعات…</span>
+      <span className="sr-only">{count}</span>
     </div>
   );
 }
 
-export function AdminLoadMore({
-  visible,
-  loading,
-  onClick,
-}: {
-  visible: boolean;
-  loading: boolean;
-  onClick: () => void;
-}) {
+export function AdminLoadMore({ visible, loading, onClick }: { visible: boolean; loading: boolean; onClick: () => void }) {
   if (!visible) return null;
   return (
-    <div className="mt-4 flex justify-center">
+    <div className="mt-3 flex justify-center">
       <AdminButton onClick={onClick} disabled={loading}>
-        {loading && <Loader2 size={15} className="animate-spin" />}
-        {loading ? "در حال دریافت..." : "نمایش موارد بیشتر"}
+        {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+        {loading ? "در حال دریافت…" : "نمایش موارد بیشتر"}
       </AdminButton>
     </div>
   );
@@ -37,24 +26,13 @@ export function AdminLoadMore({
 export function AdminErrorBanner({ message, onRetry }: { message: string; onRetry?: () => void }) {
   if (!message) return null;
   return (
-    <div
-      role="alert"
-      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[4px] border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-200"
-    >
+    <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-2 border-r-2 border-brand-zard bg-brand-zard/10 px-3 py-2 text-xs text-brand-zard">
       <span>{message}</span>
-      {onRetry && (
-        <AdminButton onClick={onRetry} className="min-h-9 px-3 text-xs">
-          تلاش مجدد
-        </AdminButton>
-      )}
+      {onRetry ? <AdminButton onClick={onRetry}>تلاش دوباره</AdminButton> : null}
     </div>
   );
 }
 
 export function AdminListCount({ count, hasMore }: { count: number; hasMore: boolean }) {
-  return (
-    <div className="mb-2 text-xs text-brand-m_khonsa">
-      {count.toLocaleString("fa-IR")} مورد{hasMore ? " (و بیشتر)" : ""}
-    </div>
-  );
+  return <div className="mb-2 text-[11px] text-brand-surface_m">نمایش {count.toLocaleString("fa-IR")} مورد{hasMore ? " و موارد بیشتر" : ""}</div>;
 }

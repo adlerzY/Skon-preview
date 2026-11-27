@@ -33,7 +33,6 @@ function AdminShellInner({ children }: { children: ReactNode }) {
       setIsSidebarCollapsed((current) => !current);
       return;
     }
-
     setIsMobileSidebarOpen((current) => !current);
   }, []);
 
@@ -42,46 +41,36 @@ function AdminShellInner({ children }: { children: ReactNode }) {
     const handleChange = (event: MediaQueryListEvent) => {
       if (event.matches) setIsMobileSidebarOpen(false);
     };
-
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   useEffect(() => {
     if (!isMobileSidebarOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeMobileSidebar();
     };
-
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileSidebarOpen, closeMobileSidebar]);
 
-  const currentUser = user ?? {
-    name: "مدیر",
-    email: "",
-    avatarUrl: null,
-  };
+  const currentUser = user ?? { name: "مدیر", email: "", avatarUrl: null };
 
   return (
-    <div className="admin-shell flex h-dvh w-full overflow-hidden bg-brand-bg text-brand-active" dir="rtl">
+    <div className="admin-shell flex h-dvh w-full overflow-hidden rounded-none bg-brand-bg text-brand-active" dir="rtl">
       {isMobileSidebarOpen ? (
         <button
           type="button"
           onClick={closeMobileSidebar}
-          className="fixed inset-0 z-40 cursor-default bg-black/65 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 cursor-default rounded-none bg-brand-bg/80 lg:hidden"
           aria-label="بستن منوی مدیریت"
         />
       ) : null}
-
       <AdminSidebar
         user={currentUser}
         permissions={permissions}
@@ -89,11 +78,10 @@ function AdminShellInner({ children }: { children: ReactNode }) {
         isMobileOpen={isMobileSidebarOpen}
         onClose={closeMobileSidebar}
       />
-
-      <div className="flex h-dvh min-w-0 flex-1 flex-col">
+      <div className="flex h-dvh min-w-0 flex-1 flex-col rounded-none">
         <AdminHeader onToggleNavigation={toggleNavigation} />
-        <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-5 lg:px-7 lg:py-7">
-          <div className="mx-auto w-full max-w-[1680px]">{children}</div>
+        <main className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto rounded-none px-3 py-4 sm:px-4 lg:px-5 lg:py-5">
+          <div className="mx-auto w-full max-w-[1600px] rounded-none">{children}</div>
         </main>
       </div>
     </div>

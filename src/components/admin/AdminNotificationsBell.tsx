@@ -81,69 +81,59 @@ export default function AdminNotificationsBell() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative rounded-none">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative p-2.5 text-brand-m_khonsa transition-colors hover:bg-white/5 hover:text-white"
+        className="relative inline-flex h-8 w-8 items-center justify-center rounded-none text-brand-m_khonsa transition-colors hover:bg-brand-surface_hover hover:text-brand-white"
         aria-label="اعلان‌ها"
         aria-expanded={open}
       >
-        <Bell size={18} />
-        {unreadCount > 0 && (
-          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-zard px-1 text-[9px] font-black text-black">
-            {unreadCount > 9 ? "9+" : unreadCount}
+        <Bell size={17} />
+        {unreadCount > 0 ? (
+          <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-zard px-1 text-[9px] font-semibold text-brand-bg">
+            {unreadCount > 9 ? "۹+" : unreadCount.toLocaleString("fa-IR")}
           </span>
-        )}
+        ) : null}
       </button>
 
-      {open && (
+      {open ? (
         <>
-          <button type="button" className="fixed inset-0 z-40 cursor-default" aria-label="بستن اعلان‌ها" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-2 max-h-[min(500px,calc(100dvh-90px))] w-[min(380px,calc(100vw-24px))] overflow-hidden border border-brand-surface_hover bg-brand-surface shadow-2xl">
-            <div className="flex items-center justify-between gap-3 border-b border-brand-surface_hover p-3">
-              <div className="text-sm font-black text-white">اعلان‌ها</div>
+          <button type="button" className="fixed inset-0 z-40 cursor-default rounded-none" aria-label="بستن اعلان‌ها" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-50 mt-2 max-h-[min(480px,calc(100dvh-80px))] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[5px] border border-brand-surface_hover bg-brand-surface">
+            <div className="flex items-center justify-between gap-3 border-b border-brand-surface_hover px-3 py-2.5">
+              <div className="text-xs font-semibold text-brand-active">اعلان‌ها</div>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => void markAll()} className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue">
-                  <Check size={12} /> همه خوانده
+                <button type="button" onClick={() => void markAll()} className="inline-flex items-center gap-1 text-[11px] text-brand-blue hover:text-brand-active">
+                  <Check size={12} /> خواندن همه
                 </button>
-                <button type="button" onClick={() => setOpen(false)} className="text-brand-m_khonsa hover:text-white" aria-label="بستن">
+                <button type="button" onClick={() => setOpen(false)} className="inline-flex h-7 w-7 items-center justify-center rounded-none text-brand-m_khonsa hover:bg-brand-surface_hover hover:text-brand-white" aria-label="بستن">
                   <X size={14} />
                 </button>
               </div>
             </div>
-
-            <div className="max-h-[420px] overflow-y-auto">
+            <div className="max-h-[410px] overflow-y-auto">
               {items.map((notification) => (
-                <div
-                  key={notification.databaseId}
-                  className={`border-b border-brand-surface_hover p-3 ${notification.isRead ? "" : "bg-brand-blue/5"}`}
-                >
+                <div key={notification.databaseId} className={`border-b border-brand-surface_hover px-3 py-2.5 ${notification.isRead ? "" : "bg-brand-blue/5"}`}>
                   {notification.link ? (
-                    <Link prefetch={false} href={notification.link} onClick={() => setOpen(false)} className="block">
-                      <div className="text-sm font-black text-white">{notification.title}</div>
-                      <div className="mt-1 text-xs leading-5 text-brand-m_khonsa">{notification.body}</div>
+                    <Link prefetch={false} href={notification.link} onClick={() => setOpen(false)} className="block rounded-none">
+                      <div className="text-xs font-medium text-brand-active">{notification.title}</div>
+                      <div className="mt-1 text-[11px] leading-5 text-brand-m_khonsa">{notification.body}</div>
                     </Link>
                   ) : (
                     <>
-                      <div className="text-sm font-black text-white">{notification.title}</div>
-                      <div className="mt-1 text-xs leading-5 text-brand-m_khonsa">{notification.body}</div>
+                      <div className="text-xs font-medium text-brand-active">{notification.title}</div>
+                      <div className="mt-1 text-[11px] leading-5 text-brand-m_khonsa">{notification.body}</div>
                     </>
                   )}
-                  <div className="mt-2 text-xs text-brand-m_khonsa" dir="ltr">
-                    {new Date(notification.createdAt).toLocaleString("fa-IR")}
-                  </div>
+                  <div className="mt-1.5 text-[10px] text-brand-surface_m" dir="ltr">{new Date(notification.createdAt).toLocaleString("fa-IR")}</div>
                 </div>
               ))}
-              {items.length === 0 && (
-                <div className="p-8 text-center text-sm text-brand-m_khonsa">
-                  {loaded ? "اعلانی برای نمایش وجود ندارد." : "در حال دریافت اعلان‌ها…"}
-                </div>
-              )}
+              {items.length === 0 ? <div className="px-3 py-7 text-center text-xs text-brand-m_khonsa">{loaded ? "اعلانی برای نمایش وجود ندارد." : "در حال دریافت اعلان‌ها…"}</div> : null}
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

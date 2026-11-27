@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -53,11 +54,11 @@ const NAV_GROUPS: AdminNavGroup[] = [
     items: [{ href: "/admin", label: "پیشخوان", icon: LayoutDashboard, exact: true }],
   },
   {
-    label: "فروش و کاتالوگ",
+    label: "فروشگاه",
     items: [
       { href: "/admin/orders", label: "سفارش‌ها", icon: ShoppingCart, permission: ADMIN_PERMISSIONS.ORDERS_READ },
       { href: "/admin/products", label: "محصولات", icon: Package, permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
-      { href: "/admin/cdkeys", label: "موجودی CD Key", icon: ShieldCheck, permission: ADMIN_PERMISSIONS.CDKEYS_READ },
+      { href: "/admin/cdkeys", label: "کدهای فعال‌سازی", icon: ShieldCheck, permission: ADMIN_PERMISSIONS.CDKEYS_READ },
     ],
   },
   {
@@ -81,96 +82,62 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
     ...group,
     items: group.items.filter((item) => canSee(item, permissions)),
   })).filter((group) => group.items.length > 0);
-
   const compact = isCollapsed && !isMobileOpen;
-  const sidebarWidth = isCollapsed ? "lg:w-[88px]" : "lg:w-[272px]";
-  const mobileState = isMobileOpen
-    ? "visible translate-x-0 pointer-events-auto"
-    : "invisible translate-x-full pointer-events-none";
 
   return (
     <aside
-      className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(19rem,88vw)] flex-col border-l border-white/[0.07] bg-[#191C25] shadow-2xl transition-[transform,width] duration-200 ease-out lg:sticky lg:top-0 lg:z-30 lg:h-dvh lg:visible lg:pointer-events-auto lg:translate-x-0 lg:shadow-none ${sidebarWidth} ${mobileState}`}
-      aria-label="منوی اصلی مدیریت"
+      className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(17rem,88vw)] flex-col rounded-none border-l border-brand-surface_hover bg-brand-menu transition-[transform,width] duration-150 ease-out lg:sticky lg:top-0 lg:z-30 lg:visible lg:pointer-events-auto lg:translate-x-0 lg:shadow-none ${isCollapsed ? "lg:w-[76px]" : "lg:w-[236px]"} ${isMobileOpen ? "visible translate-x-0 pointer-events-auto" : "invisible translate-x-full pointer-events-none"}`}
+      aria-label="منوی مدیریت"
       aria-hidden={!isMobileOpen ? undefined : false}
     >
-      <div className={`flex h-[68px] shrink-0 items-center border-b border-white/[0.07] ${compact ? "justify-center px-3" : "justify-between px-5"}`}>
-        <Link href="/admin" onClick={onClose} className="flex min-w-0 items-center gap-3" aria-label="Arena2Battle پیشخوان">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0074E1] text-sm font-black tracking-tight text-white shadow-[0_6px_20px_rgba(0,116,225,0.24)]">
-            A2B
-          </span>
-          {!compact ? (
-            <span className="min-w-0">
-              <span className="block truncate text-[13px] font-extrabold tracking-[0.04em] text-white">ARENA2BATTLE</span>
-              <span className="mt-0.5 block text-[10px] font-medium tracking-[0.14em] text-brand-m_khonsa">CONTROL PANEL</span>
-            </span>
-          ) : null}
+      <div className={`flex h-[60px] shrink-0 items-center rounded-none border-b border-brand-surface_hover ${compact ? "justify-center px-2" : "justify-between px-4"}`}>
+        <Link href="/admin" onClick={onClose} className="flex min-w-0 items-center rounded-none" aria-label="پیشخوان آرنا۲بتل">
+          <Image
+            src="/images/arena2battleLogo.webp"
+            alt="آرنا۲بتل"
+            width={128}
+            height={48}
+            priority
+            className={compact ? "h-8 w-[54px] rounded-none object-contain" : "h-9 w-[116px] rounded-none object-contain object-right"}
+          />
         </Link>
-
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-brand-m_khonsa transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-none text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white lg:hidden"
           aria-label="بستن منو"
         >
-          <X size={18} />
+          <X size={17} />
         </button>
       </div>
 
-      <nav className="scrollbar-hide flex-1 overflow-y-auto px-3 py-5" aria-label="بخش‌های پنل">
+      <nav className="flex-1 overflow-y-auto rounded-none px-2 py-4" aria-label="بخش‌های پنل">
         {groups.map((group, groupIndex) => (
-          <section key={group.label} className={groupIndex > 0 ? "mt-6" : ""}>
-            {!compact ? (
-              <h2 className="mb-2 px-3 text-[10px] font-bold tracking-[0.12em] text-brand-m_khonsa/60">
-                {group.label}
-              </h2>
-            ) : groupIndex > 0 ? (
-              <div className="mx-3 mb-3 border-t border-white/[0.07]" />
-            ) : null}
-
-            <div className="space-y-1">
+          <section key={group.label} className={groupIndex > 0 ? "mt-5" : ""}>
+            {!compact ? <h2 className="mb-1.5 px-3 text-[10px] font-medium text-brand-surface_m">{group.label}</h2> : null}
+            {compact && groupIndex > 0 ? <div className="mx-2 mb-2 border-t border-brand-surface_hover" /> : null}
+            <div className="space-y-0.5">
               {group.items.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  isCollapsed={compact}
-                  onClose={onClose}
-                />
+                <NavLink key={item.href} item={item} pathname={pathname} compact={compact} onClose={onClose} />
               ))}
             </div>
           </section>
         ))}
       </nav>
 
-      <div className="shrink-0 border-t border-white/[0.07] p-3">
-        <div className={`mb-3 flex items-center gap-3 rounded-xl bg-white/[0.035] p-3 ${compact ? "justify-center" : ""}`}>
+      <div className="shrink-0 rounded-none border-t border-brand-surface_hover px-2 py-3">
+        <div className={`mb-2 flex min-h-10 items-center gap-2.5 px-2 ${compact ? "justify-center" : ""}`}>
           <UserAvatar src={user.avatarUrl} name={user.name} size="sm" />
           {!compact ? (
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-bold text-white">{user.name || "مدیر"}</div>
-              <div className="mt-1 truncate text-[10px] text-brand-m_khonsa" dir="ltr">
-                {user.email || "مدیر فروشگاه"}
-              </div>
+              <div className="truncate text-xs font-medium text-brand-active">{user.name || "مدیر"}</div>
+              <div className="mt-0.5 truncate text-[10px] text-brand-surface_m">مدیریت فروشگاه</div>
             </div>
           ) : null}
         </div>
-
-        <div className="space-y-1">
-          <SidebarAction
-            href="/admin/settings"
-            label="تنظیمات حساب"
-            icon={Settings2}
-            isCollapsed={compact}
-            onClick={onClose}
-          />
-          <SidebarAction
-            href="/"
-            label="بازگشت به فروشگاه"
-            icon={ExternalLink}
-            isCollapsed={compact}
-            onClick={onClose}
-          />
+        <div className="space-y-0.5">
+          <SidebarAction href="/admin/settings" label="تنظیمات حساب" icon={Settings2} compact={compact} onClick={onClose} />
+          <SidebarAction href="/" label="بازگشت به فروشگاه" icon={ExternalLink} compact={compact} onClick={onClose} />
           <button
             type="button"
             onClick={() => {
@@ -179,10 +146,10 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
             }}
             disabled={isLoggingOut}
             title={compact ? "خروج از پنل" : undefined}
-            className={`flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50 ${compact ? "justify-center" : ""}`}
+            className={`flex min-h-9 w-full items-center gap-2.5 rounded-none px-3 text-xs text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-zard disabled:opacity-50 ${compact ? "justify-center" : ""}`}
           >
-            <LogOut size={17} className="shrink-0" />
-            {!compact ? <span>{isLoggingOut ? "در حال خروج..." : "خروج از پنل"}</span> : null}
+            <LogOut size={16} className="shrink-0" />
+            {!compact ? <span>{isLoggingOut ? "در حال خروج…" : "خروج از پنل"}</span> : null}
           </button>
         </div>
       </div>
@@ -193,18 +160,15 @@ export default function AdminSidebar({ user, permissions, isCollapsed, isMobileO
 function NavLink({
   item,
   pathname,
-  isCollapsed,
+  compact,
   onClose,
 }: {
   item: AdminNavItem;
   pathname: string | null;
-  isCollapsed: boolean;
+  compact: boolean;
   onClose: () => void;
 }) {
-  const compact = isCollapsed;
-  const active = item.exact
-    ? pathname === item.href
-    : pathname === item.href || pathname?.startsWith(`${item.href}/`);
+  const active = item.exact ? pathname === item.href : pathname === item.href || pathname?.startsWith(`${item.href}/`);
   const Icon = item.icon;
 
   return (
@@ -215,21 +179,10 @@ function NavLink({
       title={compact ? item.label : undefined}
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
-      className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/55 ${
-        compact ? "justify-center" : ""
-      } ${
-        active
-          ? "bg-brand-blue/10 text-white before:absolute before:inset-y-2 before:right-0 before:w-[3px] before:content-[''] before:rounded-l-full before:bg-[#0074E1]"
-          : "text-brand-m_khonsa hover:bg-white/[0.045] hover:text-white"
-      }`}
+      className={`relative flex min-h-9 items-center gap-2.5 rounded-none px-3 text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-blue ${compact ? "justify-center" : ""} ${active ? "border-r-2 border-brand-blue bg-brand-surface text-brand-white" : "border-r-2 border-transparent text-brand-m_khonsa hover:bg-brand-surface hover:text-brand-white"}`}
     >
-      <Icon
-        size={18}
-        strokeWidth={active ? 2.2 : 1.8}
-        className={`shrink-0 ${active ? "text-[#48A2FF]" : "text-brand-m_khonsa/75 group-hover:text-white"}`}
-      />
+      <Icon size={16} strokeWidth={1.8} className={`shrink-0 ${active ? "text-brand-blue" : "text-brand-surface_m"}`} />
       {!compact ? <span className="truncate">{item.label}</span> : null}
-      {active && !compact ? <span className="mr-auto h-1.5 w-1.5 rounded-full bg-[#48A2FF]" /> : null}
     </Link>
   );
 }
@@ -238,17 +191,15 @@ function SidebarAction({
   href,
   label,
   icon: Icon,
-  isCollapsed,
+  compact,
   onClick,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
-  isCollapsed: boolean;
+  compact: boolean;
   onClick: () => void;
 }) {
-  const compact = isCollapsed;
-
   return (
     <Link
       href={href}
@@ -256,12 +207,10 @@ function SidebarAction({
       onClick={onClick}
       title={compact ? label : undefined}
       aria-label={label}
-      className={`flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-brand-m_khonsa transition-colors hover:bg-white/[0.045] hover:text-white ${
-        compact ? "justify-center" : ""
-      }`}
+      className={`flex min-h-9 items-center gap-2.5 rounded-none px-3 text-xs text-brand-m_khonsa transition-colors hover:bg-brand-surface hover:text-brand-white ${compact ? "justify-center" : ""}`}
     >
-      <Icon size={17} className="shrink-0" />
-      {!isCollapsed ? <span>{label}</span> : null}
+      <Icon size={16} className="shrink-0" />
+      {!compact ? <span>{label}</span> : null}
     </Link>
   );
 }
