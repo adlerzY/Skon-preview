@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { UploadCloud } from "lucide-react";
 import { useAdminContext } from "./AdminContext";
 import AdminProductPicker, { type ProductPickerValue } from "./AdminProductPicker";
 import {
@@ -17,13 +17,13 @@ import {
   AdminRefreshButton,
   AdminSectionHeader,
   AdminSelect,
-  AdminStatCard,
   AdminTable,
   AdminTextarea,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
 import { useAdminList, type AdminListData } from "./useAdminList";
 import { faDate, faNumber } from "./format";
+import { CDKEY_STATUS_LABELS, cdkeyStatusTone } from "./labels";
 
 interface Row {
   stockId: number;
@@ -44,19 +44,17 @@ interface Data extends AdminListData<Row> {
   summary: { available: number; reserved: number; used: number; failed: number; total: number };
 }
 
-const LABELS: Record<string, string> = {
-  available: "موجود",
-  reserved: "رزروشده",
-  used: "مصرف‌شده",
-  duplicate: "تکراری",
-  decrypt_failed: "خطای رمزگشایی",
-  failed: "ناموفق",
-};
-
 const DELETABLE = new Set(["available", "duplicate", "failed", "decrypt_failed"]);
 
-const tone = (status: string): "success" | "danger" | "neutral" =>
-  status === "available" ? "success" : status === "failed" || status === "decrypt_failed" ? "danger" : "neutral";
+function Stat({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "success" | "warning" }) {
+  const toneClass = { default: "text-brand-active", success: "text-brand-sabz", warning: "text-brand-zard" }[tone];
+  return (
+    <div className="px-4 py-3">
+      <div className="text-[13px] text-brand-m_khonsa">{label}</div>
+      <div className={`mt-1 text-[20px] font-semibold leading-7 tabular-nums ${toneClass}`}>{faNumber(value)}</div>
+    </div>
+  );
+}
 
 export default function AdminCdKeysClient({
   initial,
@@ -93,7 +91,8 @@ export default function AdminCdKeysClient({
   const canWrite = permissions.includes("cdkeys.write");
   const summary = data.summary ?? { available: 0, reserved: 0, used: 0, failed: 0, total: 0 };
   const showSkeleton = loading && data.nodes.length === 0;
-  const readyToImport = Number(selection.productId) > 0 && Number(selection.variationId) > 0 && keys.trim().length > 0;
+  const hasSelection = Number(selection.productId) > 0 && Number(selection.variationId) > 0;
+  const readyToImport = hasSelection && keys.trim().length > 0;
 
   const notify = (text: string, isError = false) => {
     setMessage(text);
@@ -163,59 +162,58 @@ export default function AdminCdKeysClient({
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="زیرساخت"
         title="CD Keyها"
         description="موجودی و تخصیص کلیدها را مدیریت کن؛ متن کلیدها در فهرست نمایش داده نمی‌شود."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
       />
 
-      {summary.available <= 5 && (
-        <AdminCard className="mb-3 border-amber-400/20 bg-amber-400/[.05] p-3">
-          <div className="text-sm font-black text-amber-200">موجودی CD Key پایین است.</div>
-          <div className="mt-1 text-xs leading-6 text-brand-m_khonsa">
-            فقط {faNumber(summary.available)} کلید آماده تخصیص باقی مانده؛ قبل از رسیدن سفارش‌های بعدی موجودی را بررسی کن.
-          </div>
-        </AdminCard>
-      )}
+      {summary.available <= 5 ? (
+        <div role="status" className="mb-4 border-r-2 border-brand-zard bg-brand-zard/10 px-4 py-2.5 text-[13px] text-brand-zard">
+          موجودی CD Key پایین است؛ فقط {faNumber(summary.available)} کلید آماده تخصیص باقی مانده.
+        </div>
+      ) : null}
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminStatCard label="موجود" value={summary.available} helper="آماده تخصیص" tone="success" />
-        <AdminStatCard label="رزروشده" value={summary.reserved} helper="در انتظار تحویل" />
-        <AdminStatCard label="مصرف‌شده" value={summary.used} helper="تحویل‌شده" />
-        <AdminStatCard label="خطادار" value={summary.failed} helper="نیازمند بررسی" tone={summary.failed ? "warning" : "default"} />
-      </div>
+      <AdminCard className="mb-4 overflow-hidden">
+        <div className="grid grid-cols-2 divide-brand-surface_hover sm:grid-cols-4 sm:divide-x sm:divide-x-reverse">
+          <Stat label="موجود" value={summary.available} tone="success" />
+          <Stat label="رزروشده" value={summary.reserved} />
+          <Stat label="مصرف‌شده" value={summary.used} />
+          <Stat label="خطادار" value={summary.failed} tone={summary.failed ? "warning" : "default"} />
+        </div>
+      </AdminCard>
 
       <AdminCard className="mb-4 overflow-hidden">
         <AdminSectionHeader
-          icon={<UploadCloud size={17} />}
-          title={canWrite ? "افزودن موجودی" : "فیلتر بر اساس محصول"}
+          title={canWrite ? "محصول و افزودن موجودی" : "فیلتر بر اساس محصول"}
           description={
             canWrite
-              ? "محصول و تنوع را انتخاب کن و هر کلید را در یک خط قرار بده. انتخاب شما فهرست پایین را هم فیلتر می‌کند."
+              ? "ابتدا محصول و تنوع را انتخاب کن؛ فهرست پایین هم بر همین اساس فیلتر می‌شود."
               : "محصول و تنوع را انتخاب کن تا فهرست پایین فیلتر شود."
           }
         />
-        <div className="p-4">
+        <div className="space-y-3 p-4">
           <AdminProductPicker value={selection} onChange={setSelection} disabled={busy} />
 
-          {canWrite && (
+          {canWrite && hasSelection ? (
             <>
               <AdminTextarea
                 value={keys}
                 onChange={(event) => setKeys(event.target.value)}
                 rows={5}
                 placeholder="هر CD Key در یک خط"
-                className="mt-3"
                 dir="ltr"
               />
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <AdminButton variant="primary" onClick={() => void importKeys()} disabled={busy || !readyToImport}>
                   افزودن به موجودی
                 </AdminButton>
-                {message && <span className={`text-xs ${messageIsError ? "text-red-300" : "text-emerald-300"}`}>{message}</span>}
               </div>
             </>
-          )}
+          ) : null}
+
+          {message ? (
+            <div className={`text-[13px] ${messageIsError ? "text-brand-zard" : "text-brand-sabz"}`}>{message}</div>
+          ) : null}
         </div>
       </AdminCard>
 
@@ -240,41 +238,45 @@ export default function AdminCdKeysClient({
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
 
-          <AdminTable minWidth="980px">
+          <AdminTable minWidth="760px">
             <thead>
               <tr>
-                <th>شناسه</th>
-                <th>محصول</th>
-                <th>تنوع</th>
+                <th>محصول و تنوع</th>
                 <th>وضعیت</th>
                 <th>سفارش</th>
                 <th>تاریخ</th>
-                <th>عملیات</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {data.nodes.map((row) => (
                 <tr key={row.stockId}>
-                  <td className="text-xs text-white" dir="ltr">#{row.stockId}</td>
                   <td>
-                    <div className="text-xs font-bold text-white">{row.productName}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">{row.productId}</div>
+                    <div className="font-medium text-brand-active">{row.productName}</div>
+                    <div className="mt-0.5 text-[12px] text-brand-m_khonsa">
+                      {row.variationName} · <span dir="ltr">#{row.stockId}</span>
+                    </div>
                   </td>
                   <td>
-                    <div className="text-xs text-white">{row.variationName}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">{row.variationId}</div>
+                    <AdminBadge tone={cdkeyStatusTone(row.status)}>{CDKEY_STATUS_LABELS[row.status] ?? row.status}</AdminBadge>
+                    {row.failureReason ? <div className="mt-1 text-[12px] text-brand-m_khonsa">{row.failureReason}</div> : null}
                   </td>
                   <td>
-                    <AdminBadge tone={tone(row.status)}>{LABELS[row.status] ?? row.status}</AdminBadge>
+                    {row.orderId ? (
+                      <Link href={`/admin/orders/${row.orderId}`} prefetch={false} className="text-[13px] text-brand-blue hover:text-brand-active" dir="ltr">
+                        #{row.orderId}
+                      </Link>
+                    ) : (
+                      <span className="text-brand-m_khonsa">—</span>
+                    )}
                   </td>
-                  <td className="text-xs text-white" dir="ltr">{row.orderId ? `#${row.orderId}` : "—"}</td>
-                  <td className="text-xs text-brand-m_khonsa">{faDate(row.createdAt)}</td>
+                  <td className="text-[13px] text-brand-m_khonsa">{faDate(row.createdAt)}</td>
                   <td>
-                    {canWrite && DELETABLE.has(row.status) && !row.orderId && (
-                      <AdminButton variant="danger" onClick={() => void deleteKey(row.stockId)} disabled={busy} className="min-h-9 px-3 text-xs">
+                    {canWrite && DELETABLE.has(row.status) && !row.orderId ? (
+                      <AdminButton variant="danger" onClick={() => void deleteKey(row.stockId)} disabled={busy}>
                         حذف
                       </AdminButton>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -285,29 +287,25 @@ export default function AdminCdKeysClient({
             {data.nodes.map((row) => (
               <AdminListCard key={row.stockId}>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-black text-white">{row.productName}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa">#{row.stockId} · {row.variationName}</div>
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-medium text-brand-active">{row.productName}</div>
+                    <div className="mt-0.5 text-[12px] text-brand-m_khonsa">
+                      {row.variationName} · #{row.stockId}
+                    </div>
                   </div>
-                  <AdminBadge tone={tone(row.status)}>{LABELS[row.status] ?? row.status}</AdminBadge>
+                  <AdminBadge tone={cdkeyStatusTone(row.status)}>{CDKEY_STATUS_LABELS[row.status] ?? row.status}</AdminBadge>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-brand-m_khonsa">سفارش</div>
-                    <div className="mt-1 text-xs text-white" dir="ltr">{row.orderId ? `#${row.orderId}` : "—"}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-brand-m_khonsa">تلاش تخصیص</div>
-                    <div className="mt-1 text-xs text-white" dir="ltr">{row.assignmentAttempts}</div>
-                  </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-brand-m_khonsa">
+                  <span dir="ltr">{row.orderId ? `سفارش #${row.orderId}` : "بدون سفارش"}</span>
+                  <span>{faDate(row.createdAt)}</span>
                 </div>
-                {canWrite && DELETABLE.has(row.status) && !row.orderId && (
+                {canWrite && DELETABLE.has(row.status) && !row.orderId ? (
                   <div className="mt-3 flex justify-end">
                     <AdminButton variant="danger" onClick={() => void deleteKey(row.stockId)} disabled={busy}>
                       حذف کلید
                     </AdminButton>
                   </div>
-                )}
+                ) : null}
               </AdminListCard>
             ))}
           </AdminMobileList>

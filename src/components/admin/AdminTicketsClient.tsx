@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   AdminBadge,
   AdminEmpty,
@@ -17,18 +18,10 @@ import {
   AdminTable,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
+import AdminMoreFilters, { AdminFilterField } from "./AdminMoreFilters";
 import { useAdminList, type AdminListData } from "./useAdminList";
-
-const STATUS: Record<string, string> = {
-  open: "باز",
-  claimed: "در اختیار ادمین",
-  waiting_user: "در انتظار کاربر",
-  waiting_staff: "در انتظار پشتیبانی",
-  resolved: "حل‌شده",
-  closed: "بسته‌شده",
-};
-
-const PRIORITY: Record<string, string> = { low: "کم", normal: "عادی", high: "زیاد", urgent: "فوری" };
+import { faDate } from "./format";
+import { TICKET_PRIORITY_LABELS, TICKET_STATUS_LABELS, ticketStatusTone } from "./labels";
 
 interface Ticket {
   databaseId: number;
@@ -45,12 +38,10 @@ interface Ticket {
 
 type TicketsData = AdminListData<Ticket>;
 
-const statusTone = (value: string): "success" | "warning" | "info" =>
-  value === "resolved" || value === "closed" ? "success" : value === "open" ? "warning" : "info";
-
-const formatDate = (value: string) => (value ? new Date(value).toLocaleDateString("fa-IR") : "—");
+const isUrgent = (priority: string) => priority === "urgent" || priority === "high";
 
 export default function AdminTicketsClient({ initial }: { initial?: TicketsData }) {
+  const router = useRouter();
   const [status, setStatus] = useState("open");
   const [search, setSearch] = useState("");
   const [mine, setMine] = useState(false);
@@ -67,11 +58,11 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
   });
 
   const showSkeleton = loading && data.nodes.length === 0;
+  const moreCount = (mine ? 1 : 0) + (order !== "desc" ? 1 : 0);
 
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="پشتیبانی"
         title="تیکت‌ها"
         description="صف پشتیبانی را مدیریت کن، مسئولیت تیکت را بگیر و وضعیت را جلو ببر."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
@@ -88,14 +79,20 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
           <option value="closed">بسته‌شده</option>
           <option value="all">همه</option>
         </AdminSelect>
-        <AdminSelect value={mine ? "mine" : "all"} onChange={(event) => setMine(event.target.value === "mine")} className="lg:w-[200px] lg:flex-none">
-          <option value="all">همه تیکت‌ها</option>
-          <option value="mine">فقط تیکت‌های من</option>
-        </AdminSelect>
-                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
-          <option value="desc">جدیدترین</option>
-          <option value="asc">قدیمی‌ترین (صف انتظار)</option>
-        </AdminSelect>
+        <AdminMoreFilters activeCount={moreCount}>
+          <AdminFilterField label="نمایش">
+            <AdminSelect value={mine ? "mine" : "all"} onChange={(event) => setMine(event.target.value === "mine")}>
+              <option value="all">همه تیکت‌ها</option>
+              <option value="mine">فقط تیکت‌های من</option>
+            </AdminSelect>
+          </AdminFilterField>
+          <AdminFilterField label="مرتب‌سازی">
+            <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)}>
+              <option value="desc">جدیدترین</option>
+              <option value="asc">قدیمی‌ترین (صف انتظار)</option>
+            </AdminSelect>
+          </AdminFilterField>
+        </AdminMoreFilters>
       </AdminFilterBar>
 
       <AdminErrorBanner message={error} onRetry={() => void refresh()} />
@@ -108,61 +105,48 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
 
-          <AdminTable minWidth="1040px">
+          <AdminTable minWidth="820px">
             <thead>
               <tr>
                 <th>تیکت</th>
                 <th>مشتری</th>
                 <th>وضعیت</th>
-                <th>اولویت</th>
                 <th>مسئول</th>
-                <th>سفارش</th>
                 <th>تاریخ</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {data.nodes.map((ticket) => (
-                <tr key={ticket.databaseId}>
+                <tr
+                  key={ticket.databaseId}
+                  onClick={() => router.push(`/admin/tickets/${ticket.databaseId}`)}
+                  className="cursor-pointer"
+                >
                   <td>
-                    <div className="max-w-[320px] truncate text-sm font-black text-white">{ticket.title}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa">#{ticket.databaseId}</div>
-                  </td>
-                  <td>
-                    <div className="text-sm font-bold text-white">{ticket.customerName || "—"}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">{ticket.customerEmail || "—"}</div>
-                  </td>
-                  <td>
-                    <AdminBadge tone={statusTone(ticket.status)}>{STATUS[ticket.status] ?? ticket.status}</AdminBadge>
-                  </td>
-                  <td>
-                    <AdminBadge tone={ticket.priority === "urgent" || ticket.priority === "high" ? "danger" : "neutral"}>
-                      {PRIORITY[ticket.priority] ?? ticket.priority}
-                    </AdminBadge>
-                  </td>
-                  <td>
-                    <span className="text-xs text-white">{ticket.assigneeName || "بدون مسئول"}</span>
-                  </td>
-                  <td>
-                    {ticket.linkedOrderId ? (
-                      <Link href={`/admin/orders/${ticket.linkedOrderId}`} prefetch={false} className="text-xs font-bold text-brand-blue hover:text-white">
-                        #{ticket.linkedOrderId}
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/tickets/${ticket.databaseId}`}
+                        prefetch={false}
+                        onClick={(event) => event.stopPropagation()}
+                        className="max-w-[340px] truncate font-medium text-brand-active hover:text-brand-blue"
+                      >
+                        {ticket.title}
                       </Link>
-                    ) : (
-                      <span className="text-xs text-brand-m_khonsa">—</span>
-                    )}
+                      {isUrgent(ticket.priority) ? (
+                        <AdminBadge tone="danger">{TICKET_PRIORITY_LABELS[ticket.priority] ?? ticket.priority}</AdminBadge>
+                      ) : null}
+                    </div>
+                    <div className="mt-0.5 text-[12px] text-brand-m_khonsa">#{ticket.databaseId.toLocaleString("fa-IR")}</div>
                   </td>
+                  <td className="text-brand-active">{ticket.customerName || "—"}</td>
                   <td>
-                    <span className="text-xs text-brand-m_khonsa">{formatDate(ticket.date)}</span>
+                    <AdminBadge tone={ticketStatusTone(ticket.status)}>{TICKET_STATUS_LABELS[ticket.status] ?? ticket.status}</AdminBadge>
                   </td>
-                  <td>
-                    <Link
-                      href={`/admin/tickets/${ticket.databaseId}`}
-                      prefetch={false}
-                      className="inline-flex items-center gap-1 text-xs font-black text-brand-blue hover:text-white"
-                    >
-                      <Eye size={14} /> باز کردن
-                    </Link>
+                  <td className="text-[13px] text-brand-m_khonsa">{ticket.assigneeName || "بدون مسئول"}</td>
+                  <td className="text-[13px] text-brand-m_khonsa">{faDate(ticket.date)}</td>
+                  <td className="w-8 text-brand-surface_m">
+                    <ChevronLeft size={16} />
                   </td>
                 </tr>
               ))}
@@ -174,16 +158,18 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
               <AdminListCard key={ticket.databaseId} href={`/admin/tickets/${ticket.databaseId}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-black text-white">{ticket.title}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa">{ticket.customerName || "—"} · #{ticket.databaseId}</div>
+                    <div className="truncate text-[14px] font-medium text-brand-active">{ticket.title}</div>
+                    <div className="mt-0.5 truncate text-[12px] text-brand-m_khonsa">
+                      {ticket.customerName || "—"} · {faDate(ticket.date)}
+                    </div>
                   </div>
-                  <AdminBadge tone={statusTone(ticket.status)}>{STATUS[ticket.status] ?? ticket.status}</AdminBadge>
+                  <AdminBadge tone={ticketStatusTone(ticket.status)}>{TICKET_STATUS_LABELS[ticket.status] ?? ticket.status}</AdminBadge>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Mini label="اولویت" value={PRIORITY[ticket.priority] ?? ticket.priority} />
-                  <Mini label="مسئول" value={ticket.assigneeName || "بدون مسئول"} />
-                  <Mini label="سفارش" value={ticket.linkedOrderId ? `#${ticket.linkedOrderId}` : "—"} />
-                  <Mini label="تاریخ" value={formatDate(ticket.date)} />
+                <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-brand-m_khonsa">
+                  <span>{ticket.assigneeName || "بدون مسئول"}</span>
+                  {isUrgent(ticket.priority) ? (
+                    <AdminBadge tone="danger">{TICKET_PRIORITY_LABELS[ticket.priority] ?? ticket.priority}</AdminBadge>
+                  ) : null}
                 </div>
               </AdminListCard>
             ))}
@@ -193,14 +179,5 @@ export default function AdminTicketsClient({ initial }: { initial?: TicketsData 
 
       <AdminLoadMore visible={data.pageInfo.hasNextPage} loading={loadingMore} onClick={loadMore} />
     </AdminPage>
-  );
-}
-
-function Mini({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-xs text-brand-m_khonsa">{label}</div>
-      <div className="mt-1 truncate text-xs font-bold text-white">{value}</div>
-    </div>
   );
 }

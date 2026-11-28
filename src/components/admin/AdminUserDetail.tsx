@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, LifeBuoy, Package } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import {
   AdminBadge,
   AdminCard,
@@ -8,9 +8,9 @@ import {
   AdminPage,
   AdminPageIntro,
   AdminSectionHeader,
-  AdminStatCard,
 } from "./AdminUi";
-import { faDate, faDateTime } from "./format";
+import { faDate, faDateTime, faNumber } from "./format";
+import { ORDER_STATUS_LABELS, TICKET_STATUS_LABELS, orderStatusTone, ticketStatusTone } from "./labels";
 
 interface UserInfo {
   databaseId: number;
@@ -31,31 +31,6 @@ interface Detail {
   recentTickets: Array<{ databaseId: number; title: string; status: string; date: string | null }>;
 }
 
-const ORDER_STATUS: Record<string, string> = {
-  pending: "در انتظار",
-  processing: "در حال پردازش",
-  "on-hold": "در انتظار اقدام",
-  completed: "تکمیل‌شده",
-  cancelled: "لغوشده",
-  refunded: "مستردشده",
-  failed: "ناموفق",
-};
-
-const TICKET_STATUS: Record<string, string> = {
-  open: "باز",
-  claimed: "در اختیار ادمین",
-  waiting_user: "در انتظار کاربر",
-  waiting_staff: "در انتظار پشتیبانی",
-  resolved: "حل‌شده",
-  closed: "بسته‌شده",
-};
-
-const orderTone = (status: string): "success" | "danger" | "info" | "warning" =>
-  status === "completed" ? "success" : status === "cancelled" || status === "failed" ? "danger" : status === "processing" ? "info" : "warning";
-
-const ticketTone = (status: string): "success" | "warning" | "info" =>
-  status === "resolved" || status === "closed" ? "success" : status === "open" ? "warning" : "info";
-
 export default function AdminUserDetail({ data, permissions }: { data: Detail; permissions: string[] }) {
   const { user } = data;
   const canOrders = permissions.includes("orders.read");
@@ -64,94 +39,87 @@ export default function AdminUserDetail({ data, permissions }: { data: Detail; p
   return (
     <AdminPage>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Link href="/admin/users" prefetch={false} className="inline-flex items-center gap-2 text-sm font-bold text-brand-m_khonsa hover:text-white">
+        <Link href="/admin/users" prefetch={false} className="inline-flex items-center gap-2 text-[13px] text-brand-m_khonsa hover:text-brand-white">
           <ArrowRight size={15} /> بازگشت به کاربران
         </Link>
-        {user.isStaff && <AdminBadge tone="info">عضو تیم</AdminBadge>}
+        {user.isStaff ? <AdminBadge tone="info">عضو تیم</AdminBadge> : null}
       </div>
 
-      <AdminPageIntro eyebrow="پرونده کاربر" title={user.name || `کاربر #${user.databaseId}`} description={`شناسه #${user.databaseId}`} />
+      <AdminPageIntro title={user.name || `کاربر #${user.databaseId}`} description={`شناسه #${faNumber(user.databaseId)}`} />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminStatCard label="سفارش موفق" value={user.paidOrdersCount} tone="success" />
-        <AdminStatCard label="تیکت" value={user.ticketsCount} />
-        <AdminStatCard label="دیدگاه" value={user.reviewsCount} />
-        <AdminStatCard label="آخرین فعالیت" value={faDate(user.lastActive)} helper={user.lastActive ? faDateTime(user.lastActive) : "نشستی ثبت نشده"} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.75fr]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_0.8fr]">
         <div className="space-y-4">
-          {canOrders && (
+          {canOrders ? (
             <AdminCard className="overflow-hidden">
-              <AdminSectionHeader icon={<Package size={17} />} title="آخرین سفارش‌ها" description="۱۰ سفارش اخیر این کاربر" />
-              <div className="divide-y divide-brand-surface_hover px-4">
-                {data.recentOrders.map((order) => (
+              <AdminSectionHeader title="آخرین سفارش‌ها" description="۱۰ سفارش اخیر این کاربر" />
+              {data.recentOrders.length === 0 ? (
+                <AdminEmpty title="سفارشی ثبت نشده است." />
+              ) : (
+                data.recentOrders.map((order) => (
                   <Link
                     key={order.databaseId}
                     href={`/admin/orders/${order.databaseId}`}
                     prefetch={false}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3 hover:bg-white/[.015]"
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-surface_hover px-4 py-3 transition-colors last:border-b-0 hover:bg-brand-surface_hover/40"
                   >
                     <div>
-                      <div className="text-sm font-black text-white">#{order.orderNumber}</div>
-                      <div className="mt-1 text-xs text-brand-m_khonsa">{faDateTime(order.date)}</div>
+                      <div className="text-[14px] font-medium text-brand-active">#{order.orderNumber}</div>
+                      <div className="mt-0.5 text-[12px] text-brand-m_khonsa">{faDateTime(order.date)}</div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-white" dir="ltr">{order.total} {order.currency}</span>
-                      <AdminBadge tone={orderTone(order.status)}>{ORDER_STATUS[order.status] ?? order.status}</AdminBadge>
+                      <span className="text-[13px] text-brand-active" dir="ltr">
+                        {order.total} {order.currency}
+                      </span>
+                      <AdminBadge tone={orderStatusTone(order.status)}>{ORDER_STATUS_LABELS[order.status] ?? order.status}</AdminBadge>
                     </div>
                   </Link>
-                ))}
-              </div>
-              {data.recentOrders.length === 0 && (
-                <div className="p-4">
-                  <AdminEmpty title="سفارشی ثبت نشده است." />
-                </div>
+                ))
               )}
             </AdminCard>
-          )}
+          ) : null}
 
-          {canTickets && (
+          {canTickets ? (
             <AdminCard className="overflow-hidden">
-              <AdminSectionHeader icon={<LifeBuoy size={17} />} title="آخرین تیکت‌ها" description="۱۰ تیکت اخیر این کاربر" />
-              <div className="divide-y divide-brand-surface_hover px-4">
-                {data.recentTickets.map((ticket) => (
+              <AdminSectionHeader title="آخرین تیکت‌ها" description="۱۰ تیکت اخیر این کاربر" />
+              {data.recentTickets.length === 0 ? (
+                <AdminEmpty title="تیکتی ثبت نشده است." />
+              ) : (
+                data.recentTickets.map((ticket) => (
                   <Link
                     key={ticket.databaseId}
                     href={`/admin/tickets/${ticket.databaseId}`}
                     prefetch={false}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3 hover:bg-white/[.015]"
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-surface_hover px-4 py-3 transition-colors last:border-b-0 hover:bg-brand-surface_hover/40"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-black text-white">{ticket.title}</div>
-                      <div className="mt-1 text-xs text-brand-m_khonsa">#{ticket.databaseId} · {faDateTime(ticket.date)}</div>
+                      <div className="truncate text-[14px] font-medium text-brand-active">{ticket.title}</div>
+                      <div className="mt-0.5 text-[12px] text-brand-m_khonsa">
+                        #{faNumber(ticket.databaseId)} · {faDateTime(ticket.date)}
+                      </div>
                     </div>
-                    <AdminBadge tone={ticketTone(ticket.status)}>{TICKET_STATUS[ticket.status] ?? ticket.status}</AdminBadge>
+                    <AdminBadge tone={ticketStatusTone(ticket.status)}>{TICKET_STATUS_LABELS[ticket.status] ?? ticket.status}</AdminBadge>
                   </Link>
-                ))}
-              </div>
-              {data.recentTickets.length === 0 && (
-                <div className="p-4">
-                  <AdminEmpty title="تیکتی ثبت نشده است." />
-                </div>
+                ))
               )}
             </AdminCard>
-          )}
+          ) : null}
 
-          {!canOrders && !canTickets && <AdminEmpty title="برای مشاهده سفارش‌ها و تیکت‌ها مجوز لازم را ندارید." />}
+          {!canOrders && !canTickets ? <AdminEmpty title="برای مشاهده سفارش‌ها و تیکت‌ها مجوز لازم را ندارید." /> : null}
         </div>
 
-        <div className="space-y-4">
-          <AdminCard className="overflow-hidden">
-            <AdminSectionHeader title="اطلاعات تماس" />
-            <div className="p-4">
-              <AdminFieldRow label="نام" value={user.name || "—"} ltr={false} />
-              <AdminFieldRow label="ایمیل" value={user.email || "—"} />
-              <AdminFieldRow label="موبایل" value={user.phone || "—"} />
-              <AdminFieldRow label="تاریخ عضویت" value={faDate(user.registeredAt)} ltr={false} />
-            </div>
-          </AdminCard>
-        </div>
+        <AdminCard className="h-fit overflow-hidden">
+          <AdminSectionHeader title="اطلاعات کاربر" />
+          <div className="px-4 py-1">
+            <AdminFieldRow label="نام" value={user.name || "—"} ltr={false} />
+            <AdminFieldRow label="ایمیل" value={user.email || "—"} />
+            <AdminFieldRow label="موبایل" value={user.phone || "—"} />
+            <AdminFieldRow label="تاریخ عضویت" value={faDate(user.registeredAt)} ltr={false} />
+            <AdminFieldRow label="آخرین فعالیت" value={user.lastActive ? faDateTime(user.lastActive) : "نشستی ثبت نشده"} ltr={false} />
+            <AdminFieldRow label="سفارش موفق" value={faNumber(user.paidOrdersCount)} ltr={false} />
+            <AdminFieldRow label="تیکت" value={faNumber(user.ticketsCount)} ltr={false} />
+            <AdminFieldRow label="دیدگاه" value={faNumber(user.reviewsCount)} ltr={false} />
+          </div>
+        </AdminCard>
       </div>
     </AdminPage>
   );

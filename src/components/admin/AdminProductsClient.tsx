@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   AdminBadge,
   AdminEmpty,
@@ -17,8 +18,10 @@ import {
   AdminTable,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
+import AdminMoreFilters, { AdminFilterField } from "./AdminMoreFilters";
 import { useAdminList, type AdminListData } from "./useAdminList";
 import { faNumber } from "./format";
+import { PRODUCT_STATUS_LABELS, productStatusTone } from "./labels";
 
 interface ProductRow {
   databaseId: number;
@@ -34,36 +37,27 @@ interface ProductRow {
 
 type ProductsData = AdminListData<ProductRow>;
 
-const STATUS_LABEL: Record<string, string> = {
-  publish: "منتشرشده",
-  draft: "پیش‌نویس",
-  private: "خصوصی",
-  pending: "در انتظار بررسی",
-};
-
-const statusTone = (status: string): "success" | "neutral" | "warning" =>
-  status === "publish" ? "success" : status === "pending" ? "warning" : "neutral";
-
 function CodeStock({ available, reserved }: { available: number; reserved: number }) {
-  if (available === 0 && reserved === 0) return <span className="text-xs text-brand-m_khonsa">—</span>;
+  if (available === 0 && reserved === 0) return <span className="text-[13px] text-brand-m_khonsa">—</span>;
   const tone = available === 0 ? "danger" : available <= 5 ? "warning" : "success";
   return (
     <span className="inline-flex items-center gap-2">
       <AdminBadge tone={tone}>{faNumber(available)} موجود</AdminBadge>
-      {reserved > 0 && <span className="text-xs text-brand-m_khonsa">{faNumber(reserved)} رزرو</span>}
+      {reserved > 0 ? <span className="text-[12px] text-brand-m_khonsa">{faNumber(reserved)} رزرو</span> : null}
     </span>
   );
 }
 
 function Thumb({ src, alt }: { src: string | null; alt: string }) {
   return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-brand-surface_hover bg-brand-bg">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[5px] border border-brand-surface_hover bg-brand-bg">
       {src ? <img src={src} alt={alt} width={40} height={40} loading="lazy" className="h-full w-full object-cover" /> : null}
     </span>
   );
 }
 
 export default function AdminProductsClient({ initial }: { initial?: ProductsData }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [sortKey, setSortKey] = useState("date:desc");
@@ -83,9 +77,8 @@ export default function AdminProductsClient({ initial }: { initial?: ProductsDat
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="کاتالوگ"
         title="محصولات"
-        description="وضعیت محصولات، تنوع‌ها و موجودی کد را ببین. قیمت‌ها فقط از موتور قیمت‌گذاری می‌آیند و اینجا قابل ویرایش نیستند."
+        description="وضعیت محصولات، تنوع‌ها و موجودی کد را ببین. قیمت‌ها فقط از موتور قیمت‌گذاری می‌آیند."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
       />
 
@@ -98,12 +91,16 @@ export default function AdminProductsClient({ initial }: { initial?: ProductsDat
           <option value="private">خصوصی</option>
           <option value="pending">در انتظار بررسی</option>
         </AdminSelect>
-        <AdminSelect value={sortKey} onChange={(event) => setSortKey(event.target.value)} className="lg:w-[200px] lg:flex-none">
-          <option value="date:desc">جدیدترین</option>
-          <option value="date:asc">قدیمی‌ترین</option>
-          <option value="title:asc">نام (الف تا ی)</option>
-          <option value="title:desc">نام (ی تا الف)</option>
-        </AdminSelect>
+        <AdminMoreFilters activeCount={sortKey !== "date:desc" ? 1 : 0}>
+          <AdminFilterField label="مرتب‌سازی">
+            <AdminSelect value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
+              <option value="date:desc">جدیدترین</option>
+              <option value="date:asc">قدیمی‌ترین</option>
+              <option value="title:asc">نام (الف تا ی)</option>
+              <option value="title:desc">نام (ی تا الف)</option>
+            </AdminSelect>
+          </AdminFilterField>
+        </AdminMoreFilters>
       </AdminFilterBar>
 
       <AdminErrorBanner message={error} onRetry={() => void refresh()} />
@@ -116,7 +113,7 @@ export default function AdminProductsClient({ initial }: { initial?: ProductsDat
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
 
-          <AdminTable minWidth="980px">
+          <AdminTable minWidth="780px">
             <thead>
               <tr>
                 <th>محصول</th>
@@ -128,31 +125,38 @@ export default function AdminProductsClient({ initial }: { initial?: ProductsDat
             </thead>
             <tbody>
               {data.nodes.map((product) => (
-                <tr key={product.databaseId}>
+                <tr
+                  key={product.databaseId}
+                  onClick={() => router.push(`/admin/products/${product.databaseId}`)}
+                  className="cursor-pointer"
+                >
                   <td>
                     <div className="flex items-center gap-3">
                       <Thumb src={product.imageUrl} alt={product.name} />
                       <div className="min-w-0">
-                        <div className="max-w-[360px] truncate text-sm font-black text-white">{product.name}</div>
-                        <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">#{product.databaseId} · {product.slug}</div>
+                        <Link
+                          href={`/admin/products/${product.databaseId}`}
+                          prefetch={false}
+                          onClick={(event) => event.stopPropagation()}
+                          className="block max-w-[360px] truncate font-medium text-brand-active hover:text-brand-blue"
+                        >
+                          {product.name}
+                        </Link>
+                        <div className="mt-0.5 text-[12px] text-brand-m_khonsa" dir="ltr">
+                          #{product.databaseId} · {product.slug}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <AdminBadge tone={statusTone(product.status)}>{STATUS_LABEL[product.status] ?? product.status}</AdminBadge>
+                    <AdminBadge tone={productStatusTone(product.status)}>{PRODUCT_STATUS_LABELS[product.status] ?? product.status}</AdminBadge>
                   </td>
-                  <td className="text-sm text-white">{faNumber(product.variationCount)}</td>
+                  <td className="text-brand-active">{faNumber(product.variationCount)}</td>
                   <td>
                     <CodeStock available={product.codeAvailable} reserved={product.codeReserved} />
                   </td>
-                  <td>
-                    <Link
-                      href={`/admin/products/${product.databaseId}`}
-                      prefetch={false}
-                      className="inline-flex items-center gap-1 text-xs font-black text-brand-blue hover:text-white"
-                    >
-                      <Eye size={14} /> جزئیات
-                    </Link>
+                  <td className="w-8 text-brand-surface_m">
+                    <ChevronLeft size={16} />
                   </td>
                 </tr>
               ))}
@@ -165,13 +169,14 @@ export default function AdminProductsClient({ initial }: { initial?: ProductsDat
                 <div className="flex items-start gap-3">
                   <Thumb src={product.imageUrl} alt={product.name} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-black text-white">{product.name}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa">#{product.databaseId}</div>
+                    <div className="truncate text-[14px] font-medium text-brand-active">{product.name}</div>
+                    <div className="mt-0.5 text-[12px] text-brand-m_khonsa">
+                      #{product.databaseId} · {faNumber(product.variationCount)} تنوع
+                    </div>
                   </div>
-                  <AdminBadge tone={statusTone(product.status)}>{STATUS_LABEL[product.status] ?? product.status}</AdminBadge>
+                  <AdminBadge tone={productStatusTone(product.status)}>{PRODUCT_STATUS_LABELS[product.status] ?? product.status}</AdminBadge>
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-xs text-brand-m_khonsa">{faNumber(product.variationCount)} تنوع</span>
+                <div className="mt-2 flex justify-end">
                   <CodeStock available={product.codeAvailable} reserved={product.codeReserved} />
                 </div>
               </AdminListCard>

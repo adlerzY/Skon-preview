@@ -132,15 +132,17 @@ export default function AdminProductPicker({
   if (hasProduct) {
     return (
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3 rounded-[5px] border border-brand-surface_hover bg-brand-bg p-3">
+        <div className="flex items-center justify-between gap-3 rounded-[5px] border border-brand-surface_hover bg-brand-bg px-3 py-2.5">
           <div className="min-w-0">
-            <div className="truncate text-sm font-bold text-white">
+            <div className="truncate text-[14px] font-medium text-brand-active">
               {loadingProduct && !product ? "در حال بارگذاری..." : product?.name ?? `محصول #${value.productId}`}
             </div>
-            <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">#{value.productId}</div>
+            <div className="mt-0.5 text-[12px] text-brand-m_khonsa" dir="ltr">
+              #{value.productId}
+            </div>
           </div>
-          <AdminButton onClick={clear} disabled={disabled} className="min-h-9 px-3 text-xs">
-            <X size={13} /> تغییر
+          <AdminButton onClick={clear} disabled={disabled}>
+            <X size={14} /> تغییر
           </AdminButton>
         </div>
 
@@ -159,10 +161,10 @@ export default function AdminProductPicker({
             ))}
           </AdminSelect>
         ) : (
-          !loadingProduct && <div className="text-xs text-brand-zard">این محصول تنوعی ندارد؛ CD Key فقط برای تنوع‌ها قابل ثبت است.</div>
+          !loadingProduct && <div className="text-[13px] text-brand-zard">این محصول تنوعی ندارد؛ CD Key فقط برای تنوع‌ها قابل ثبت است.</div>
         )}
 
-        {error && <div className="text-xs text-red-300">{error}</div>}
+        {error ? <div className="text-[13px] text-brand-zard">{error}</div> : null}
       </div>
     );
   }
@@ -170,7 +172,7 @@ export default function AdminProductPicker({
   return (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-brand-m_khonsa" />
+        <Search size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-brand-surface_m" />
         <AdminField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -180,30 +182,30 @@ export default function AdminProductPicker({
         />
       </div>
 
-      {searching && <div className="text-xs text-brand-m_khonsa">در حال جست‌وجو...</div>}
-      {error && <div className="text-xs text-red-300">{error}</div>}
+      {searching ? <div className="text-[13px] text-brand-m_khonsa">در حال جست‌وجو...</div> : null}
+      {error ? <div className="text-[13px] text-brand-zard">{error}</div> : null}
 
-      {hits.length > 0 && (
+      {hits.length > 0 ? (
         <div className="overflow-hidden rounded-[5px] border border-brand-surface_hover bg-brand-bg">
           {hits.map((hit) => (
             <button
               key={hit.databaseId}
               type="button"
               onClick={() => onChange({ productId: String(hit.databaseId), variationId: "" })}
-              className="flex w-full items-center justify-between gap-3 border-b border-brand-surface_hover px-3 py-2.5 text-right text-sm text-white transition-colors last:border-0 hover:bg-white/[.04]"
+              className="flex w-full items-center justify-between gap-3 border-b border-brand-surface_hover px-3 py-2.5 text-right text-[14px] text-brand-active transition-colors last:border-0 hover:bg-brand-surface_hover/40"
             >
-              <span className="min-w-0 truncate font-bold">{hit.name}</span>
-              <span className="shrink-0 text-xs text-brand-m_khonsa">
+              <span className="min-w-0 truncate font-medium">{hit.name}</span>
+              <span className="shrink-0 text-[12px] text-brand-m_khonsa">
                 {hit.variationCount.toLocaleString("fa-IR")} تنوع · #{hit.databaseId}
               </span>
             </button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {!searching && query.trim().length >= 2 && hits.length === 0 && !error && (
-        <div className="text-xs text-brand-m_khonsa">محصولی پیدا نشد.</div>
-      )}
+      {!searching && query.trim().length >= 2 && hits.length === 0 && !error ? (
+        <div className="text-[13px] text-brand-m_khonsa">محصولی پیدا نشد.</div>
+      ) : null}
     </div>
   );
 }

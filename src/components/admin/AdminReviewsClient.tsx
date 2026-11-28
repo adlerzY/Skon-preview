@@ -14,7 +14,9 @@ import {
   AdminSelect,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
+import AdminMoreFilters, { AdminFilterField } from "./AdminMoreFilters";
 import { useAdminList, type AdminListData } from "./useAdminList";
+import { faDate } from "./format";
 
 interface Review {
   databaseId: number;
@@ -38,10 +40,14 @@ const STATES: Record<string, string> = {
   hidden: "مخفی",
 };
 
+const stateTone = (state: string): "neutral" | "success" | "warning" | "danger" =>
+  state === "published" ? "success" : state === "flagged" ? "danger" : state === "pending" ? "warning" : "neutral";
+
 export default function AdminReviewsClient({ initial }: { initial?: ReviewsData }) {
   const [state, setState] = useState("pending");
-    const [order, setOrder] = useState("desc");
+  const [order, setOrder] = useState("desc");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
   const params = useMemo(() => ({ state, order }), [state, order]);
 
@@ -79,7 +85,6 @@ export default function AdminReviewsClient({ initial }: { initial?: ReviewsData 
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="عملیات"
         title="دیدگاه‌ها"
         description="صف بررسی را کوتاه نگه دار و فقط موارد لازم را بررسی کن."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
@@ -92,10 +97,14 @@ export default function AdminReviewsClient({ initial }: { initial?: ReviewsData 
           <option value="flagged">علامت‌گذاری‌شده</option>
           <option value="hidden">مخفی</option>
         </AdminSelect>
-                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
-          <option value="desc">جدیدترین</option>
-          <option value="asc">قدیمی‌ترین</option>
-        </AdminSelect>
+        <AdminMoreFilters activeCount={order !== "desc" ? 1 : 0}>
+          <AdminFilterField label="مرتب‌سازی">
+            <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)}>
+              <option value="desc">جدیدترین</option>
+              <option value="asc">قدیمی‌ترین</option>
+            </AdminSelect>
+          </AdminFilterField>
+        </AdminMoreFilters>
       </AdminFilterBar>
 
       <AdminErrorBanner message={error || actionError} onRetry={error ? () => void refresh() : undefined} />
@@ -107,65 +116,56 @@ export default function AdminReviewsClient({ initial }: { initial?: ReviewsData 
       ) : (
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
-          <div className="grid gap-3">
-            {data.nodes.map((review) => (
-              <AdminCard key={review.databaseId} className="overflow-hidden">
-                <div className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-black text-white">{review.productName || "محصول"}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-brand-m_khonsa">
-                      <span>{review.userName || "کاربر"}</span>
-                      <span>#{review.databaseId}</span>
-                      <span className="inline-flex items-center gap-1 text-brand-zard">
-                        <Star size={12} fill="currentColor" />
-                        {review.rating}/5
-                      </span>
-                      <AdminBadge>{STATES[review.moderationState] ?? review.moderationState}</AdminBadge>
+          <AdminCard className="overflow-hidden">
+            {data.nodes.map((review) => {
+              const expanded = expandedId === review.databaseId;
+              return (
+                <div key={review.databaseId} className="border-b border-brand-surface_hover px-4 py-3 last:border-b-0">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-[14px] font-medium text-brand-active">{review.productName || "محصول"}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-brand-m_khonsa">
+                        <span>{review.userName || "کاربر"}</span>
+                        <span className="inline-flex items-center gap-1 text-brand-zard">
+                          <Star size={12} fill="currentColor" />
+                          {review.rating.toLocaleString("fa-IR")}/۵
+                        </span>
+                        <span>{faDate(review.date)}</span>
+                      </div>
                     </div>
+                    <AdminBadge tone={stateTone(review.moderationState)}>{STATES[review.moderationState] ?? review.moderationState}</AdminBadge>
                   </div>
-                  <div className="text-xs text-brand-m_khonsa" dir="ltr">
-                    {review.date ? new Date(review.date).toLocaleString("fa-IR") : "—"}
+
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(expanded ? null : review.databaseId)}
+                    className="mt-2 block w-full text-right"
+                    aria-expanded={expanded}
+                  >
+                    <p className={`whitespace-pre-wrap text-[14px] leading-7 text-brand-active ${expanded ? "" : "line-clamp-2"}`}>{review.content}</p>
+                  </button>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {state !== "published" ? (
+                      <AdminButton variant="primary" onClick={() => void moderate(review.databaseId, "approve")} disabled={busyId !== null}>
+                        <Check size={14} /> تأیید
+                      </AdminButton>
+                    ) : null}
+                    {state !== "hidden" ? (
+                      <AdminButton onClick={() => void moderate(review.databaseId, "hide")} disabled={busyId !== null}>
+                        <EyeOff size={14} /> مخفی
+                      </AdminButton>
+                    ) : null}
+                    {state !== "flagged" ? (
+                      <AdminButton variant="danger" onClick={() => void moderate(review.databaseId, "flag")} disabled={busyId !== null}>
+                        <Flag size={14} /> علامت‌گذاری
+                      </AdminButton>
+                    ) : null}
                   </div>
                 </div>
-
-                <div className="mx-4 whitespace-pre-wrap rounded-[4px] border border-white/[.04] bg-brand-bg p-4 text-sm leading-7 text-white">
-                  {review.content}
-                </div>
-
-                <div className="flex flex-wrap gap-2 p-4 pt-3">
-                  {state !== "published" && (
-                    <AdminButton
-                      variant="primary"
-                      onClick={() => void moderate(review.databaseId, "approve")}
-                      disabled={busyId !== null}
-                      className="min-h-9 px-3 text-xs"
-                    >
-                      <Check size={14} /> تأیید
-                    </AdminButton>
-                  )}
-                  {state !== "hidden" && (
-                    <AdminButton
-                      onClick={() => void moderate(review.databaseId, "hide")}
-                      disabled={busyId !== null}
-                      className="min-h-9 px-3 text-xs"
-                    >
-                      <EyeOff size={14} /> مخفی
-                    </AdminButton>
-                  )}
-                  {state !== "flagged" && (
-                    <AdminButton
-                      variant="danger"
-                      onClick={() => void moderate(review.databaseId, "flag")}
-                      disabled={busyId !== null}
-                      className="min-h-9 px-3 text-xs"
-                    >
-                      <Flag size={14} /> علامت‌گذاری
-                    </AdminButton>
-                  )}
-                </div>
-              </AdminCard>
-            ))}
-          </div>
+              );
+            })}
+          </AdminCard>
         </div>
       )}
 

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   AdminBadge,
   AdminEmpty,
@@ -17,8 +18,11 @@ import {
   AdminTable,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
+import AdminMoreFilters, { AdminFilterField } from "./AdminMoreFilters";
 import { useAdminContext } from "./AdminContext";
 import { useAdminList, type AdminListData } from "./useAdminList";
+import { faDate } from "./format";
+import { FULFILLMENT_LABELS, ORDER_STATUS_LABELS, fulfillmentTone, orderStatusTone } from "./labels";
 
 interface OrderNode {
   databaseId: number;
@@ -35,29 +39,6 @@ interface OrderNode {
 
 type OrdersData = AdminListData<OrderNode>;
 
-const STATUS_LABEL: Record<string, string> = {
-  processing: "در حال پردازش",
-  completed: "تکمیل‌شده",
-  cancelled: "لغوشده",
-  pending: "در انتظار",
-  "on-hold": "در انتظار اقدام",
-  refunded: "مستردشده",
-  failed: "ناموفق",
-};
-
-const FULFILLMENT_LABEL: Record<string, string> = {
-  queued: "در صف",
-  processing: "در حال تکمیل",
-  completed: "تکمیل کامل",
-};
-
-type Tone = "success" | "danger" | "info" | "warning";
-
-const statusTone = (status: string): Tone =>
-  status === "completed" ? "success" : status === "cancelled" || status === "failed" ? "danger" : status === "processing" ? "info" : "warning";
-
-const formatDate = (value: string) => (value ? new Date(value).toLocaleString("fa-IR") : "—");
-
 export default function AdminOrdersClient({
   initial,
   permissions = [],
@@ -65,6 +46,7 @@ export default function AdminOrdersClient({
   initial?: OrdersData;
   permissions?: string[];
 }) {
+  const router = useRouter();
   const context = useAdminContext();
   const effectivePermissions = permissions.length ? permissions : context.permissions;
   const [status, setStatus] = useState("processing");
@@ -83,7 +65,6 @@ export default function AdminOrdersClient({
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="عملیات"
         title="سفارش‌ها"
         description="وضعیت پرداخت و تحویل سفارش‌ها را سریع بررسی کن."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
@@ -96,10 +77,14 @@ export default function AdminOrdersClient({
           <option value="completed">تکمیل‌شده</option>
           <option value="all">همه پرداخت‌شده‌ها</option>
         </AdminSelect>
-                <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
-          <option value="desc">جدیدترین</option>
-          <option value="asc">قدیمی‌ترین</option>
-        </AdminSelect>
+        <AdminMoreFilters activeCount={order !== "desc" ? 1 : 0}>
+          <AdminFilterField label="مرتب‌سازی">
+            <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)}>
+              <option value="desc">جدیدترین</option>
+              <option value="asc">قدیمی‌ترین</option>
+            </AdminSelect>
+          </AdminFilterField>
+        </AdminMoreFilters>
       </AdminFilterBar>
 
       <AdminErrorBanner message={error} onRetry={() => void refresh()} />
@@ -112,13 +97,12 @@ export default function AdminOrdersClient({
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
 
-          <AdminTable minWidth="1080px">
+          <AdminTable minWidth="860px">
             <thead>
               <tr>
                 <th>سفارش</th>
                 <th>مشتری</th>
                 <th>وضعیت</th>
-                <th>پرداخت</th>
                 <th>تحویل</th>
                 <th>مبلغ</th>
                 <th>تاریخ</th>
@@ -126,43 +110,42 @@ export default function AdminOrdersClient({
               </tr>
             </thead>
             <tbody>
-              {data.nodes.map((order) => (
-                <tr key={order.databaseId}>
-                  <td>
-                    <div className="text-sm font-black text-white">#{order.orderNumber}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa">شناسه {order.databaseId}</div>
-                  </td>
-                  <td>
-                    <div className="text-sm font-bold text-white">{order.customerName || "—"}</div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">{order.customerEmail || "—"}</div>
-                  </td>
-                  <td>
-                    <AdminBadge tone={statusTone(order.status)}>{STATUS_LABEL[order.status] ?? order.status}</AdminBadge>
-                  </td>
-                  <td>
-                    <AdminBadge tone={order.paymentStatus === "paid" ? "success" : "warning"}>
-                      {order.paymentStatus === "paid" ? "پرداخت‌شده" : "پرداخت‌نشده"}
-                    </AdminBadge>
-                  </td>
-                  <td>
-                    <AdminBadge tone={order.fulfillmentStatus === "completed" ? "success" : "info"}>
-                      {FULFILLMENT_LABEL[order.fulfillmentStatus] ?? order.fulfillmentStatus}
-                    </AdminBadge>
-                  </td>
-                  <td>
-                    <span className="text-sm font-black text-white" dir="ltr">{order.total} {order.currency}</span>
-                  </td>
-                  <td>
-                    <span className="text-xs text-brand-m_khonsa">{formatDate(order.date)}</span>
-                  </td>
+              {data.nodes.map((item) => (
+                <tr
+                  key={item.databaseId}
+                  onClick={() => router.push(`/admin/orders/${item.databaseId}`)}
+                  className="cursor-pointer"
+                >
                   <td>
                     <Link
-                      href={`/admin/orders/${order.databaseId}`}
+                      href={`/admin/orders/${item.databaseId}`}
                       prefetch={false}
-                      className="inline-flex items-center gap-1 text-xs font-black text-brand-blue hover:text-white"
+                      onClick={(event) => event.stopPropagation()}
+                      className="font-medium text-brand-active hover:text-brand-blue"
                     >
-                      <Eye size={14} /> باز کردن
+                      #{item.orderNumber}
                     </Link>
+                    {item.paymentStatus !== "paid" ? (
+                      <div className="mt-1">
+                        <AdminBadge tone="warning">پرداخت‌نشده</AdminBadge>
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="text-brand-active">{item.customerName || "—"}</td>
+                  <td>
+                    <AdminBadge tone={orderStatusTone(item.status)}>{ORDER_STATUS_LABELS[item.status] ?? item.status}</AdminBadge>
+                  </td>
+                  <td>
+                    <AdminBadge tone={fulfillmentTone(item.fulfillmentStatus)}>
+                      {FULFILLMENT_LABELS[item.fulfillmentStatus] ?? item.fulfillmentStatus}
+                    </AdminBadge>
+                  </td>
+                  <td className="text-brand-active" dir="ltr">
+                    {item.total} {item.currency}
+                  </td>
+                  <td className="text-[13px] text-brand-m_khonsa">{faDate(item.date)}</td>
+                  <td className="w-8 text-brand-surface_m">
+                    <ChevronLeft size={16} />
                   </td>
                 </tr>
               ))}
@@ -170,20 +153,24 @@ export default function AdminOrdersClient({
           </AdminTable>
 
           <AdminMobileList>
-            {data.nodes.map((order) => (
-              <AdminListCard key={order.databaseId} href={`/admin/orders/${order.databaseId}`}>
+            {data.nodes.map((item) => (
+              <AdminListCard key={item.databaseId} href={`/admin/orders/${item.databaseId}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-black text-white">#{order.orderNumber}</div>
-                    <div className="mt-1 truncate text-xs text-brand-m_khonsa">{order.customerName || "—"}</div>
+                    <div className="text-[14px] font-medium text-brand-active">#{item.orderNumber}</div>
+                    <div className="mt-0.5 truncate text-[12px] text-brand-m_khonsa">
+                      {item.customerName || "—"} · {faDate(item.date)}
+                    </div>
                   </div>
-                  <AdminBadge tone={statusTone(order.status)}>{STATUS_LABEL[order.status] ?? order.status}</AdminBadge>
+                  <AdminBadge tone={orderStatusTone(item.status)}>{ORDER_STATUS_LABELS[item.status] ?? item.status}</AdminBadge>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Mini label="پرداخت" value={order.paymentStatus === "paid" ? "پرداخت‌شده" : "پرداخت‌نشده"} />
-                  <Mini label="تحویل" value={FULFILLMENT_LABEL[order.fulfillmentStatus] ?? order.fulfillmentStatus} />
-                  <Mini label="مبلغ" value={`${order.total} ${order.currency}`} ltr />
-                  <Mini label="تاریخ" value={order.date ? new Date(order.date).toLocaleDateString("fa-IR") : "—"} />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <AdminBadge tone={fulfillmentTone(item.fulfillmentStatus)}>
+                    {FULFILLMENT_LABELS[item.fulfillmentStatus] ?? item.fulfillmentStatus}
+                  </AdminBadge>
+                  <span className="text-[13px] text-brand-active" dir="ltr">
+                    {item.total} {item.currency}
+                  </span>
                 </div>
               </AdminListCard>
             ))}
@@ -193,18 +180,9 @@ export default function AdminOrdersClient({
 
       <AdminLoadMore visible={data.pageInfo.hasNextPage} loading={loadingMore} onClick={loadMore} />
 
-      {!effectivePermissions.includes("orders.write") && (
-        <div className="mt-3 text-xs text-brand-m_khonsa">این حساب فقط مجوز مشاهده دارد.</div>
-      )}
+      {!effectivePermissions.includes("orders.write") ? (
+        <div className="mt-4 text-[12px] text-brand-m_khonsa">این حساب فقط مجوز مشاهده دارد.</div>
+      ) : null}
     </AdminPage>
-  );
-}
-
-function Mini({ label, value, ltr = false }: { label: string; value: string; ltr?: boolean }) {
-  return (
-    <div>
-      <div className="text-xs text-brand-m_khonsa">{label}</div>
-      <div className="mt-1 truncate text-xs font-bold text-white" dir={ltr ? "ltr" : undefined}>{value}</div>
-    </div>
   );
 }

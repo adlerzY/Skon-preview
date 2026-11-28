@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Eye } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   AdminBadge,
   AdminEmpty,
@@ -17,8 +18,9 @@ import {
   AdminTable,
 } from "./AdminUi";
 import { AdminErrorBanner, AdminListCount, AdminLoadMore, AdminSkeletonRows } from "./AdminListParts";
+import AdminMoreFilters, { AdminFilterField } from "./AdminMoreFilters";
 import { useAdminList, type AdminListData } from "./useAdminList";
-import { faDate, faDateTime, faNumber } from "./format";
+import { faDate, faNumber } from "./format";
 
 interface UserRow {
   databaseId: number;
@@ -35,7 +37,10 @@ interface UserRow {
 
 type UsersData = AdminListData<UserRow>;
 
+const contactLine = (user: UserRow) => user.email || user.phone || "—";
+
 export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [segment, setSegment] = useState("all");
   const [order, setOrder] = useState("desc");
@@ -52,7 +57,6 @@ export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
   return (
     <AdminPage>
       <AdminPageIntro
-        eyebrow="عملیات"
         title="کاربران"
         description="مشتری‌ها و اعضای تیم را جست‌وجو کن و سابقه سفارش و تیکت‌هایشان را ببین."
         action={<AdminRefreshButton onClick={() => void refresh()} loading={loading} />}
@@ -65,10 +69,14 @@ export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
           <option value="customers">مشتری‌ها</option>
           <option value="staff">اعضای تیم</option>
         </AdminSelect>
-        <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)} className="lg:w-[200px] lg:flex-none">
-          <option value="desc">جدیدترین عضو</option>
-          <option value="asc">قدیمی‌ترین عضو</option>
-        </AdminSelect>
+        <AdminMoreFilters activeCount={order !== "desc" ? 1 : 0}>
+          <AdminFilterField label="مرتب‌سازی">
+            <AdminSelect value={order} onChange={(event) => setOrder(event.target.value)}>
+              <option value="desc">جدیدترین عضو</option>
+              <option value="asc">قدیمی‌ترین عضو</option>
+            </AdminSelect>
+          </AdminFilterField>
+        </AdminMoreFilters>
       </AdminFilterBar>
 
       <AdminErrorBanner message={error} onRetry={() => void refresh()} />
@@ -81,49 +89,40 @@ export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <AdminListCount count={data.nodes.length} hasMore={data.pageInfo.hasNextPage} />
 
-          <AdminTable minWidth="1100px">
+          <AdminTable minWidth="760px">
             <thead>
               <tr>
                 <th>کاربر</th>
-                <th>موبایل</th>
                 <th>عضویت</th>
                 <th>سفارش موفق</th>
-                <th>تیکت</th>
-                <th>دیدگاه</th>
                 <th>آخرین فعالیت</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {data.nodes.map((user) => (
-                <tr key={user.databaseId}>
+                <tr key={user.databaseId} onClick={() => router.push(`/admin/users/${user.databaseId}`)} className="cursor-pointer">
                   <td>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-white">{user.name || "—"}</span>
-                      {user.isStaff && <AdminBadge tone="info">تیم</AdminBadge>}
+                      <Link
+                        href={`/admin/users/${user.databaseId}`}
+                        prefetch={false}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-medium text-brand-active hover:text-brand-blue"
+                      >
+                        {user.name || "—"}
+                      </Link>
+                      {user.isStaff ? <AdminBadge tone="info">تیم</AdminBadge> : null}
                     </div>
-                    <div className="mt-1 text-xs text-brand-m_khonsa" dir="ltr">{user.email || "—"}</div>
+                    <div className="mt-0.5 text-[12px] text-brand-m_khonsa" dir="ltr">
+                      {contactLine(user)}
+                    </div>
                   </td>
-                  <td>
-                    <span className="text-xs text-white" dir="ltr">{user.phone || "—"}</span>
-                  </td>
-                  <td>
-                    <span className="text-xs text-brand-m_khonsa">{faDate(user.registeredAt)}</span>
-                  </td>
-                  <td className="text-sm font-bold text-white">{faNumber(user.paidOrdersCount)}</td>
-                  <td className="text-sm text-white">{faNumber(user.ticketsCount)}</td>
-                  <td className="text-sm text-white">{faNumber(user.reviewsCount)}</td>
-                  <td>
-                    <span className="text-xs text-brand-m_khonsa">{faDateTime(user.lastActive)}</span>
-                  </td>
-                  <td>
-                    <Link
-                      href={`/admin/users/${user.databaseId}`}
-                      prefetch={false}
-                      className="inline-flex items-center gap-1 text-xs font-black text-brand-blue hover:text-white"
-                    >
-                      <Eye size={14} /> مشاهده
-                    </Link>
+                  <td className="text-[13px] text-brand-m_khonsa">{faDate(user.registeredAt)}</td>
+                  <td className="text-brand-active">{faNumber(user.paidOrdersCount)}</td>
+                  <td className="text-[13px] text-brand-m_khonsa">{faDate(user.lastActive)}</td>
+                  <td className="w-8 text-brand-surface_m">
+                    <ChevronLeft size={16} />
                   </td>
                 </tr>
               ))}
@@ -135,16 +134,16 @@ export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
               <AdminListCard key={user.databaseId} href={`/admin/users/${user.databaseId}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-black text-white">{user.name || "—"}</div>
-                    <div className="mt-1 truncate text-xs text-brand-m_khonsa" dir="ltr">{user.email || user.phone || "—"}</div>
+                    <div className="truncate text-[14px] font-medium text-brand-active">{user.name || "—"}</div>
+                    <div className="mt-0.5 truncate text-[12px] text-brand-m_khonsa" dir="ltr">
+                      {contactLine(user)}
+                    </div>
                   </div>
-                  {user.isStaff && <AdminBadge tone="info">تیم</AdminBadge>}
+                  {user.isStaff ? <AdminBadge tone="info">تیم</AdminBadge> : null}
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Mini label="سفارش موفق" value={faNumber(user.paidOrdersCount)} />
-                  <Mini label="تیکت" value={faNumber(user.ticketsCount)} />
-                  <Mini label="عضویت" value={faDate(user.registeredAt)} />
-                  <Mini label="آخرین فعالیت" value={faDate(user.lastActive)} />
+                <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-brand-m_khonsa">
+                  <span>{faNumber(user.paidOrdersCount)} سفارش موفق</span>
+                  <span>عضویت {faDate(user.registeredAt)}</span>
                 </div>
               </AdminListCard>
             ))}
@@ -154,14 +153,5 @@ export default function AdminUsersClient({ initial }: { initial?: UsersData }) {
 
       <AdminLoadMore visible={data.pageInfo.hasNextPage} loading={loadingMore} onClick={loadMore} />
     </AdminPage>
-  );
-}
-
-function Mini({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-xs text-brand-m_khonsa">{label}</div>
-      <div className="mt-1 truncate text-xs font-bold text-white">{value}</div>
-    </div>
   );
 }
